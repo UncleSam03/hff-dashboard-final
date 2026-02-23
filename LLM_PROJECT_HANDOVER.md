@@ -1,0 +1,113 @@
+# HFF Dashboard V2 - Technical Handover & System Architecture
+
+This document serves as a comprehensive technical guide for an AI or developer taking over the **Healthy Families Foundation (HFF) Dashboard** project.
+
+---
+
+## 🚀 1. Project Mission & Context
+The HFF Dashboard is a specialized data management platform designed for tracking participant registration and attendance across 18-day health campaigns. It is built to bridge the gap between rural field data collection (often offline) and centralized reporting.
+
+- **Primary Goal**: Real-time demographic insights and attendance tracking.
+- **Workflow**: Field teams use Enketo (ODK) forms or Excel registers. Data is ingested, normalized, and synced to a centralized Google Sheet and Supabase.
+
+---
+
+## 🛠 2. Technical Stack
+
+### **Frontend (Vite + React)**
+- **UI**: Tailwind CSS, Lucide icons, Radix UI.
+- **Charts**: Recharts (Daily attendance, Demographic distributions).
+- **Local Persistence**: **Dexie.js** (IndexedDB). This is critical for offline registration.
+- **State/Auth**: React Context, Supabase Auth.
+
+### **Backend (Node.js/Express)**
+- **Server**: Express.js server (`server/index.js`).
+- **Database**: **SQLite** (via `better-sqlite3`) for local file-based persistence.
+- **Cloud Sync**: 
+  - **Google Sheets API**: Service account based sync (`googleSheets.js`).
+  - **Supabase**: Real-time sync of registrations and participants.
+
+### **Data Processing**
+- **Excel/CSV**: `xlsx` library, custom parser in `hffRegister.js`.
+- **Enketo (XML)**: custom mapping in `enketoMapper.js`.
+
+---
+
+## 📂 3. Repository Structure & Key Files
+
+| Path | Description |
+| :--- | :--- |
+| `src/lib/hffRegister.js` | **Core Logic**: Detects headers, normalizes gender/names, calculates analytics. |
+| `src/lib/syncManager.js` | **Sync Orchestrator**: Manages data flow between local Dexie and cloud Supabase. |
+| `src/lib/dexieDb.js` | **Schema**: Defines the local IndexedDB stores (`participants`, `registrations`). |
+| `server/index.js` | **Express API**: Handles file uploads, API key protection, and cloud sync triggers. |
+| `server/db.js` | **SQLite Schema**: Defines the server-side persistence for uploads. |
+| `server/googleSheets.js` | **Cloud Bridge**: Service account logic for reading/writing to the master sheet. |
+| `src/forms/` | Contains the Enketo XML definitions and transformations. |
+
+---
+
+## 🧠 4. Core Logic & Normalization
+
+### **Gender Normalization (`normalizeGender`)**
+The system is designed for the Setswana context. It maps various inputs into standard 'M' or 'F':
+- `1`, `Male`, `Monna` → **M**
+- `2`, `Female`, `Mosadi` → **F**
+
+### **Excel Header Detection**
+The `detectHffHeaderRowIndex` function scans the first 40 rows of an Excel file to find the "No." column, allowing it to bypass empty spacer rows or titles commonly found in field templates.
+
+---
+
+## 📊 5. Data Schemas
+
+### **Dexie (Client-side)**
+```javascript
+registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status'
+participants: '++id, uuid, name, gender, age, sync_status'
+```
+
+### **SQLite (Server-side)**
+```sql
+CREATE TABLE participants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    external_id TEXT,
+    first_name TEXT,
+    last_name TEXT,
+    gender TEXT,
+    age TEXT,
+    education TEXT,
+    marital_status TEXT,
+    occupation TEXT,
+    attendance TEXT -- JSON string array of 18 values
+);
+```
+
+---
+
+## 🚧 6. Current Implementation Status
+
+- [x] **Branding**: Fully migrated from "Hope For Families" to "Healthy Families Foundation".
+- [x] **Auth**: Supabase integration active.
+- [x] **Offline-First**: Dexie.js integration complete for dashboard and registration.
+- [x] **File Parsing**: Handles messy Excel registers with "No." detection.
+- [x] **Analytics**: Real-time generation of demographic charts.
+
+---
+
+## 📌 7. Immediate Roadmap & Challenges
+
+1.  **Supabase Finalization**: Move all SQLite/Google Sheets storage to Supabase Postgres for a unified cloud architecture.
+2.  **PWA Optimization**: Ensure the dashboard is fully installable and functional in zero-connectivity environments.
+3.  **UI/UX for Field**: Simplify the attendance grid for mobile/tablet users (currently too wide for small screens).
+4.  **Bulk Sync**: Implement a "Sync All" button with a clear progress bar for when the user returns to a connected area.
+
+---
+
+## 💡 8. Handover Instructions for Next LLM
+
+When starting a session with this codebase, inject the following context:
+> "I am working on the HFF Dashboard V2. The core logic for data ingestion is in `hffRegister.js`. The local data layer uses Dexie.js. We are currently in the process of ensuring all field data (Excel/Enketo) correctly maps to the Supabase schema and provides real-time analytics. Focus on reliability for offline-first field workers."
+
+---
+*Generated by Antigravity AI*

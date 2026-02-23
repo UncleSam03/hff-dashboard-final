@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<h:html xmlns="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:h="http://www.w3.org/1999/xhtml" xmlns:jr="http://openrosa.org/javarosa" xmlns:odk="http://www.opendatakit.org/xforms" xmlns:orx="http://openrosa.org/xforms" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <h:head>
+    <h:title>HFF Participant Register</h:title>
+    <model odk:xforms-version="1.0.0">
+      <instance>
+        <data id="hff_register">
+          <first_name/>
+          <last_name/>
+          <gender/>
+          <age/>
+          <education/>
+          <marital_status/>
+          <occupation/>
+          <meta jr:name="instanceID">
+            <jr:uuid/>
+          </meta>
+        </data>
+      </instance>
+      <bind nodeset="/data/first_name" required="true()" type="string"/>
+      <bind nodeset="/data/last_name" required="true()" type="string"/>
+      <bind nodeset="/data/gender" required="true()" type="select1"/>
+      <bind nodeset="/data/age" type="int"/>
+      <bind nodeset="/data/education" type="string"/>
+      <bind nodeset="/data/marital_status" type="string"/>
+      <bind nodeset="/data/occupation" type="string"/>
+      <bind jr:preload="uid" nodeset="/data/meta/jr:uuid" type="string"/>
+    </model>
+  </h:head>
+  <h:body>
+    <input ref="/data/first_name">
+      <label>First Name</label>
+    </input>
+    <input ref="/data/last_name">
+      <label>Last Name</label>
+    </input>
+    <select1 ref="/data/gender">
+      <label>Gender</label>
+      <item>
+        <label>Male</label>
+        <value>M</value>
+      </item>
+      <item>
+        <label>Female</label>
+        <value>F</value>
+      </item>
+    </select1>
+    <input ref="/data/age">
+      <label>Age</label>
+    </input>
+    <input ref="/data/education">
+      <label>Education</label>
+    </input>
+    <input ref="/data/marital_status">
+      <label>Marital Status</label>
+    </input>
+    <input ref="/data/occupation">
+      <label>Occupation</label>
+    </input>
+  </h:body>
+</h:html>
