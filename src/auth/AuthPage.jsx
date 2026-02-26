@@ -18,17 +18,6 @@ function friendlyAuthError(err) {
 
 const ROLES = [
   {
-    id: "admin",
-    label: "Admin",
-    desc: "Full access to all dashboard features, analytics, and user management.",
-    icon: Shield,
-    gradient: "from-amber-500 to-orange-600",
-    bgLight: "bg-amber-50",
-    textColor: "text-amber-700",
-    borderColor: "border-amber-400",
-    ring: "ring-amber-400/40",
-  },
-  {
     id: "facilitator",
     label: "Facilitator",
     desc: "Register participants, mark daily attendance, and track your group.",
@@ -264,7 +253,7 @@ export default function AuthPage() {
               HFF <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400">Campaigns</span>
             </h1>
             <p className="text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-              Join the campaign as an Admin, Facilitator, or Participant. Sign up to access your personalized dashboard and start making an impact.
+              Join the campaign as a Facilitator or Participant. Sign up to access your personalized dashboard and start making an impact.
             </p>
           </div>
 
@@ -319,8 +308,8 @@ export default function AuthPage() {
           {/* Features footer */}
           <div className="mt-20 flex flex-wrap justify-center gap-8 text-white/40">
             <div className="flex items-center gap-2 text-sm">
-              <Shield className="h-4 w-4" />
-              <span>Role-Based Access</span>
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Secure Access</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Users className="h-4 w-4" />

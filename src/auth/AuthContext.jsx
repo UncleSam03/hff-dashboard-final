@@ -16,6 +16,9 @@ export function AuthProvider({ children }) {
     }
 
     try {
+      const email = authUser.email?.toLowerCase() || "";
+      const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
+
       // Try to get existing profile
       const { data, error } = await supabase
         .from("profiles")
@@ -25,10 +28,12 @@ export function AuthProvider({ children }) {
 
       if (error && error.code === "PGRST116") {
         // No profile row — legacy user or trigger didn't fire
-        // Insert a default admin profile (legacy users keep full access)
+        // If admin email, force admin. Otherwise default to participant for new accounts.
+        const role = isAdminEmail ? "admin" : "participant";
+        
         const newProfile = {
           id: authUser.id,
-          role: "admin",
+          role: role,
           full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.username || "",
           phone: authUser.user_metadata?.phone || authUser.phone || "",
         };
@@ -40,8 +45,8 @@ export function AuthProvider({ children }) {
 
         if (insertErr) {
           console.error("Failed to create profile:", insertErr);
-          setProfile({ role: "admin", full_name: "", phone: "" });
-          return { role: "admin" };
+          setProfile({ role: role, full_name: "", phone: "" });
+          return { role: role };
         }
         setProfile(inserted);
         return inserted;
@@ -49,16 +54,29 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error("Error fetching profile:", error);
-        setProfile({ role: "admin", full_name: "", phone: "" });
-        return { role: "admin" };
+        const fallbackRole = isAdminEmail ? "admin" : "participant";
+        setProfile({ role: fallbackRole, full_name: "", phone: "" });
+        return { role: fallbackRole };
+      }
+
+      // If they have an @thehealthyfamilies.net email but aren't admin in DB, fix it locally
+      if (isAdminEmail && data.role !== "admin") {
+        const updatedProfile = { ...data, role: "admin" };
+        setProfile(updatedProfile);
+        
+        // Proactively update DB
+        await supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id);
+        
+        return updatedProfile;
       }
 
       setProfile(data);
       return data;
     } catch (err) {
       console.error("Profile fetch error:", err);
-      setProfile({ role: "admin", full_name: "", phone: "" });
-      return { role: "admin" };
+      const fallbackRole = (authUser.email?.toLowerCase().endsWith("@thehealthyfamilies.net")) ? "admin" : "participant";
+      setProfile({ role: fallbackRole, full_name: "", phone: "" });
+      return { role: fallbackRole };
     }
   }
 
