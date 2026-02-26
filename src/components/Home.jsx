@@ -42,7 +42,7 @@ const Home = ({ onSelectMode }) => {
                         </h2>
                         <p className="text-gray-600">
                             Your dashboard is ready with the latest metrics from your campaigns.
-                            Let's make a difference today.
+                            Let&apos;s make a difference today.
                         </p>
                     </div>
                     <div className="flex gap-4">
@@ -74,7 +74,7 @@ const Home = ({ onSelectMode }) => {
 
                         <h2 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">Offline Collect</h2>
                         <p className="text-gray-600 mb-8 line-height-relaxed">
-                            Collect participant data in the field even without internet. Records are synced to Google Sheets when you're online.
+                            Collect participant data in the field even without internet. Records are synced to Google Sheets when you&apos;re online.
                         </p>
 
                         <div className="flex items-center text-green-600 font-bold group-hover:gap-2 transition-all">
