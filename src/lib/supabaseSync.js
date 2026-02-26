@@ -53,57 +53,68 @@ async function pushStorePending(storeName) {
     }
 }
 
+let isPulling = false;
+
 /**
  * Pull updates from Supabase to IndexedDB for a specific store
  */
 async function pullStoreUpdates(storeName) {
-    if (!isConfigured || !navigator.onLine) return;
+    if (!isConfigured || !navigator.onLine || isPulling) return;
+    
+    isPulling = true;
+    try {
+        const latestLocal = await db[storeName].orderBy('updated_at').last();
+        const lastSyncTime = latestLocal?.updated_at || new Date(0).toISOString();
 
-    const latestLocal = await db[storeName].orderBy('updated_at').last();
-    const lastSyncTime = latestLocal?.updated_at || new Date(0).toISOString();
+        const { data, error } = await supabase
+            .from(storeName)
+            .select('*')
+            .gt('updated_at', lastSyncTime);
 
-    const { data, error } = await supabase
-        .from(storeName)
-        .select('*')
-        .gt('updated_at', lastSyncTime);
+        if (error) {
+            // Check for aborted signal (common in some browser states)
+            if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+                console.warn(`[SupabaseSync] Pull ${storeName} aborted:`, error.message);
+            } else {
+                console.error(`[SupabaseSync] Error pulling ${storeName} updates:`, error.message);
+            }
+            return;
+        }
 
-    if (error) {
-        console.error(`[SupabaseSync] Error pulling ${storeName} updates:`, error.message);
-        return;
-    }
+        if (data && data.length > 0) {
+            console.log(`[SupabaseSync] Pulling ${data.length} new records from ${storeName}...`);
+            for (const remoteRecord of data) {
+                const existing = await db[storeName].where('uuid').equals(remoteRecord.uuid).first();
 
-    if (data && data.length > 0) {
-        console.log(`[SupabaseSync] Pulling ${data.length} new records from ${storeName}...`);
-        for (const remoteRecord of data) {
-            const existing = await db[storeName].where('uuid').equals(remoteRecord.uuid).first();
-
-            if (existing) {
-                if (new Date(remoteRecord.updated_at) > new Date(existing.updated_at)) {
-                    await db[storeName].update(existing.id, {
+                if (existing) {
+                    if (new Date(remoteRecord.updated_at) > new Date(existing.updated_at)) {
+                        await db[storeName].update(existing.id, {
+                            ...remoteRecord,
+                            sync_status: 'synced'
+                        });
+                    }
+                } else {
+                    await db[storeName].add({
                         ...remoteRecord,
                         sync_status: 'synced'
                     });
                 }
-            } else {
-                await db[storeName].add({
-                    ...remoteRecord,
-                    sync_status: 'synced'
-                });
             }
+            window.dispatchEvent(new CustomEvent(`hff-supabase-${storeName}-updated`));
         }
-        window.dispatchEvent(new CustomEvent(`hff-supabase-${storeName}-updated`));
+    } finally {
+        isPulling = false;
     }
 }
 
 /**
- * Orchestrates push for both stores
+ * Orchestrates push for registrations
  */
 export async function pushPendingToSupabase() {
     if (isSyncing) return;
     isSyncing = true;
     try {
         await pushStorePending('registrations');
-        await pushStorePending('participants');
     } finally {
         isSyncing = false;
         window.dispatchEvent(new CustomEvent('hff-supabase-sync-complete'));
@@ -111,26 +122,9 @@ export async function pushPendingToSupabase() {
 }
 
 /**
- * Orchestrates pull for both stores
+ * Orchestrates pull for registrations
  */
 export async function pullFromSupabase() {
     await pullStoreUpdates('registrations');
-    await pullStoreUpdates('participants');
-}
-
-/**
- * Initialize sync listeners
- */
-export function initSupabaseSync() {
-    window.addEventListener('online', () => {
-        console.log("[SupabaseSync] Back online. Triggering sync...");
-        pushPendingToSupabase();
-    });
-
-    setInterval(pushPendingToSupabase, 30000);
-    setInterval(pullFromSupabase, 60000);
-
-    pushPendingToSupabase();
-    pullFromSupabase();
 }
 
