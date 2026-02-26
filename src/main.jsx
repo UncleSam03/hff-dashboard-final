@@ -21,7 +21,6 @@ const updateSW = registerSW({
 
 // Start the background sync engines
 startAutoSync();
-initSupabaseSync();
 
 
 createRoot(document.getElementById('root')).render(

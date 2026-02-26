@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import { supabase, isConfigured } from "@/lib/supabase";
 
 const AuthContext = createContext(null);
-console.log("[AuthContext] Script loaded - v1.0.2");
+console.log("[AuthContext] Script loaded - v1.0.3");
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -16,64 +16,73 @@ export function AuthProvider({ children }) {
       return null;
     }
 
+    // Set a timeout of 10 seconds for the profile fetch
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Profile fetch timed out")), 10000);
+    });
+
     try {
-      const email = authUser.email?.toLowerCase() || "";
-      const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
+      const fetchPromise = (async () => {
+        const email = authUser.email?.toLowerCase() || "";
+        const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
 
-      // Try to get existing profile
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", authUser.id)
-        .single();
-
-      if (error && error.code === "PGRST116") {
-        // No profile row — legacy user or trigger didn't fire
-        // If admin email, force admin. Otherwise default to participant for new accounts.
-        const role = isAdminEmail ? "admin" : "participant";
-        
-        const newProfile = {
-          id: authUser.id,
-          role: role,
-          full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.username || "",
-          phone: authUser.user_metadata?.phone || authUser.phone || "",
-          must_change_password: false, // Default for manual signups
-        };
-        const { data: inserted, error: insertErr } = await supabase
+        // Try to get existing profile
+        const { data, error } = await supabase
           .from("profiles")
-          .insert(newProfile)
-          .select()
+          .select("*")
+          .eq("id", authUser.id)
           .single();
 
-        if (insertErr) {
-          console.error("Failed to create profile:", insertErr);
-          setProfile({ role: role, full_name: "", phone: "" });
-          return { role: role };
+        if (error && error.code === "PGRST116") {
+          // No profile row — legacy user or trigger didn't fire
+          // If admin email, force admin. Otherwise default to participant for new accounts.
+          const role = isAdminEmail ? "admin" : "participant";
+          
+          const newProfile = {
+            id: authUser.id,
+            role: role,
+            full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.username || "",
+            phone: authUser.user_metadata?.phone || authUser.phone || "",
+            must_change_password: false, // Default for manual signups
+          };
+          const { data: inserted, error: insertErr } = await supabase
+            .from("profiles")
+            .insert(newProfile)
+            .select()
+            .single();
+
+          if (insertErr) {
+            console.error("Failed to create profile:", insertErr);
+            setProfile({ role: role, full_name: "", phone: "" });
+            return { role: role };
+          }
+          setProfile(inserted);
+          return inserted;
         }
-        setProfile(inserted);
-        return inserted;
-      }
 
-      if (error) {
-        console.error("Error fetching profile:", error);
-        const fallbackRole = isAdminEmail ? "admin" : "participant";
-        setProfile({ role: fallbackRole, full_name: "", phone: "" });
-        return { role: fallbackRole };
-      }
+        if (error) {
+          console.error("Error fetching profile:", error);
+          const fallbackRole = isAdminEmail ? "admin" : "participant";
+          setProfile({ role: fallbackRole, full_name: "", phone: "" });
+          return { role: fallbackRole };
+        }
 
-      // If they have an @thehealthyfamilies.net email but aren't admin in DB, fix it locally
-      if (isAdminEmail && data.role !== "admin") {
-        const updatedProfile = { ...data, role: "admin" };
-        setProfile(updatedProfile);
-        
-        // Proactively update DB
-        await supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id);
-        
-        return updatedProfile;
-      }
+        // If they have an @thehealthyfamilies.net email but aren't admin in DB, fix it locally
+        if (isAdminEmail && data.role !== "admin") {
+          const updatedProfile = { ...data, role: "admin" };
+          setProfile(updatedProfile);
+          
+          // Proactively update DB
+          await supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id);
+          
+          return updatedProfile;
+        }
 
-      setProfile(data);
-      return data;
+        setProfile(data);
+        return data;
+      })();
+
+      return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
       console.error("Profile fetch error:", err);
       const fallbackRole = (authUser.email?.toLowerCase().endsWith("@thehealthyfamilies.net")) ? "admin" : "participant";
