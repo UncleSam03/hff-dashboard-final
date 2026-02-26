@@ -97,14 +97,14 @@ export default function FacilitatorDashboard({ onBack }) {
             // Save locally
             await db.registrations.add(record);
 
-            // Try Supabase
+            // Try Supabase - strip internal fields
             if (isConfigured) {
-                const { error } = await supabase.from("registrations").insert({
-                    ...record,
-                    sync_status: undefined,
-                });
+                const { sync_status, ...supabasePayload } = record;
+                const { error } = await supabase.from("registrations").insert(supabasePayload);
                 if (!error) {
                     await db.registrations.where("uuid").equals(newUuid).modify({ sync_status: "synced" });
+                } else {
+                    console.error("Supabase sync error:", error);
                 }
             }
 
