@@ -88,23 +88,29 @@ export function AuthProvider({ children }) {
     }
 
     // Get initial session
+    console.log("[AuthContext] Getting initial session...");
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       try {
         const authUser = session?.user ?? null;
+        console.log("[AuthContext] Session found:", authUser ? authUser.email : "none");
         setUser(authUser);
         if (authUser) {
-          await fetchProfile(authUser);
+          console.log("[AuthContext] Fetching profile for:", authUser.id);
+          const p = await fetchProfile(authUser);
+          console.log("[AuthContext] Profile result:", p ? p.role : "none");
         }
       } catch (err) {
-        console.error("Auth initialization error:", err);
+        console.error("[AuthContext] Auth initialization error:", err);
       } finally {
+        console.log("[AuthContext] Loading set to false");
         setLoading(false);
       }
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true); // Show loading during transition if needed
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[AuthContext] Auth state change:", event);
+      setLoading(true);
       try {
         const authUser = session?.user ?? null;
         setUser(authUser);
@@ -114,7 +120,7 @@ export function AuthProvider({ children }) {
           setProfile(null);
         }
       } catch (err) {
-        console.error("Auth change error:", err);
+        console.error("[AuthContext] Auth change error:", err);
       } finally {
         setLoading(false);
       }
