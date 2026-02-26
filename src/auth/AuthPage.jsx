@@ -18,17 +18,6 @@ function friendlyAuthError(err) {
 
 const ROLES = [
   {
-    id: "admin",
-    label: "Admin",
-    desc: "Full access to all dashboard features, analytics, and user management.",
-    icon: Shield,
-    gradient: "from-amber-500 to-orange-600",
-    bgLight: "bg-amber-50",
-    textColor: "text-amber-700",
-    borderColor: "border-amber-400",
-    ring: "ring-amber-400/40",
-  },
-  {
     id: "facilitator",
     label: "Facilitator",
     desc: "Register participants, mark daily attendance, and track your group.",
