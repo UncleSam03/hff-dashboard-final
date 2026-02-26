@@ -10,23 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-# Environment and Secrets
-.env*.local
+*.local
+
+# Credentials / secrets
 hff-dashboard-*.json
 .env
-
-# Next.js
-.next/
-out/
-
-# Database
-*.db
-*.db-journal
-*.sqlite
-
-# Vercel
-.vercel
-.env.vercel
 
 # Editor directories and files
 .vscode/*
@@ -38,3 +26,4 @@ out/
 *.njsproj
 *.sln
 *.sw?
+.vercel

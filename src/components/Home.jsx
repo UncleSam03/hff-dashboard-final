@@ -2,10 +2,9 @@ import React from 'react';
 import { LayoutDashboard, FileSpreadsheet, MapPin, ArrowRight, Share2, Download, Zap, Database } from 'lucide-react';
 
 const Home = ({ onSelectMode }) => {
-    const [isOnline, setIsOnline] = React.useState(true);
+    const [isOnline, setIsOnline] = React.useState(navigator.onLine);
 
     React.useEffect(() => {
-        setIsOnline(navigator.onLine);
         const handleStatusChange = (e) => {
             setIsOnline(e.detail.online);
         };
@@ -42,7 +41,7 @@ const Home = ({ onSelectMode }) => {
                         </h2>
                         <p className="text-gray-600">
                             Your dashboard is ready with the latest metrics from your campaigns.
-                            Let&apos;s make a difference today.
+                            Let's make a difference today.
                         </p>
                     </div>
                     <div className="flex gap-4">
@@ -74,7 +73,7 @@ const Home = ({ onSelectMode }) => {
 
                         <h2 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">Offline Collect</h2>
                         <p className="text-gray-600 mb-8 line-height-relaxed">
-                            Collect participant data in the field even without internet. Records are synced to Google Sheets when you&apos;re online.
+                            Collect participant data in the field even without internet. Records are synced to Google Sheets when you're online.
                         </p>
 
                         <div className="flex items-center text-green-600 font-bold group-hover:gap-2 transition-all">

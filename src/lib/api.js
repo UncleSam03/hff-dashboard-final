@@ -1,6 +1,4 @@
-import { getEnv } from './env';
-
-const API_KEY = process.env.NEXT_PUBLIC_HFF_API_KEY || process.env.VITE_HFF_API_KEY || "";
+const API_KEY = import.meta.env.VITE_HFF_API_KEY || "";
 
 /**
  * Enhanced fetch wrapper that automatically adds API key headers

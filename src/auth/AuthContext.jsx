@@ -1,5 +1,3 @@
-"use client";
-
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase, isConfigured } from "@/lib/supabase";
 
@@ -18,9 +16,6 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const email = authUser.email?.toLowerCase() || "";
-      const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
-
       // Try to get existing profile
       const { data, error } = await supabase
         .from("profiles")
@@ -30,12 +25,10 @@ export function AuthProvider({ children }) {
 
       if (error && error.code === "PGRST116") {
         // No profile row — legacy user or trigger didn't fire
-        // If admin email, force admin. Otherwise default to participant for new accounts.
-        const role = isAdminEmail ? "admin" : "participant";
-        
+        // Insert a default admin profile (legacy users keep full access)
         const newProfile = {
           id: authUser.id,
-          role: role,
+          role: "admin",
           full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.username || "",
           phone: authUser.user_metadata?.phone || authUser.phone || "",
         };
@@ -47,8 +40,8 @@ export function AuthProvider({ children }) {
 
         if (insertErr) {
           console.error("Failed to create profile:", insertErr);
-          setProfile({ role: role, full_name: "", phone: "" });
-          return { role: role };
+          setProfile({ role: "admin", full_name: "", phone: "" });
+          return { role: "admin" };
         }
         setProfile(inserted);
         return inserted;
@@ -56,30 +49,16 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error("Error fetching profile:", error);
-        const fallbackRole = isAdminEmail ? "admin" : "participant";
-        setProfile({ role: fallbackRole, full_name: "", phone: "" });
-        return { role: fallbackRole };
-      }
-
-      // If they have an @healthyfamilies.net email but aren't admin in DB, fix it locally
-      // (Optionally we could update the DB here too)
-      if (isAdminEmail && data.role !== "admin") {
-        const updatedProfile = { ...data, role: "admin" };
-        setProfile(updatedProfile);
-        
-        // Proactively update DB
-        await supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id);
-        
-        return updatedProfile;
+        setProfile({ role: "admin", full_name: "", phone: "" });
+        return { role: "admin" };
       }
 
       setProfile(data);
       return data;
     } catch (err) {
       console.error("Profile fetch error:", err);
-      const fallbackRole = (authUser.email?.toLowerCase().endsWith("@healthyfamilies.net")) ? "admin" : "participant";
-      setProfile({ role: fallbackRole, full_name: "", phone: "" });
-      return { role: fallbackRole };
+      setProfile({ role: "admin", full_name: "", phone: "" });
+      return { role: "admin" };
     }
   }
 
