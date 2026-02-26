@@ -36,6 +36,7 @@ export function AuthProvider({ children }) {
           role: role,
           full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.username || "",
           phone: authUser.user_metadata?.phone || authUser.phone || "",
+          must_change_password: false, // Default for manual signups
         };
         const { data: inserted, error: insertErr } = await supabase
           .from("profiles")

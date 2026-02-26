@@ -46,6 +46,24 @@ async function pushStorePending(storeName) {
                 sync_status: 'synced',
                 synced_at: new Date().toISOString()
             });
+
+            // Trigger registration if it's a participant
+            if (storeName === 'registrations' && recordToSync.type === 'participant') {
+                try {
+                    await fetch('/api/auth/register-participant', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            firstName: recordToSync.first_name,
+                            lastName: recordToSync.last_name,
+                            phone: recordToSync.contact,
+                            uuid: recordToSync.uuid
+                        })
+                    });
+                } catch (regErr) {
+                    console.error("[SupabaseSync] Auto-registration failed:", regErr);
+                }
+            }
         } else {
             console.error(`[SupabaseSync] Error syncing ${storeName} record ${record.uuid}:`, error.message);
             await db[storeName].update(id, { sync_status: 'failed' });
