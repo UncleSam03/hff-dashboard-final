@@ -72,7 +72,7 @@ function ConfigRequired() {
               <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
               <div className="text-sm text-amber-800">
                 <p className="font-semibold mb-1">Why is this happening?</p>
-                <p>The app requires Supabase Auth. Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to your <code>.env.local</code> and restart the dev server.</p>
+                <p>The app requires Supabase Auth. Since we migrated to Next.js, you must add <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY</code> to your environment variables (in Vercel settings for production).</p>
               </div>
             </div>
           </div>
