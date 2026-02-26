@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import { supabase, isConfigured } from "@/lib/supabase";
 
 const AuthContext = createContext(null);
+console.log("[AuthContext] Script loaded - v1.0.2");
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
