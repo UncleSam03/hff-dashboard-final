@@ -27,3 +27,5 @@ hff-dashboard-*.json
 *.sln
 *.sw?
 .vercel
+.next
+.env.vercel
