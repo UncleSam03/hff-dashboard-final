@@ -116,47 +116,50 @@ export default function AuthPage() {
     setError("");
     setMessage("");
 
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail) {
+      setError("Please enter your email.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (authMode === "signup" && !trimmedEmail.includes("@")) {
+      setError("Please enter a valid email address.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       if (authMode === "signin") {
-        let loginEmail = email;
-        const isEmail = email.includes("@");
+        let loginEmail = trimmedEmail;
+        const isEmail = trimmedEmail.includes("@");
 
         // If not an email, lookup in profiles by full_name
         if (!isEmail) {
           const { data: profileMatch, error: lookupErr } = await supabase
             .from("profiles")
             .select("id, full_name, role")
-            .ilike("full_name", email)
+            .ilike("full_name", trimmedEmail)
             .single();
 
           if (lookupErr || !profileMatch) {
             throw new Error("Could not find a user with that name. Please check and try again.");
           }
 
-          // We need to find the "fake" email used for login
-          // The email is stored in auth.users, which we can't query directly from frontend easily
-          // However, we can use a RPC or just assume the pattern if we had the ID.
-          // Better approach: Let's assume the user might have multiple participants with same name? 
-          // No, .single() expects one.
-
-          // Since we can't query auth.users directly, we'll use a stored procedure or 
-          // just try to sign in with the name-based email pattern if we know the UUID.
-          // BUT we don't know the exact email yet. 
-
-          // REVISION: The profile SHOULD store the login email if it's a participant.
-          // Let's check if the profile has an email field or if we can fetch it via a custom function.
-
-          // Workaround for this session: Query a custom RPC that returns email by profile ID
           const { data: userData, error: userErr } = await supabase.rpc('get_user_email_by_id', { user_id: profileMatch.id });
 
           if (userErr || !userData) {
-            // Fallback: If we can't get it via RPC, the system might be missing the function.
             throw new Error("Unable to retrieve login identifier for this name. Please use email or contact admin.");
           }
           loginEmail = userData;
         }
 
-        const { data: signInData, error: err } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        const { data: signInData, error: err } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password: trimmedPassword
+        });
         if (err) throw err;
 
         // Check for must_change_password after successful login
@@ -173,13 +176,13 @@ export default function AuthPage() {
         }
       } else {
         const { error: err } = await supabase.auth.signUp({
-          email,
-          password,
+          email: trimmedEmail,
+          password: trimmedPassword,
           options: {
             data: {
               role: selectedRole,
-              full_name: fullName,
-              phone: phone,
+              full_name: fullName.trim(),
+              phone: phone.trim(),
             },
           },
         });
@@ -523,15 +526,17 @@ export default function AuthPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Email or Full Name</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">
+                  {authMode === "signin" ? "Email or Full Name" : "Email Address"}
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
                   <input
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/30 transition-all"
-                    placeholder="you@example.com or Full Name"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/30 transition-all font-medium"
+                    placeholder={authMode === "signin" ? "you@example.com or Full Name" : "you@example.com"}
                     required
                   />
                 </div>
