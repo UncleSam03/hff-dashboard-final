@@ -27,24 +27,26 @@ export function AuthProvider({ children }) {
         const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
 
         // Try to get existing profile
-        const { data, error } = await supabase
+        const { data: existingProfile, error: fetchErr } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", authUser.id)
           .single();
 
-        if (error && error.code === "PGRST116") {
+        let currentProfile = existingProfile;
+
+        if (fetchErr && fetchErr.code === "PGRST116") {
           // No profile row — legacy user or trigger didn't fire
-          // If admin email, force admin. Otherwise default to participant for new accounts.
-          const role = isAdminEmail ? "admin" : "participant";
-          
+          const role = isAdminEmail ? "admin" : (authUser.user_metadata?.role || "participant");
+
           const newProfile = {
             id: authUser.id,
             role: role,
-            full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.username || "",
+            full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.user_metadata?.username || "",
             phone: authUser.user_metadata?.phone || authUser.phone || "",
-            must_change_password: false, // Default for manual signups
+            must_change_password: false,
           };
+
           const { data: inserted, error: insertErr } = await supabase
             .from("profiles")
             .insert(newProfile)
@@ -52,42 +54,45 @@ export function AuthProvider({ children }) {
             .single();
 
           if (insertErr) {
-            console.error("Failed to create profile:", insertErr);
-            setProfile({ role: role, full_name: "", phone: "" });
-            return { role: role };
+            console.error("[AuthContext] Failed to create profile:", insertErr);
+            const fallback = { id: authUser.id, role, full_name: newProfile.full_name, phone: newProfile.phone };
+            setProfile(fallback);
+            return fallback;
           }
-          setProfile(inserted);
-          return inserted;
-        }
-
-        if (error) {
-          console.error("Error fetching profile:", error);
+          currentProfile = inserted;
+        } else if (fetchErr) {
+          console.error("[AuthContext] Error fetching profile:", fetchErr);
           const fallbackRole = isAdminEmail ? "admin" : "participant";
-          setProfile({ role: fallbackRole, full_name: "", phone: "" });
-          return { role: fallbackRole };
+          const fallback = { id: authUser.id, role: fallbackRole, full_name: "", phone: "" };
+          setProfile(fallback);
+          return fallback;
         }
 
-        // If they have an @thehealthyfamilies.net email but aren't admin in DB, fix it locally
-        if (isAdminEmail && data.role !== "admin") {
-          const updatedProfile = { ...data, role: "admin" };
+        // ENFORCE ADMIN ROLE: If they have @thehealthyfamilies.net but aren't admin in DB, fix it.
+        if (isAdminEmail && currentProfile.role !== "admin") {
+          console.log("[AuthContext] Upgrading user to admin based on email domain");
+          const updatedProfile = { ...currentProfile, role: "admin" };
           setProfile(updatedProfile);
-          
-          // Proactively update DB
-          await supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id);
-          
+
+          // Background update to DB
+          supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id).then(({ error }) => {
+            if (error) console.error("[AuthContext] Failed to sync admin role to DB:", error);
+          });
+
           return updatedProfile;
         }
 
-        setProfile(data);
-        return data;
+        setProfile(currentProfile);
+        return currentProfile;
       })();
 
       return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
-      console.error("Profile fetch error:", err);
+      console.error("[AuthContext] Profile fetch error:", err);
       const fallbackRole = (authUser.email?.toLowerCase().endsWith("@thehealthyfamilies.net")) ? "admin" : "participant";
-      setProfile({ role: fallbackRole, full_name: "", phone: "" });
-      return { role: fallbackRole };
+      const fallback = { id: authUser.id, role: fallbackRole, full_name: "", phone: "" };
+      setProfile(fallback);
+      return fallback;
     }
   }
 

@@ -137,20 +137,20 @@ export default function AuthPage() {
           // However, we can use a RPC or just assume the pattern if we had the ID.
           // Better approach: Let's assume the user might have multiple participants with same name? 
           // No, .single() expects one.
-          
+
           // Since we can't query auth.users directly, we'll use a stored procedure or 
           // just try to sign in with the name-based email pattern if we know the UUID.
           // BUT we don't know the exact email yet. 
-          
+
           // REVISION: The profile SHOULD store the login email if it's a participant.
           // Let's check if the profile has an email field or if we can fetch it via a custom function.
-          
+
           // Workaround for this session: Query a custom RPC that returns email by profile ID
           const { data: userData, error: userErr } = await supabase.rpc('get_user_email_by_id', { user_id: profileMatch.id });
-          
+
           if (userErr || !userData) {
-             // Fallback: If we can't get it via RPC, the system might be missing the function.
-             throw new Error("Unable to retrieve login identifier for this name. Please use email or contact admin.");
+            // Fallback: If we can't get it via RPC, the system might be missing the function.
+            throw new Error("Unable to retrieve login identifier for this name. Please use email or contact admin.");
           }
           loginEmail = userData;
         }
@@ -200,13 +200,13 @@ export default function AuthPage() {
     try {
       const { error: err } = await supabase.auth.updateUser({ password });
       if (err) throw err;
-      
+
       // Update profile to mark password as changed
       const { error: profErr } = await supabase
         .from("profiles")
         .update({ must_change_password: false })
         .eq("id", (await supabase.auth.getUser()).data.user.id);
-      
+
       if (profErr) throw profErr;
 
       setMessage("Password changed successfully! Redirecting...");
@@ -494,10 +494,10 @@ export default function AuthPage() {
             <div className="flex-1 h-px bg-white/10"></div>
           </div>
 
-          {/* Email / Password form */}
+          {/* Phone OTP / Email / Password form */}
           {authMode === "change-password" ? (
             <form onSubmit={handleChangePassword} className="space-y-4">
-               <div>
+              <div>
                 <label className="block text-sm font-medium text-white/70 mb-1.5">New Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
@@ -525,7 +525,66 @@ export default function AuthPage() {
             </form>
           ) : authMode === "phone-otp" ? (
             <form onSubmit={otpSent ? handlePhoneVerifyOtp : handlePhoneSendOtp} className="space-y-4">
-              {/* ... existing phone form ... */}
+              {!otpSent ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-1.5">Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/30 transition-all font-mono"
+                        placeholder="+267 71 234 567"
+                        required
+                      />
+                    </div>
+                    <p className="text-[10px] text-white/30 mt-2">Enter with country code (e.g., +267). We'll send a 6-digit code.</p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold px-4 py-3 hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {submitting ? "Sending..." : "Send Verification Code"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-1.5">Verification Code</label>
+                    <div className="relative">
+                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                      <input
+                        type="text"
+                        value={otpToken}
+                        onChange={(e) => setOtpToken(e.target.value)}
+                        className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-3 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/30 transition-all text-center tracking-[0.5em] font-bold"
+                        placeholder="000000"
+                        required
+                        maxLength={6}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold px-4 py-3 hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {submitting ? "Verifying..." : "Verify & Sign In"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    className="w-full text-xs text-white/40 hover:text-white/60 transition-colors"
+                  >
+                    Use a different number
+                  </button>
+                </>
+              )}
+              {error && <div className="text-sm text-red-300 bg-red-500/10 border border-red-400/20 rounded-xl px-3 py-2">{error}</div>}
+              {message && <div className="text-sm text-green-300 bg-green-500/10 border border-green-400/20 rounded-xl px-3 py-2">{message}</div>}
             </form>
           ) : (
             <form onSubmit={handleEmailAuth} className="space-y-4">
@@ -563,7 +622,7 @@ export default function AuthPage() {
 
               {authMode === "signup" && (
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1.5">Phone Number</label>
+                  <label className="block text-sm font-medium text-white/70 mb-1.5">Phone Number (Optional)</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
                     <input
