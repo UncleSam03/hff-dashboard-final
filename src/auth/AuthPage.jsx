@@ -5,6 +5,7 @@ import {
   Mail, Phone, Lock, Eye, EyeOff, ArrowRight,
   CheckCircle2, ChevronLeft, Sparkles
 } from "lucide-react";
+import LandingPage from "@/components/LandingPage";
 
 /* ───────── helpers ───────── */
 function friendlyAuthError(err) {
@@ -311,94 +312,10 @@ export default function AuthPage() {
   /* ────────────────────────── LANDING SCREEN ────────────────────────── */
   if (screen === "landing") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-950 font-sans relative overflow-hidden">
-        {/* Animated background orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "2s" }}></div>
-        </div>
-
-        <div className="relative z-10 max-w-6xl mx-auto px-4 py-12">
-          {/* Hero */}
-          <div className="text-center mb-16 pt-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-white/90 text-sm font-semibold tracking-wide">
-              <Sparkles className="h-4 w-4 text-amber-400" />
-              Healthy Families Foundation
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-tight">
-              HFF <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400">Campaigns</span>
-            </h1>
-            <p className="text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-              Join the campaign as a Facilitator or Participant. Sign up to access your personalized dashboard and start making an impact.
-            </p>
-          </div>
-
-          {/* Role Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
-            {ROLES.map((r) => {
-              const Icon = r.icon;
-              const isSelected = selectedRole === r.id;
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => setSelectedRole(r.id)}
-                  className={[
-                    "relative p-6 rounded-2xl border-2 text-left transition-all duration-300 backdrop-blur-sm group",
-                    isSelected
-                      ? `bg-white/15 ${r.borderColor} shadow-xl shadow-black/20 scale-[1.03] ring-4 ${r.ring}`
-                      : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20",
-                  ].join(" ")}
-                >
-                  {isSelected && (
-                    <div className="absolute top-3 right-3">
-                      <CheckCircle2 className="h-6 w-6 text-white" />
-                    </div>
-                  )}
-                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${r.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">{r.label}</h3>
-                  <p className="text-sm text-white/60 leading-relaxed">{r.desc}</p>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
-            <button
-              onClick={() => goToAuth("signup")}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-lg shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              Get Started
-              <ArrowRight className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => goToAuth("signin")}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold text-lg hover:bg-white/15 transition-all duration-300"
-            >
-              Sign In
-            </button>
-          </div>
-
-          {/* Features footer */}
-          <div className="mt-20 flex flex-wrap justify-center gap-8 text-white/40">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>Secure Access</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4" />
-              <span>Attendance Tracking</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>Offline Support</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LandingPage
+        onStart={(mode) => goToAuth(mode || "signup")}
+        onSignIn={() => goToAuth("signin")}
+      />
     );
   }
 
