@@ -16,6 +16,9 @@ export function AuthProvider({ children }) {
       return null;
     }
 
+    const email = authUser.email?.toLowerCase() || "";
+    const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
+
     // Set a timeout of 10 seconds for the profile fetch
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Profile fetch timed out")), 10000);
@@ -23,9 +26,6 @@ export function AuthProvider({ children }) {
 
     try {
       const fetchPromise = (async () => {
-        const email = authUser.email?.toLowerCase() || "";
-        const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
-
         // Try to get existing profile
         const { data: existingProfile, error: fetchErr } = await supabase
           .from("profiles")
@@ -62,24 +62,29 @@ export function AuthProvider({ children }) {
           currentProfile = inserted;
         } else if (fetchErr) {
           console.error("[AuthContext] Error fetching profile:", fetchErr);
-          const fallbackRole = isAdminEmail ? "admin" : "facilitator";
-          const fallback = { id: authUser.id, role: fallbackRole, full_name: "", phone: "" };
+          const fallback = { id: authUser.id, role: isAdminEmail ? "admin" : "facilitator", full_name: "", phone: "" };
           setProfile(fallback);
           return fallback;
         }
 
-        // ENFORCE ADMIN ROLE: If they have @thehealthyfamilies.net but aren't admin in DB, fix it.
+        // STRICT DOMAIN ENFORCEMENT
+
         if (isAdminEmail && currentProfile.role !== "admin") {
           console.log("[AuthContext] Upgrading user to admin based on email domain");
-          const updatedProfile = { ...currentProfile, role: "admin" };
-          setProfile(updatedProfile);
+          currentProfile = { ...currentProfile, role: "admin" };
 
-          // Background update to DB
+          // Background sync to DB
           supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id).then(({ error }) => {
-            if (error) console.error("[AuthContext] Failed to sync admin role to DB:", error);
+            if (error) console.error("[AuthContext] Failed to sync admin role upgrade:", error);
           });
+        } else if (!isAdminEmail && currentProfile.role === "admin") {
+          console.warn("[AuthContext] Restricted domain: Downgrading admin to facilitator");
+          currentProfile = { ...currentProfile, role: "facilitator" };
 
-          return updatedProfile;
+          // Background sync to DB
+          supabase.from("profiles").update({ role: "facilitator" }).eq("id", authUser.id).then(({ error }) => {
+            if (error) console.error("[AuthContext] Failed to sync admin role downgrade:", error);
+          });
         }
 
         setProfile(currentProfile);
@@ -89,8 +94,7 @@ export function AuthProvider({ children }) {
       return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
       console.error("[AuthContext] Profile fetch error:", err);
-      const fallbackRole = (authUser.email?.toLowerCase().endsWith("@thehealthyfamilies.net")) ? "admin" : "facilitator";
-      const fallback = { id: authUser.id, role: fallbackRole, full_name: "", phone: "" };
+      const fallback = { id: authUser.id, role: isAdminEmail ? "admin" : "facilitator", full_name: "", phone: "" };
       setProfile(fallback);
       return fallback;
     }

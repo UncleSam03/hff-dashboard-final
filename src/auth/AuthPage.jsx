@@ -165,13 +165,16 @@ export default function AuthPage() {
           return;
         }
       } else {
+        const isDomainEmail = trimmedEmail.toLowerCase().endsWith("@thehealthyfamilies.net");
+        const metadataRole = isDomainEmail ? "admin" : "facilitator";
+
         const { error: err } = await supabase.auth.signUp({
           email: trimmedEmail,
           password: trimmedPassword,
           options: {
             emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
             data: {
-              role: selectedRole,
+              role: metadataRole,
               full_name: fullName.trim(),
               phone: phone.trim(),
             },
@@ -250,7 +253,7 @@ export default function AuthPage() {
         options: {
           emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
           data: {
-            role: selectedRole,
+            role: "facilitator",
             full_name: fullName,
             phone: phone,
           },
