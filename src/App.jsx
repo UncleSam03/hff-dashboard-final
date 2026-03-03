@@ -8,7 +8,6 @@ import { useAuth } from "@/auth/AuthContext";
 import OfflineCollect from './components/OfflineCollect';
 import Hub from './components/Hub';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
-import ParticipantDashboard from './components/ParticipantDashboard';
 
 function AppContent() {
   const { role, signOut } = useAuth();
@@ -31,14 +30,7 @@ function AppContent() {
     );
   }
 
-  // Participant role — dedicated dashboard
-  if (role === 'participant') {
-    return (
-      <Layout onBackToHome={signOut} isHome={true} showNav={false}>
-        <ParticipantDashboard onBack={signOut} />
-      </Layout>
-    );
-  }
+
 
   // Admin role — full dashboard access (existing behavior)
   return (
