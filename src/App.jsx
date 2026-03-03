@@ -7,6 +7,7 @@ import { useAuth } from "@/auth/AuthContext";
 
 import OfflineCollect from './components/OfflineCollect';
 import Hub from './components/Hub';
+import DeepAnalysis from './components/DeepAnalysis';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
 
 function AppContent() {
@@ -37,6 +38,8 @@ function AppContent() {
         <OfflineCollect onBack={handleBackToHome} />
       ) : mode === 'hub' ? (
         <Hub onBack={handleBackToHome} />
+      ) : mode === 'analysis' ? (
+        <DeepAnalysis analytics={{}} />
       ) : (
         <Dashboard mode="general" />
       )}

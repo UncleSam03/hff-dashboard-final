@@ -8,7 +8,8 @@ import { GenderChart, EducationChart, MaritalStatusChart } from './DemographicsC
 import CampaignLaunchpad from './CampaignLaunchpad';
 import ActionPanel from './ActionPanel';
 import NoticeBoard from './NoticeBoard';
-import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2 } from 'lucide-react';
+import FacilitatorLeaderboard from './FacilitatorLeaderboard';
+import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2, LineChart } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // ── Analytics processing from Dexie data ──
@@ -250,19 +251,7 @@ const Dashboard = ({ mode = 'general' }) => {
                 {/* Side Insights Column */}
                 <div className="space-y-10">
                     <ActionPanel />
-                    <div className="glass-card p-8 bg-gradient-to-br from-[#71167F] to-[#3EB049] text-white">
-                        <h4 className="text-sm font-black uppercase tracking-widest mb-4">Quick Insights</h4>
-                        <div className="space-y-4">
-                            <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
-                                <p className="text-[10px] font-bold text-white/60 uppercase mb-1">Top Education</p>
-                                <p className="text-lg font-black truncate">Tertiary Degree</p>
-                            </div>
-                            <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
-                                <p className="text-[10px] font-bold text-white/60 uppercase mb-1">Active Window</p>
-                                <p className="text-lg font-black truncate">Days 4 - 8</p>
-                            </div>
-                        </div>
-                    </div>
+                    <FacilitatorLeaderboard />
                     <div className="xl:hidden">
                         <NoticeBoard />
                     </div>
