@@ -169,6 +169,7 @@ export default function AuthPage() {
           email: trimmedEmail,
           password: trimmedPassword,
           options: {
+            emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
             data: {
               role: selectedRole,
               full_name: fullName.trim(),
@@ -223,7 +224,7 @@ export default function AuthPage() {
             access_type: "offline",
             prompt: "consent",
           },
-          redirectTo: window.location.origin,
+          redirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
         },
       });
       if (err) throw err;
@@ -247,6 +248,7 @@ export default function AuthPage() {
       const { error: err } = await supabase.auth.signInWithOtp({
         phone: phone,
         options: {
+          emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
           data: {
             role: selectedRole,
             full_name: fullName,
