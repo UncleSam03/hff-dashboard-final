@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
 
         if (fetchErr && fetchErr.code === "PGRST116") {
           // No profile row — legacy user or trigger didn't fire
-          const role = isAdminEmail ? "admin" : (authUser.user_metadata?.role || "participant");
+          const role = isAdminEmail ? "admin" : (authUser.user_metadata?.role || "facilitator");
 
           const newProfile = {
             id: authUser.id,
@@ -62,7 +62,7 @@ export function AuthProvider({ children }) {
           currentProfile = inserted;
         } else if (fetchErr) {
           console.error("[AuthContext] Error fetching profile:", fetchErr);
-          const fallbackRole = isAdminEmail ? "admin" : "participant";
+          const fallbackRole = isAdminEmail ? "admin" : "facilitator";
           const fallback = { id: authUser.id, role: fallbackRole, full_name: "", phone: "" };
           setProfile(fallback);
           return fallback;
@@ -89,7 +89,7 @@ export function AuthProvider({ children }) {
       return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
       console.error("[AuthContext] Profile fetch error:", err);
-      const fallbackRole = (authUser.email?.toLowerCase().endsWith("@thehealthyfamilies.net")) ? "admin" : "participant";
+      const fallbackRole = (authUser.email?.toLowerCase().endsWith("@thehealthyfamilies.net")) ? "admin" : "facilitator";
       const fallback = { id: authUser.id, role: fallbackRole, full_name: "", phone: "" };
       setProfile(fallback);
       return fallback;
