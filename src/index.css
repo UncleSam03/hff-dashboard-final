@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -84,7 +86,7 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 body::before {
