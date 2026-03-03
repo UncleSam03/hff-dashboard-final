@@ -65,12 +65,6 @@ const LandingPage = ({ onStart, onSignIn }) => {
                             Become a Facilitator
                             <ArrowRight className="h-6 w-6" />
                         </button>
-                        <button
-                            onClick={() => onStart('signup')}
-                            className="w-full sm:w-auto px-10 py-5 rounded-full bg-white text-hff-primary font-black text-lg border-2 border-hff-primary/10 hover:bg-hff-primary/5 transition-all flex items-center justify-center gap-3"
-                        >
-                            Join as Participant
-                        </button>
                     </div>
                 </div>
             </section>

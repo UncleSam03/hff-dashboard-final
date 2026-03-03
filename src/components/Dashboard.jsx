@@ -12,7 +12,7 @@ import { cn } from '../lib/utils';
 function processAnalytics(registrations) {
     if (!registrations || registrations.length === 0) {
         return {
-            totalParticipants: 0,
+            totalRegistrations: 0,
             totalFacilitators: 0,
             totalRegistered: 0,
             uniqueAttendees: 0,
@@ -87,7 +87,7 @@ function processAnalytics(registrations) {
     });
 
     return {
-        totalParticipants: participants.length,
+        totalRegistrations: participants.length,
         totalFacilitators: facilitators.length,
         totalRegistered: registrations.length,
         uniqueAttendees,
@@ -181,10 +181,10 @@ const Dashboard = ({ mode = 'general', onBack }) => {
                     description="All records in database"
                 />
                 <StatsCard
-                    title="Participants"
-                    value={analytics.totalParticipants}
+                    title="Impact Records"
+                    value={analytics.totalRegistrations}
                     icon={UserCheck}
-                    description="Registered participants"
+                    description="Total people recorded"
                     className="border-l-4 border-l-hff-primary"
                 />
                 <StatsCard
@@ -251,8 +251,8 @@ const Dashboard = ({ mode = 'general', onBack }) => {
                             <div className="text-center">
                                 <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-1">Retention</span>
                                 <span className="text-xl font-bold text-gray-700">
-                                    {analytics.totalParticipants > 0
-                                        ? Math.round((participants.filter(p => p.attendance && p.attendance[selectedDay]).length / analytics.totalParticipants) * 100)
+                                    {analytics.totalRegistrations > 0
+                                        ? Math.round((participants.filter(p => p.attendance && p.attendance[selectedDay]).length / analytics.totalRegistrations) * 100)
                                         : 0}%
                                 </span>
                             </div>

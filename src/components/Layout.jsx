@@ -5,13 +5,12 @@ import { useAuth } from "@/auth/AuthContext";
 const ROLE_BADGES = {
     admin: { label: "Admin", icon: Shield, bg: "bg-amber-50", text: "text-amber-700" },
     facilitator: { label: "Facilitator", icon: Users, bg: "bg-emerald-50", text: "text-emerald-700" },
-    participant: { label: "Participant", icon: User, bg: "bg-violet-50", text: "text-violet-700" },
 };
 
 const Layout = ({ children, onBackToHome, isHome, showNav = true }) => {
     const { user, profile, role, signOut } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const badge = ROLE_BADGES[role] || ROLE_BADGES.participant;
+    const badge = ROLE_BADGES[role] || ROLE_BADGES.facilitator;
     const BadgeIcon = badge.icon;
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);

@@ -4,7 +4,6 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from "@/auth/AuthContext.jsx"
 import { startAutoSync } from './lib/syncManager'
-import { initSupabaseSync } from './lib/supabaseSync'
 import { registerSW } from 'virtual:pwa-register'
 
 // Register Service Worker

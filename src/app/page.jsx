@@ -10,7 +10,6 @@ import { useAuth } from "@/auth/AuthContext";
 import OfflineCollect from '@/components/OfflineCollect';
 import Hub from '@/components/Hub';
 import FacilitatorDashboard from '@/components/FacilitatorDashboard';
-import ParticipantDashboard from '@/components/ParticipantDashboard';
 import NotesView from '@/components/NotesView';
 
 import { startAutoSync } from '@/lib/syncManager';
@@ -45,14 +44,7 @@ function AppContent() {
         );
     }
 
-    // Participant role — dedicated dashboard
-    if (role === 'participant') {
-        return (
-            <Layout onBackToHome={signOut} isHome={true} showNav={false}>
-                <ParticipantDashboard onBack={signOut} />
-            </Layout>
-        );
-    }
+
 
     // Admin role — full dashboard access
     return (
