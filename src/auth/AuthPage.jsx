@@ -294,7 +294,9 @@ export default function AuthPage() {
         setError("Enter your email above first, then click Reset password.");
         return;
       }
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email);
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
+      });
       if (err) throw err;
       setMessage("Password reset email sent — check your inbox.");
     } catch (err) {
