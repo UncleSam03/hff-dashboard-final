@@ -1,66 +1,86 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
-const AttendanceChart = ({ data }) => {
-    // Validate data before rendering
+const AttendanceChart = ({ data, compareWithRetention = false }) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
-        console.warn('AttendanceChart: Invalid or empty data', data);
         return (
-            <Card className="col-span-full lg:col-span-2 shadow-sm border-gray-100">
-                <CardHeader>
-                    <CardTitle className="text-gray-900">Daily Attendance Trend</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[300px] w-full flex items-center justify-center">
-                    <p className="text-gray-400 text-sm">No attendance data available</p>
-                </CardContent>
-            </Card>
+            <div className="h-full w-full flex items-center justify-center">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No analytic data available</p>
+            </div>
         );
     }
 
     return (
-        <Card className="col-span-full lg:col-span-2 shadow-sm border-gray-100">
-            <CardHeader>
-                <CardTitle className="text-gray-900">Daily Attendance Trend</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[300px] w-full p-0">
-                <div className="w-full h-full p-6 pt-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                            data={data}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                            <XAxis
-                                dataKey="date"
-                                stroke="#6B7280"
-                                fontSize={12}
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <YAxis
-                                stroke="#6B7280"
-                                fontSize={12}
-                                tickLine={false}
-                                axisLine={false}
-                                allowDecimals={false}
-                            />
-                            <Tooltip
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="count"
-                                stroke="#71167F"
-                                strokeWidth={3}
-                                dot={{ r: 4, fill: "#71167F", strokeWidth: 2, stroke: "#fff" }}
-                                activeDot={{ r: 6, fill: "#3EB049" }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="w-full h-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                    data={data}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                    <defs>
+                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#71167F" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#71167F" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorRetention" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3EB049" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#3EB049" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                    <XAxis
+                        dataKey="date"
+                        stroke="#9CA3AF"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(val) => val.replace('Day ', 'D')}
+                        fontFamily="inherit"
+                        fontWeight="bold"
+                    />
+                    <YAxis
+                        stroke="#9CA3AF"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                        fontFamily="inherit"
+                        fontWeight="bold"
+                    />
+                    <Tooltip
+                        contentStyle={{ 
+                            borderRadius: '16px', 
+                            border: '1px solid #F3F4F6', 
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            padding: '12px'
+                        }}
+                        cursor={{ stroke: '#71167F', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    />
+                    <Area
+                        type="monotone"
+                        dataKey="count"
+                        name="Attendees"
+                        stroke="#71167F"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorCount)"
+                    />
+                    {compareWithRetention && (
+                        <Area
+                            type="monotone"
+                            dataKey="retention"
+                            name="Retention %"
+                            stroke="#3EB049"
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill="url(#colorRetention)"
+                        />
+                    )}
+                </AreaChart>
+            </ResponsiveContainer>
+        </div>
     );
 };
 

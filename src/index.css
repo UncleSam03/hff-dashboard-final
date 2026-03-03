@@ -40,6 +40,9 @@
     --hff-warm-beige: 30 40% 98%;
     --hff-warm-green: 142 45% 95%;
     --hff-soft-purple: 292 70% 96%;
+
+    --hff-purple: 292 70% 29%;
+    --hff-green: 126 48% 47%;
   }
 
   .dark {

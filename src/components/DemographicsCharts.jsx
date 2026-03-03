@@ -1,20 +1,14 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const COLORS = ['#71167F', '#3EB049', '#7E1B9B', '#A569BD', '#45B39D', '#264653', '#E76F51', '#F4A261'];
 
 export const GenderChart = ({ data }) => {
     if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
         return (
-            <Card className="shadow-sm border-gray-100">
-                <CardHeader>
-                    <CardTitle className="text-gray-900 text-lg">Gender Distribution</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[250px] flex items-center justify-center">
-                    <p className="text-gray-400 text-sm">No gender data available</p>
-                </CardContent>
-            </Card>
+            <div className="h-[250px] flex items-center justify-center">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No gender data</p>
+            </div>
         );
     }
 
@@ -22,123 +16,122 @@ export const GenderChart = ({ data }) => {
     const labelMap = { 'M': 'Male', 'F': 'Female' };
 
     return (
-        <Card className="shadow-sm border-gray-100">
-            <CardHeader>
-                <CardTitle className="text-gray-900 text-lg">Gender Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[250px] p-0">
-                <div className="w-full h-full p-6 pt-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={chartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.name === 'F' ? '#3EB049' : '#71167F'} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-                <div className="flex justify-center gap-4 text-sm text-gray-600 mt-2">
-                    {chartData.map((entry, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.name === 'F' ? '#3EB049' : '#71167F' }}></div>
-                            <span>{labelMap[entry.name] || entry.name} ({entry.value})</span>
-                        </div>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
+        <div className="space-y-4">
+            <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={chartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={8}
+                            dataKey="value"
+                            stroke="none"
+                        >
+                            {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.name === 'F' ? '#3EB049' : '#71167F'} />
+                            ))}
+                        </Pie>
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                        />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4">
+                {chartData.map((entry, index) => (
+                    <div key={index} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-100">
+                        <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: entry.name === 'F' ? '#3EB049' : '#71167F' }}></div>
+                        <span className="text-[10px] font-black text-gray-700 uppercase tracking-widest">{labelMap[entry.name] || entry.name}</span>
+                        <span className="text-xs font-black text-gray-900 ml-1">{entry.value}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 };
 
 export const EducationChart = ({ data }) => {
-    if (!data || typeof data !== 'object') {
-        data = {};
-    }
+    if (!data || typeof data !== 'object') data = {};
 
-    // Support full-text keys from the offline form
     const chartData = Object.entries(data)
         .map(([name, value]) => ({ name, value }))
         .filter(item => item.value > 0)
         .sort((a, b) => b.value - a.value);
 
-    const hasData = chartData.length > 0;
+    if (chartData.length === 0) {
+        return (
+            <div className="h-[200px] flex items-center justify-center">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No education data</p>
+            </div>
+        );
+    }
 
     return (
-        <Card className="shadow-sm border-gray-100">
-            <CardHeader>
-                <CardTitle className="text-gray-900 text-lg">Education Level</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[250px] p-0">
-                {!hasData ? (
-                    <div className="h-full flex items-center justify-center p-6 pt-0">
-                        <p className="text-gray-400 text-sm">No education data available</p>
-                    </div>
-                ) : (
-                    <div className="w-full h-full p-6 pt-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={11} />
-                                <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
-                                <Tooltip cursor={{ fill: '#F9FAFB' }} />
-                                <Bar dataKey="value" fill="#71167F" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+        <div className="h-[200px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                    <XAxis 
+                        dataKey="name" 
+                        stroke="#9CA3AF" 
+                        fontSize={9} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        fontFamily="inherit"
+                        fontWeight="bold"
+                    />
+                    <YAxis stroke="#9CA3AF" fontSize={9} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip 
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                        cursor={{ fill: '#71167F', opacity: 0.05 }}
+                    />
+                    <Bar dataKey="value" fill="#71167F" radius={[6, 6, 0, 0]} barSize={25} />
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
     );
 };
 
 export const MaritalStatusChart = ({ data }) => {
     if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
         return (
-            <Card className="shadow-sm border-gray-100">
-                <CardHeader>
-                    <CardTitle className="text-gray-900 text-lg">Marital Status</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[250px] flex items-center justify-center">
-                    <p className="text-gray-400 text-sm">No marital status data available</p>
-                </CardContent>
-            </Card>
+            <div className="h-[200px] flex items-center justify-center">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No marital data</p>
+            </div>
         );
     }
 
-    // Support full-text keys from the offline form
     const chartData = Object.entries(data)
         .map(([name, value]) => ({ name, value }))
         .filter(item => item.value > 0)
         .sort((a, b) => b.value - a.value);
 
     return (
-        <Card className="shadow-sm border-gray-100">
-            <CardHeader>
-                <CardTitle className="text-gray-900 text-lg">Marital Status</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[250px] p-0">
-                <div className="w-full h-full p-6 pt-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
-                            <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" width={80} tickLine={false} axisLine={false} fontSize={12} />
-                            <Tooltip cursor={{ fill: '#F9FAFB' }} />
-                            <Bar dataKey="value" fill="#3EB049" radius={[0, 4, 4, 0]} barSize={20} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="h-[200px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ left: -30, right: 20 }}>
+                    <XAxis type="number" hide />
+                    <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        width={90} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        fontSize={10} 
+                        fontFamily="inherit"
+                        fontWeight="bold"
+                        stroke="#9CA3AF"
+                    />
+                    <Tooltip 
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                        cursor={{ fill: '#3EB049', opacity: 0.05 }}
+                    />
+                    <Bar dataKey="value" fill="#3EB049" radius={[0, 6, 6, 0]} barSize={15} />
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
     );
 };

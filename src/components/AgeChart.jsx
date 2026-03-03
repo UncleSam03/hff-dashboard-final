@@ -1,51 +1,59 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const AgeChart = ({ data }) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
         return (
-            <Card className="shadow-sm border-gray-100">
-                <CardHeader>
-                    <CardTitle className="text-gray-900 text-lg">Age Distribution</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[250px] flex items-center justify-center">
-                    <p className="text-gray-400 text-sm">No age data available</p>
-                </CardContent>
-            </Card>
+            <div className="h-full w-full flex items-center justify-center">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No demographic data</p>
+            </div>
         );
     }
 
-    const hasData = data.some(item => item.count > 0);
+    const COLORS = ['#71167F', '#8E24AA', '#AB47BC', '#CE93D8'];
 
     return (
-        <Card className="shadow-sm border-gray-100">
-            <CardHeader>
-                <CardTitle className="text-gray-900 text-lg">Age Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[250px] p-0">
-                {!hasData ? (
-                    <div className="h-full flex items-center justify-center p-6 pt-0">
-                        <p className="text-gray-400 text-sm">No age data available</p>
-                    </div>
-                ) : (
-                    <div className="w-full h-full p-6 pt-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                <XAxis dataKey="range" tickLine={false} axisLine={false} fontSize={12} />
-                                <YAxis tickLine={false} axisLine={false} allowDecimals={false} fontSize={12} />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value) => [value, 'Participants']}
-                                />
-                                <Bar dataKey="count" fill="#7E1B9B" radius={[6, 6, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+        <div className="w-full h-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                    <XAxis 
+                        dataKey="range" 
+                        stroke="#9CA3AF" 
+                        fontSize={10} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        fontFamily="inherit"
+                        fontWeight="bold"
+                    />
+                    <YAxis 
+                        stroke="#9CA3AF" 
+                        fontSize={10} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        allowDecimals={false}
+                        fontFamily="inherit"
+                        fontWeight="bold"
+                    />
+                    <Tooltip
+                        contentStyle={{ 
+                            borderRadius: '16px', 
+                            border: '1px solid #F3F4F6', 
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            padding: '12px'
+                        }}
+                        cursor={{ fill: '#71167F', opacity: 0.05 }}
+                    />
+                    <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={40}>
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
     );
 };
 

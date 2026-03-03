@@ -5,7 +5,10 @@ import StatsCard from './StatsCard';
 import AttendanceChart from './AttendanceChart';
 import AgeChart from './AgeChart';
 import { GenderChart, EducationChart, MaritalStatusChart } from './DemographicsCharts';
-import { Users, UserCheck, CalendarDays, Briefcase, AlertCircle, Database } from 'lucide-react';
+import CampaignLaunchpad from './CampaignLaunchpad';
+import ActionPanel from './ActionPanel';
+import NoticeBoard from './NoticeBoard';
+import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // ── Analytics processing from Dexie data ──
@@ -31,7 +34,9 @@ function processAnalytics(registrations) {
 
     const dailyStats = days.map(day => {
         const count = participants.filter(p => p.attendance && p.attendance[day]).length;
-        return { date: day, count };
+        // Retention rate simulation for the line graph
+        const retention = participants.length > 0 ? (count / participants.length) * 100 : 0;
+        return { date: day, count, retention: parseFloat(retention.toFixed(1)) };
     });
 
     const uniqueAttendees = participants.filter(p => {
@@ -68,7 +73,6 @@ function processAnalytics(registrations) {
 
     // Age distribution buckets
     const ageBuckets = [
-        { range: '<18', min: 0, max: 17, count: 0 },
         { range: '18-25', min: 18, max: 25, count: 0 },
         { range: '26-35', min: 26, max: 35, count: 0 },
         { range: '36-50', min: 36, max: 50, count: 0 },
@@ -99,9 +103,10 @@ function processAnalytics(registrations) {
 }
 
 const Dashboard = ({ mode = 'general', onBack }) => {
-    const [selectedDay, setSelectedDay] = useState(null);
+    const [selectedDay, setSelectedDay] = useState('Day 1');
+    const [genderFilter, setGenderFilter] = useState('all'); // 'all', 'M', 'F'
 
-    // Live query from Dexie — updates automatically when Dexie data changes
+    // Live query from Dexie
     const registrations = useLiveQuery(() => db.registrations.toArray(), []);
 
     const analytics = useMemo(() => {
@@ -110,176 +115,158 @@ const Dashboard = ({ mode = 'general', onBack }) => {
 
     const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
 
-    // Participants subset for day-by-day drill-down
-    const participants = useMemo(() => {
+    const filteredParticipants = useMemo(() => {
         if (!registrations) return [];
-        return registrations.filter(r => r.type === 'participant' && !r.is_deleted);
-    }, [registrations]);
+        let data = registrations.filter(r => r.type === 'participant' && !r.is_deleted);
+        if (genderFilter !== 'all') {
+            data = data.filter(p => p.gender === genderFilter);
+        }
+        return data;
+    }, [registrations, genderFilter]);
 
-    // Loading state
     if (registrations === undefined) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-700">
-                <div className="text-center max-w-lg">
-                    <div className="h-16 w-16 bg-hff-primary/10 rounded-2xl flex items-center justify-center text-hff-primary mx-auto mb-6 animate-pulse">
-                        <Database className="h-8 w-8" />
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">Loading Dashboard...</h2>
-                    <p className="text-gray-500">Reading local data from your device.</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="h-16 w-16 hff-gradient-bg rounded-2xl flex items-center justify-center text-white animate-bounce shadow-2xl shadow-hff-primary/40">
+                    <Database className="h-8 w-8" />
                 </div>
-            </div>
-        );
-    }
-
-    // Empty state
-    if (!registrations || registrations.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-700">
-                <div className="text-center max-w-lg">
-                    <div className="h-16 w-16 bg-hff-primary/10 rounded-2xl flex items-center justify-center text-hff-primary mx-auto mb-6">
-                        <Users className="h-8 w-8" />
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">No Data Yet</h2>
-                    <p className="text-gray-500 mb-6">
-                        Start by registering participants and facilitators in the <strong>Offline Collect</strong> section.
-                        Data will appear here automatically once records are saved.
-                    </p>
-                    {onBack && (
-                        <button
-                            onClick={onBack}
-                            className="px-6 py-3 bg-hff-primary text-white rounded-lg font-semibold hover:bg-hff-primary/90 transition-colors"
-                        >
-                            Go to Home
-                        </button>
-                    )}
-                </div>
+                <h2 className="text-2xl font-black text-gray-900 mt-8">Initializing Hyper-Data...</h2>
             </div>
         );
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Campaign Dashboard</h1>
-                    <p className="text-gray-500 mt-1">Real-time overview from local & synced data</p>
-                </div>
-                <div className="flex items-center gap-2 bg-hff-primary/10 text-hff-primary px-3 py-1.5 rounded-full text-sm font-semibold">
-                    <Database className="h-4 w-4" />
-                    {analytics.totalRegistered} Records
-                </div>
-            </div>
-
-            {/* Stats Grid */}
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+            
+            {/* 1. Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatsCard
-                    title="Total Registered"
-                    value={analytics.totalRegistered}
-                    icon={Users}
-                    description="All records in database"
-                />
-                <StatsCard
-                    title="Impact Records"
+                    title="Registered Participants"
                     value={analytics.totalRegistrations}
-                    icon={UserCheck}
+                    icon={Users}
                     description="Total people recorded"
-                    className="border-l-4 border-l-hff-primary"
+                    trend="+12% Since yesterday"
+                    color="purple"
                 />
                 <StatsCard
                     title="Facilitators"
                     value={analytics.totalFacilitators}
                     icon={Briefcase}
-                    description="Registered facilitators"
-                    className="border-l-4 border-l-green-500"
+                    description="Verified field agents"
+                    color="green"
+                />
+                <StatsCard
+                    title="Unique Individuals"
+                    value={analytics.uniqueAttendees}
+                    icon={Users2}
+                    description="Attendees with profiles"
+                    color="blue"
                 />
                 <StatsCard
                     title="Avg Daily Attendance"
                     value={analytics.avgAttendance}
-                    icon={CalendarDays}
-                    description="Per active session"
+                    icon={TrendingUp}
+                    description="Current campaign avg"
+                    color="amber"
                 />
             </div>
 
-            {/* Day-by-Day Analysis Section */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Day-by-Day Analysis</h2>
-                        <p className="text-gray-500">Analyze campaign attendance for specific days across the 12-day cycle.</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 max-w-md">
-                        {days.map((day, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => setSelectedDay(selectedDay === day ? null : day)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
-                                    selectedDay === day
-                                        ? "bg-hff-primary text-white border-hff-primary shadow-md shadow-hff-primary/20"
-                                        : "bg-gray-50 text-gray-600 border-gray-100 hover:border-hff-primary/30"
-                                )}
-                            >
-                                Day {idx + 1}
-                            </button>
-                        ))}
-                    </div>
+            {/* 2. Campaign Launchpad */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="h-2 w-8 hff-gradient-bg rounded-full" />
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight text-[#71167F]">Campaign Launchpad</h2>
                 </div>
+                <CampaignLaunchpad />
+            </div>
 
-                {selectedDay ? (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-1">Attendance on {selectedDay}</span>
-                            <span className="text-4xl font-black text-hff-primary">
-                                {participants.filter(p => p.attendance && p.attendance[selectedDay]).length}
-                            </span>
-                        </div>
-                        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-1">Males</span>
-                            <span className="text-3xl font-bold text-blue-600">
-                                {participants.filter(p => p.attendance && p.attendance[selectedDay] && p.gender === 'M').length}
-                            </span>
-                        </div>
-                        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-1">Females</span>
-                            <span className="text-3xl font-bold text-pink-500">
-                                {participants.filter(p => p.attendance && p.attendance[selectedDay] && p.gender === 'F').length}
-                            </span>
-                        </div>
-                        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 flex items-center justify-center">
-                            <div className="text-center">
-                                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-1">Retention</span>
-                                <span className="text-xl font-bold text-gray-700">
-                                    {analytics.totalRegistrations > 0
-                                        ? Math.round((participants.filter(p => p.attendance && p.attendance[selectedDay]).length / analytics.totalRegistrations) * 100)
-                                        : 0}%
-                                </span>
+            {/* 3. Analytics Section: Day-by-Day Drill-down */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="xl:col-span-2 space-y-8">
+                    <div className="glass-card p-10">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                            <div>
+                                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Day-by-Day Analysis</h2>
+                                <p className="text-gray-400 font-bold mt-1 uppercase text-xs tracking-[0.2em]">Campaign Lifecycle Insights (Day 1-12)</p>
+                            </div>
+                            <div className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-2xl border border-gray-100">
+                                <button 
+                                    onClick={() => setGenderFilter('all')}
+                                    className={cn("px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", genderFilter === 'all' ? "bg-white text-gray-900 shadow-sm border border-gray-100" : "text-gray-400 hover:text-gray-600")}
+                                >All</button>
+                                <button 
+                                    onClick={() => setGenderFilter('M')}
+                                    className={cn("px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", genderFilter === 'M' ? "bg-white text-blue-600 shadow-sm border border-gray-100" : "text-gray-400 hover:text-gray-600")}
+                                >Male</button>
+                                <button 
+                                    onClick={() => setGenderFilter('F')}
+                                    className={cn("px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", genderFilter === 'F' ? "bg-white text-pink-500 shadow-sm border border-gray-100" : "text-gray-400 hover:text-gray-600")}
+                                >Female</button>
                             </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-                        <CalendarDays className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-400 font-medium">Select a day from the list above to view specific analysis</p>
-                    </div>
-                )}
-            </div>
 
-            {/* Main Charts Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <AttendanceChart data={analytics.dailyStats} />
+                        {/* Line graph for Day-by-Day Comparison */}
+                        <div className="h-[400px] w-full">
+                            <AttendanceChart data={analytics.dailyStats} compareWithRetention={true} />
+                        </div>
 
-                <div className="lg:col-span-1 space-y-6">
-                    <GenderChart data={analytics.demographics.gender} />
+                        <div className="flex flex-wrap gap-2 mt-10 p-2 bg-gray-50/50 rounded-2xl border border-gray-100 justify-center">
+                            {days.map((day) => (
+                                <button
+                                    key={day}
+                                    onClick={() => setSelectedDay(day)}
+                                    className={cn(
+                                        "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        selectedDay === day
+                                            ? "hff-gradient-bg text-white shadow-lg shadow-hff-primary/20 scale-105"
+                                            : "bg-white text-gray-400 border border-gray-100 hover:border-hff-primary/30"
+                                    )}
+                                >
+                                    {day}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Age Distribution Panel */}
+                    <div className="glass-card p-10">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="h-8 w-1 hff-gradient-bg rounded-full" />
+                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Age Distribution</h2>
+                        </div>
+                        <div className="h-[300px]">
+                            <AgeChart data={analytics.ageDistribution} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Side Panel: AI Insights & notices */}
+                <div className="space-y-8">
+                    <ActionPanel />
+                    <NoticeBoard />
                 </div>
             </div>
 
-            {/* Age & Demographics Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <AgeChart data={analytics.ageDistribution} />
-                <EducationChart data={analytics.demographics.education} />
-                <MaritalStatusChart data={analytics.demographics.maritalStatus} />
+            {/* 4. Demographic Row */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="h-2 w-8 hff-gradient-bg rounded-full" />
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Participant Demographics</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="glass-card p-8">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Gender Breakdown</h3>
+                        <GenderChart data={analytics.demographics.gender} />
+                    </div>
+                    <div className="glass-card p-8">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Education Levels</h3>
+                        <EducationChart data={analytics.demographics.education} />
+                    </div>
+                    <div className="glass-card p-8">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Marital Status</h3>
+                        <MaritalStatusChart data={analytics.demographics.maritalStatus} />
+                    </div>
+                </div>
             </div>
 
         </div>
