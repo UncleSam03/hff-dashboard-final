@@ -53,10 +53,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
       )}
 
       {/* Main Content Area */}
-      <main className={cn(
-        "flex-1 min-w-0 flex flex-col relative ui-transition",
-        isCollapsed ? "lg:ml-24" : "lg:ml-72"
-      )}>
+      <main className="flex-1 min-w-0 flex flex-col relative ui-transition">
         {/* TopBar */}
         <header className="sticky top-0 z-30 h-24 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 lg:px-12">
           <div className="flex items-center gap-4">
