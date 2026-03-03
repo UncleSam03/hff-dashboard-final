@@ -12,13 +12,25 @@ const ROLE_BADGES = {
 const Layout = ({ children, activeTab, onTabChange }) => {
   const { user, profile, role, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const badge = ROLE_BADGES[role] || ROLE_BADGES.facilitator;
 
   return (
     <div className="min-h-screen flex bg-[#FDFBFF]">
       {/* Sidebar - Desktop */}
-      <div className="hidden lg:block">
-        <Sidebar activeTab={activeTab} onTabChange={onTabChange} onSignOut={signOut} userProfile={profile} userRole={role} />
+      <div className={cn(
+        "hidden lg:block transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-20" : "w-64"
+      )}>
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          onSignOut={signOut}
+          userProfile={profile}
+          userRole={role}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+        />
       </div>
 
       {/* Sidebar - Mobile Drawer */}
@@ -26,12 +38,12 @@ const Layout = ({ children, activeTab, onTabChange }) => {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-2xl animate-in slide-in-from-left duration-300">
-            <Sidebar 
-              activeTab={activeTab} 
+            <Sidebar
+              activeTab={activeTab}
               onTabChange={(tab) => {
                 onTabChange(tab);
                 setIsMobileMenuOpen(false);
-              }} 
+              }}
               onSignOut={signOut}
               userProfile={profile}
               userRole={role}
@@ -41,11 +53,14 @@ const Layout = ({ children, activeTab, onTabChange }) => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:ml-64 min-w-0 flex flex-col relative">
+      <main className={cn(
+        "flex-1 min-w-0 flex flex-col relative transition-all duration-300 ease-in-out",
+        isCollapsed ? "lg:ml-20" : "lg:ml-64"
+      )}>
         {/* TopBar */}
         <header className="sticky top-0 z-30 h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-6 lg:px-10">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               className="lg:hidden p-2 text-gray-500 hover:bg-gray-50 rounded-xl"
               onClick={() => setIsMobileMenuOpen(true)}
             >
@@ -53,9 +68,9 @@ const Layout = ({ children, activeTab, onTabChange }) => {
             </button>
             <div>
               <h2 className="text-xl font-black text-gray-900 uppercase tracking-widest leading-none">
-                {activeTab === 'overview' ? 'Dashboard Overview' : 
-                 activeTab === 'collect' ? 'Offline Collect' :
-                 activeTab === 'hub' ? 'Campaign Hub' : 'Data Analysis'}
+                {activeTab === 'overview' ? 'Dashboard Overview' :
+                  activeTab === 'collect' ? 'Offline Collect' :
+                    activeTab === 'hub' ? 'Campaign Hub' : 'Data Analysis'}
               </h2>
               <p className="text-[10px] font-bold text-[#71167F] uppercase tracking-widest mt-1">
                 Real-Time Campaign Performance
@@ -67,9 +82,9 @@ const Layout = ({ children, activeTab, onTabChange }) => {
             {/* Search Bar */}
             <div className="hidden md:flex items-center gap-2 bg-gray-50 px-4 py-2.5 rounded-2xl border border-gray-100 focus-within:ring-2 focus-within:ring-[#71167F]/10 transition-all">
               <Search size={16} className="text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search metrics..." 
+              <input
+                type="text"
+                placeholder="Search metrics..."
                 className="bg-transparent border-none focus:outline-none text-[11px] font-bold text-gray-600 placeholder:text-gray-300 w-40"
               />
             </div>
@@ -79,9 +94,9 @@ const Layout = ({ children, activeTab, onTabChange }) => {
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-500/10" />
             </button>
-            
+
             <div className="h-10 w-[1px] bg-gray-100 mx-1 hidden sm:block" />
-            
+
             {/* Live Indicator */}
             <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-green-50 text-green-700 rounded-2xl border border-green-100 shadow-sm shadow-green-500/5">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
