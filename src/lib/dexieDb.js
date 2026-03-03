@@ -13,9 +13,9 @@ db.version(2).stores({
     registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status'
 });
 
-db.version(6).stores({
+db.version(7).stores({
     participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
-    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at'
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted'
 });
 
 export default db;

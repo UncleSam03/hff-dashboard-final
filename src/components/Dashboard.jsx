@@ -23,8 +23,8 @@ function processAnalytics(registrations) {
         };
     }
 
-    const participants = registrations.filter(r => r.type === 'participant');
-    const facilitators = registrations.filter(r => r.type === 'facilitator');
+    const participants = registrations.filter(r => r.type === 'participant' && !r.is_deleted);
+    const facilitators = registrations.filter(r => r.type === 'facilitator' && !r.is_deleted);
 
     // Attendance
     const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
@@ -113,7 +113,7 @@ const Dashboard = ({ mode = 'general', onBack }) => {
     // Participants subset for day-by-day drill-down
     const participants = useMemo(() => {
         if (!registrations) return [];
-        return registrations.filter(r => r.type === 'participant');
+        return registrations.filter(r => r.type === 'participant' && !r.is_deleted);
     }, [registrations]);
 
     // Loading state

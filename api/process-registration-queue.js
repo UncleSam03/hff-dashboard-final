@@ -22,6 +22,7 @@ async function processBatch(batchSize = 10) {
     .select('*')
     .eq('processed', false)
     .eq('type', 'participant')
+    .or('is_deleted.is.null,is_deleted.eq.false')
     .order('created_at', { ascending: true })
     .limit(batchSize);
 

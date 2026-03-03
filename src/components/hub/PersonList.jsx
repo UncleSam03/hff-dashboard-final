@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Filter, Download } from 'lucide-react';
+import { Search, User, Briefcase, Filter, Download, Trash2 } from 'lucide-react';
 
 const PersonList = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +15,9 @@ const PersonList = () => {
         }
 
         let results = await collection.toArray();
+
+        // 1. Filter out soft-deleted records
+        results = results.filter(p => !p.is_deleted);
 
         if (searchTerm) {
             const lowerFilter = searchTerm.toLowerCase();
@@ -41,6 +44,22 @@ const PersonList = () => {
 
         return results;
     }, [searchTerm, filterType]);
+
+    const handleDelete = async (person) => {
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${person.first_name} ${person.last_name}?`);
+        if (!confirmDelete) return;
+
+        try {
+            await db.registrations.update(person.id, {
+                is_deleted: true,
+                sync_status: 'pending',
+                updated_at: new Date().toISOString()
+            });
+        } catch (err) {
+            console.error('[PersonList] Delete failed:', err);
+            alert('Failed to delete record. Please try again.');
+        }
+    };
 
     if (!people) return <div className="p-8 text-center text-gray-500">Loading people...</div>;
 
@@ -155,10 +174,19 @@ const PersonList = () => {
                             </div>
 
                             <div className="text-right flex flex-col gap-1 items-end">
-                                <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${person.sync_status === 'synced' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
-                                    }`}>
-                                    {person.sync_status === 'synced' ? 'Synced' : 'Pending'}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleDelete(person)}
+                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        title="Delete record"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                    <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${person.sync_status === 'synced' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                                        }`}>
+                                        {person.sync_status === 'synced' ? 'Synced' : 'Pending'}
+                                    </span>
+                                </div>
                                 {person.processed && (
                                     <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-tight">
                                         Processed
