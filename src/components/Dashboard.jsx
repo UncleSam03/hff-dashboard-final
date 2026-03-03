@@ -30,11 +30,11 @@ const Dashboard = ({ analytics }) => {
     }
 
     return (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000 max-w-[1600px] mx-auto pb-20">
+        <div className="space-y-14 animate-in fade-in slide-in-from-bottom-8 duration-1000 max-w-[1600px] mx-auto pb-24">
 
             {/* 1. Header & Stats Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                <div className="xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-10">
+                <div className="xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     <StatsCard
                         title="Registered"
                         value={analytics.totalRegistrations}
@@ -70,8 +70,8 @@ const Dashboard = ({ analytics }) => {
             </div>
 
             {/* 2. Main Analytics Body */}
-            <div className="grid grid-cols-1 xxl:grid-cols-3 gap-10">
-                <div className="xxl:col-span-2 space-y-10">
+            <div className="grid grid-cols-1 xxl:grid-cols-3 gap-12">
+                <div className="xxl:col-span-2 space-y-12">
                     {/* Attendance Analysis Card */}
                     <div className="glass-card p-10 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
@@ -151,7 +151,7 @@ const Dashboard = ({ analytics }) => {
                 </div>
 
                 {/* Side Insights Column */}
-                <div className="space-y-10">
+                <div className="space-y-12">
                     <ActionPanel />
                     <FacilitatorLeaderboard />
                     <div className="xl:hidden">
@@ -161,8 +161,8 @@ const Dashboard = ({ analytics }) => {
             </div>
 
             {/* 3. Deep Demographics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="glass-card p-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="glass-card p-12">
                     <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8">Education Spectrum</h3>
                     <div className="h-[250px]">
                         <EducationChart data={analytics.demographics.education} />

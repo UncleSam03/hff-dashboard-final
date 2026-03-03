@@ -37,12 +37,12 @@ const StatsCard = ({ title, value, icon: Icon, description, className, trend, co
 
     return (
         <div className={cn(
-            "glass-card p-7 group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-200/50 border border-white/40",
+            "glass-card p-8 group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-200/50 border border-white/40",
             className
         )}>
             {/* Soft Glow Radial */}
             <div className={cn("absolute -top-24 -right-24 w-48 h-48 bg-gradient-radial blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700", config.glow)} />
-            
+
             <div className="flex items-start justify-between mb-6 relative z-10">
                 <div className={cn("p-3.5 rounded-2xl shadow-xl transform transition-transform group-hover:rotate-6 group-hover:scale-110 duration-500", config.icon)}>
                     {Icon && <Icon size={22} />}
@@ -56,7 +56,7 @@ const StatsCard = ({ title, value, icon: Icon, description, className, trend, co
             </div>
 
             <div className="relative z-10">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-1">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-2">
                     {title}
                 </span>
                 <div className="flex items-baseline gap-2">

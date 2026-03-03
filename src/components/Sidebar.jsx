@@ -38,8 +38,8 @@ const Sidebar = ({
     )}>
       {/* Brand Logo */}
       <div className={cn(
-        "p-6 flex items-center transition-all duration-300",
-        isCollapsed ? "justify-center" : "justify-between"
+        "p-8 pb-6 flex items-center transition-all duration-300",
+        isCollapsed ? "justify-center p-6" : "justify-between"
       )}>
         <div className="flex items-center gap-2 overflow-hidden">
           <div className="w-10 h-10 min-w-[40px] rounded-2xl hff-gradient-bg flex items-center justify-center shadow-xl shadow-[#71167F]/20 transform rotate-3">
@@ -77,11 +77,11 @@ const Sidebar = ({
               onClick={() => onTabChange(item.id)}
               title={isCollapsed ? item.label : ""}
               className={cn(
-                "w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
+                "w-full flex items-center px-4 py-4 rounded-2xl transition-all duration-300 group relative",
                 isActive
                   ? "bg-[#71167F]/5 text-[#71167F] shadow-sm ring-1 ring-[#71167F]/10"
                   : "text-gray-500 hover:bg-gray-50 hover:text-[#71167F]",
-                isCollapsed && "justify-center px-0"
+                isCollapsed && "justify-center px-0 py-4"
               )}
             >
               <div className="flex items-center gap-3">

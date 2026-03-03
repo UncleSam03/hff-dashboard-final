@@ -58,7 +58,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
         isCollapsed ? "lg:ml-20" : "lg:ml-64"
       )}>
         {/* TopBar */}
-        <header className="sticky top-0 z-30 h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-6 lg:px-10">
+        <header className="sticky top-0 z-30 h-24 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 lg:px-12">
           <div className="flex items-center gap-4">
             <button
               className="lg:hidden p-2 text-gray-500 hover:bg-gray-50 rounded-xl"
@@ -106,7 +106,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-6 lg:p-10 space-y-8 scrollbar-hide">
+        <div className="flex-1 p-8 lg:p-12 space-y-12 scrollbar-hide">
           {children}
         </div>
       </main>
