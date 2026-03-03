@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles, FileDown, CloudLightning, CheckCircle2 } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 const ActionPanel = ({ syncStatus = 'synced', onDownload, onSync }) => {
     return (

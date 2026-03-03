@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
 import { Search, User, Briefcase, Filter, Download, Trash2 } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 const PersonList = () => {
     const [searchTerm, setSearchTerm] = useState('');

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Smartphone, LayoutGrid, MapPin, BarChart3, ChevronRight } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 const LAUNCH_CARDS = [
     {

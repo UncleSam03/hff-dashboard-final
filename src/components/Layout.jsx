@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth } from "../auth/AuthContext";
 import Sidebar from './Sidebar';
 import { Bell, Search, Menu, X, User, Shield, Users } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { cn } from '../lib/utils';
 
 const ROLE_BADGES = {
   admin: { label: "Admin", icon: Shield, bg: "bg-amber-50", text: "text-amber-700" },

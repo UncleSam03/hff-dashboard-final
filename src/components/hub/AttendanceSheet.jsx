@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
 import { Check, Search } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 const AttendanceSheet = () => {
     const [searchTerm, setSearchTerm] = useState('');

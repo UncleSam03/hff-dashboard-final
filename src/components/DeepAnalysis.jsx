@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Sparkles, Share2, DollarSign, TrendingUp, Target, ShieldCheck } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 const DeepAnalysis = ({ analytics }) => {
     const [budget, setBudget] = useState(50000);

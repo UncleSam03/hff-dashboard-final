@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { supabase, isConfigured } from "@/lib/supabase";
+import { supabase, isConfigured } from "../lib/supabase";
 
 const AuthContext = createContext(null);
 console.log("[AuthContext] Script loaded - v1.0.3");

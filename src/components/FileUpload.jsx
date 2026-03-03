@@ -2,8 +2,8 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileSpreadsheet, Loader2, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { cn } from "@/lib/utils";
-import { parseHffRegisterRows } from "@/lib/hffRegister";
+import { cn } from "../lib/utils";
+import { parseHffRegisterRows } from "../lib/hffRegister";
 
 const FileUpload = ({ onDataLoaded }) => {
     const [error, setError] = useState(null);

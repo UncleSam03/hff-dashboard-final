@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 const StatsCard = ({ title, value, icon: Icon, description, className, trend, color = 'purple' }) => {
     const colorMap = {

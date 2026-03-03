@@ -2,7 +2,7 @@ import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/dexieDb';
 import { Trophy, Award, Target, MessageSquare } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 const FacilitatorLeaderboard = () => {
     const facilitators = useLiveQuery(async () => {

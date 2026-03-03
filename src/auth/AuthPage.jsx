@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { supabase, isConfigured } from "@/lib/supabase";
+import { supabase, isConfigured } from "../lib/supabase";
 import {
   AlertCircle, Key, Info, Shield, Users, User,
   Mail, Phone, Lock, Eye, EyeOff, ArrowRight,
   CheckCircle2, ChevronLeft, Sparkles
 } from "lucide-react";
-import LandingPage from "@/components/LandingPage";
+import LandingPage from "../components/LandingPage";
 
 /* ───────── helpers ───────── */
 function friendlyAuthError(err) {

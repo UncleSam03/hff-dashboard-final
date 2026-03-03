@@ -1,6 +1,6 @@
 import React from "react";
-import AuthPage from "@/auth/AuthPage";
-import { useAuth } from "@/auth/AuthContext";
+import AuthPage from "./AuthPage";
+import { useAuth } from "./AuthContext";
 
 export default function AuthGate({ children }) {
   const { user, loading, role } = useAuth();

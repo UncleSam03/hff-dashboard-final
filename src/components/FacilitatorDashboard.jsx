@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/auth/AuthContext";
-import { supabase, isConfigured } from "@/lib/supabase";
-import { db } from "@/lib/dexieDb";
+import { useAuth } from "../auth/AuthContext";
+import { supabase, isConfigured } from "../lib/supabase";
+import { db } from "../lib/dexieDb";
 import {
     Users, UserPlus, ClipboardCheck, ArrowLeft, Search,
     Phone, CheckCircle2, XCircle, ChevronDown, ChevronUp,

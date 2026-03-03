@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Home from './components/Home';
-import AuthGate from "@/auth/AuthGate";
-import { useAuth } from "@/auth/AuthContext";
+import AuthGate from "./auth/AuthGate";
+import { useAuth } from "./auth/AuthContext";
 
 import OfflineCollect from './components/OfflineCollect';
 import Hub from './components/Hub';
