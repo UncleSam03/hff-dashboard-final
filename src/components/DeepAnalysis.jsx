@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Sparkles, Share2, DollarSign, TrendingUp, Target, ShieldCheck } from 'lucide-react';
 import { cn } from "../lib/utils";
@@ -6,7 +7,7 @@ const DeepAnalysis = ({ analytics }) => {
     const [budget, setBudget] = useState(50000);
     const [spend, setSpend] = useState(12500);
 
-    if (!analytics) {
+    if (!analytics || analytics.totalRegistered === undefined) {
         return (
             <div className="flex flex-col items-center justify-center p-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-200">
                 <ShieldCheck size={48} className="text-gray-300 mb-4" />
@@ -88,7 +89,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
         <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* Top Grid: Financial vs AI */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
+
                 {/* Financial Intelligence */}
                 <Card className="glass-card border-white/40 shadow-2xl shadow-gray-200/50 p-8 group overflow-hidden">
                     <div className="flex items-center gap-4 mb-10">
@@ -129,7 +130,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
                                 <div className="text-3xl font-black text-[#71167F]">BWP {costPerParticipant}</div>
                                 <div className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Based on {uniqueAttendees} unique pax</div>
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <div className="flex justify-between items-end">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Utilization</span>
@@ -138,7 +139,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
                                     </span>
                                 </div>
                                 <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-white shadow-sm">
-                                    <div 
+                                    <div
                                         className="h-full hff-gradient-bg transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(113,22,127,0.3)]"
                                         style={{ width: `${budgetPercentage}%` }}
                                     />

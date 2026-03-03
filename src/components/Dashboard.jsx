@@ -12,111 +12,13 @@ import FacilitatorLeaderboard from './FacilitatorLeaderboard';
 import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2, LineChart } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-// ── Analytics processing from Dexie data ──
-function processAnalytics(registrations) {
-    if (!registrations || registrations.length === 0) {
-        return {
-            totalRegistrations: 0,
-            totalFacilitators: 0,
-            totalRegistered: 0,
-            uniqueAttendees: 0,
-            avgAttendance: 0,
-            dailyStats: [],
-            ageDistribution: [],
-            demographics: { gender: {}, education: {}, maritalStatus: {} },
-        };
-    }
-
-    const participants = registrations.filter(r => r.type === 'participant' && !r.is_deleted);
-    const facilitators = registrations.filter(r => r.type === 'facilitator' && !r.is_deleted);
-
-    // Attendance
-    const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
-
-    const dailyStats = days.map(day => {
-        const count = participants.filter(p => p.attendance && p.attendance[day]).length;
-        // Retention rate simulation for the line graph
-        const retention = participants.length > 0 ? (count / participants.length) * 100 : 0;
-        return { date: day, count, retention: parseFloat(retention.toFixed(1)) };
-    });
-
-    const uniqueAttendees = participants.filter(p => {
-        if (!p.attendance) return false;
-        return Object.values(p.attendance).some(v => v === true);
-    }).length;
-
-    const activeDays = dailyStats.filter(d => d.count > 0);
-    const totalAttendanceCount = dailyStats.reduce((sum, d) => sum + d.count, 0);
-    const avgAttendance = activeDays.length > 0
-        ? (totalAttendanceCount / activeDays.length).toFixed(1)
-        : 0;
-
-    // Gender
-    const gender = {};
-    participants.forEach(p => {
-        const g = (p.gender || 'Unknown').toUpperCase();
-        gender[g] = (gender[g] || 0) + 1;
-    });
-
-    // Education
-    const education = {};
-    participants.forEach(p => {
-        const e = p.education || 'Unknown';
-        education[e] = (education[e] || 0) + 1;
-    });
-
-    // Marital Status
-    const maritalStatus = {};
-    participants.forEach(p => {
-        const m = p.marital_status || 'Unknown';
-        maritalStatus[m] = (maritalStatus[m] || 0) + 1;
-    });
-
-    // Age distribution buckets
-    const ageBuckets = [
-        { range: '18-25', min: 18, max: 25, count: 0 },
-        { range: '26-35', min: 26, max: 35, count: 0 },
-        { range: '36-50', min: 36, max: 50, count: 0 },
-        { range: '50+', min: 51, max: 999, count: 0 },
-    ];
-
-    participants.forEach(p => {
-        const age = parseInt(p.age);
-        if (isNaN(age)) return;
-        for (const bucket of ageBuckets) {
-            if (age >= bucket.min && age <= bucket.max) {
-                bucket.count++;
-                break;
-            }
-        }
-    });
-
-    return {
-        totalRegistrations: participants.length,
-        totalFacilitators: facilitators.length,
-        totalRegistered: registrations.length,
-        uniqueAttendees,
-        avgAttendance,
-        dailyStats,
-        ageDistribution: ageBuckets.map(b => ({ range: b.range, count: b.count })),
-        demographics: { gender, education, maritalStatus },
-    };
-}
-
-const Dashboard = ({ mode = 'general' }) => {
+const Dashboard = ({ analytics }) => {
     const [selectedDay, setSelectedDay] = useState('Day 1');
     const [genderFilter, setGenderFilter] = useState('all'); // 'all', 'M', 'F'
 
-    // Live query from Dexie
-    const registrations = useLiveQuery(() => db.registrations.toArray(), []);
-
-    const analytics = useMemo(() => {
-        return processAnalytics(registrations);
-    }, [registrations]);
-
     const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
 
-    if (registrations === undefined) {
+    if (!analytics || analytics.totalRegistered === undefined) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
                 <div className="h-20 w-20 hff-gradient-bg rounded-3xl flex items-center justify-center text-white animate-bounce shadow-2xl shadow-[#71167F]/40 border-4 border-white">
@@ -129,7 +31,7 @@ const Dashboard = ({ mode = 'general' }) => {
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000 max-w-[1600px] mx-auto pb-20">
-            
+
             {/* 1. Header & Stats Section */}
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
                 <div className="xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -163,7 +65,7 @@ const Dashboard = ({ mode = 'general' }) => {
                     />
                 </div>
                 <div className="hidden xl:block">
-                   <NoticeBoard />
+                    <NoticeBoard />
                 </div>
             </div>
 
@@ -185,13 +87,13 @@ const Dashboard = ({ mode = 'general' }) => {
                             </div>
                             <div className="flex items-center gap-2 p-1.5 bg-gray-50/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-inner">
                                 {['all', 'M', 'F'].map((filter) => (
-                                    <button 
+                                    <button
                                         key={filter}
                                         onClick={() => setGenderFilter(filter)}
                                         className={cn(
-                                            "px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300", 
-                                            genderFilter === filter 
-                                                ? "bg-white text-[#71167F] shadow-md shadow-gray-200 border border-gray-100 scale-105" 
+                                            "px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                                            genderFilter === filter
+                                                ? "bg-white text-[#71167F] shadow-md shadow-gray-200 border border-gray-100 scale-105"
                                                 : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
                                         )}
                                     >
@@ -261,16 +163,16 @@ const Dashboard = ({ mode = 'general' }) => {
             {/* 3. Deep Demographics */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="glass-card p-10">
-                  <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8">Education Spectrum</h3>
-                  <div className="h-[250px]">
-                    <EducationChart data={analytics.demographics.education} />
-                  </div>
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8">Education Spectrum</h3>
+                    <div className="h-[250px]">
+                        <EducationChart data={analytics.demographics.education} />
+                    </div>
                 </div>
                 <div className="glass-card p-10">
-                  <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8">Marital Status</h3>
-                  <div className="h-[250px]">
-                    <MaritalStatusChart data={analytics.demographics.maritalStatus} />
-                  </div>
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8">Marital Status</h3>
+                    <div className="h-[250px]">
+                        <MaritalStatusChart data={analytics.demographics.maritalStatus} />
+                    </div>
                 </div>
             </div>
         </div>

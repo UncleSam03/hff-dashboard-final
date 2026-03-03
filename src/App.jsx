@@ -9,10 +9,16 @@ import OfflineCollect from './components/OfflineCollect';
 import Hub from './components/Hub';
 import DeepAnalysis from './components/DeepAnalysis';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from './lib/dexieDb';
+import { processAnalytics } from './lib/analytics';
 
 function AppContent() {
   const { role, signOut } = useAuth();
   const [mode, setMode] = useState('overview'); // 'overview', 'collect', 'hub', 'analysis'
+
+  const registrations = useLiveQuery(() => db.registrations.toArray()) || [];
+  const analytics = processAnalytics(registrations);
 
   const handleSelectMode = (newMode) => {
     setMode(newMode);
@@ -33,15 +39,15 @@ function AppContent() {
   return (
     <Layout activeTab={mode} onTabChange={handleSelectMode}>
       {mode === 'overview' ? (
-        <Dashboard mode="general" />
+        <Dashboard analytics={analytics} />
       ) : mode === 'collect' ? (
         <OfflineCollect onBack={handleBackToHome} />
       ) : mode === 'hub' ? (
         <Hub onBack={handleBackToHome} />
       ) : mode === 'analysis' ? (
-        <DeepAnalysis analytics={{}} />
+        <DeepAnalysis analytics={analytics} />
       ) : (
-        <Dashboard mode="general" />
+        <Dashboard analytics={analytics} />
       )}
     </Layout>
   );
