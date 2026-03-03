@@ -33,8 +33,8 @@ const Sidebar = ({
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 h-screen bg-white border-r border-gray-100 z-50 flex flex-col shadow-sm transition-all duration-300 ease-in-out",
-      isCollapsed ? "w-20" : "w-64"
+      "fixed left-0 top-0 h-screen bg-white border-r border-gray-100 z-50 flex flex-col shadow-sm ui-transition",
+      isCollapsed ? "w-24" : "w-72"
     )}>
       {/* Brand Logo */}
       <div className={cn(

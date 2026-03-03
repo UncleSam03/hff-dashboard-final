@@ -19,8 +19,8 @@ const Layout = ({ children, activeTab, onTabChange }) => {
     <div className="min-h-screen flex bg-[#FDFBFF]">
       {/* Sidebar - Desktop */}
       <div className={cn(
-        "hidden lg:block transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-20" : "w-64"
+        "hidden lg:block ui-transition",
+        isCollapsed ? "w-24" : "w-72"
       )}>
         <Sidebar
           activeTab={activeTab}
@@ -54,8 +54,8 @@ const Layout = ({ children, activeTab, onTabChange }) => {
 
       {/* Main Content Area */}
       <main className={cn(
-        "flex-1 min-w-0 flex flex-col relative transition-all duration-300 ease-in-out",
-        isCollapsed ? "lg:ml-20" : "lg:ml-64"
+        "flex-1 min-w-0 flex flex-col relative ui-transition",
+        isCollapsed ? "lg:ml-24" : "lg:ml-72"
       )}>
         {/* TopBar */}
         <header className="sticky top-0 z-30 h-24 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 lg:px-12">

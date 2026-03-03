@@ -33,8 +33,8 @@ const Dashboard = ({ analytics }) => {
         <div className="space-y-14 animate-in fade-in slide-in-from-bottom-8 duration-1000 max-w-[1600px] mx-auto pb-24">
 
             {/* 1. Header & Stats Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-10">
-                <div className="xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 2xl:grid-cols-4 gap-12">
+                <div className="2xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
                     <StatsCard
                         title="Registered"
                         value={analytics.totalRegistrations}
@@ -64,14 +64,14 @@ const Dashboard = ({ analytics }) => {
                         color="amber"
                     />
                 </div>
-                <div className="hidden xl:block">
+                <div className="hidden 2xl:block">
                     <NoticeBoard />
                 </div>
             </div>
 
             {/* 2. Main Analytics Body */}
-            <div className="grid grid-cols-1 xxl:grid-cols-3 gap-12">
-                <div className="xxl:col-span-2 space-y-12">
+            <div className="grid grid-cols-1 2xl:grid-cols-3 gap-12">
+                <div className="2xl:col-span-2 space-y-12">
                     {/* Attendance Analysis Card */}
                     <div className="glass-card p-10 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
@@ -154,7 +154,7 @@ const Dashboard = ({ analytics }) => {
                 <div className="space-y-12">
                     <ActionPanel />
                     <FacilitatorLeaderboard />
-                    <div className="xl:hidden">
+                    <div className="2xl:hidden">
                         <NoticeBoard />
                     </div>
                 </div>
