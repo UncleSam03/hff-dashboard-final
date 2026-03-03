@@ -6,82 +6,107 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
     --primary: 292 70% 29%;
-    /* Purple #71167F */
     --primary-foreground: 0 0% 100%;
-
     --secondary: 126 48% 47%;
-    /* Green #3EB049 */
     --secondary-foreground: 0 0% 100%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 172 100% 21%;
-
-    --radius: 1.5rem;
-    /* Extra rounded for warmth */
-
-    --hff-warm-beige: 30 40% 98%;
-    --hff-warm-green: 142 45% 95%;
-    --hff-soft-purple: 292 70% 96%;
-
-    --hff-purple: 292 70% 29%;
-    --hff-green: 126 48% 47%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 292 70% 40%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 126 48% 47%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 292 70% 29%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
     --ring: 292 70% 29%;
+    --radius: 1rem;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@layer utilities {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(113, 22, 127, 0.05);
   }
 
-  body {
-    @apply bg-hff-bg text-foreground;
+  .soft-glow-purple {
+    background: radial-gradient(circle at center, rgba(113, 22, 127, 0.1) 0%, transparent 70%);
   }
+
+  .soft-glow-green {
+    background: radial-gradient(circle at center, rgba(62, 176, 73, 0.1) 0%, transparent 70%);
+  }
+
+  .hff-gradient-text {
+    background: linear-gradient(135deg, #71167F 0%, #3EB049 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hff-gradient-bg {
+    background: linear-gradient(135deg, #71167F 0%, #3EB049 100%);
+  }
+
+  .card-hover-effect {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-hover-effect:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px -8px rgba(113, 22, 127, 0.15);
+  }
+
+  .sidebar-link-active {
+    background: linear-gradient(to right, rgba(113, 22, 127, 0.08), transparent);
+    border-left: 4px solid #71167F;
+    color: #71167F !important;
+  }
+
+  .sidebar-link {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .sidebar-link:hover {
+    background: rgba(113, 22, 127, 0.04);
+    color: #71167F;
+  }
+}
+
+body {
+  background-color: #FDFBFF;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(113, 22, 127, 0.02) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -10%;
+  right: -10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(62, 176, 73, 0.02) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
 }

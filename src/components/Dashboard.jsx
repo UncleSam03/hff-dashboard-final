@@ -102,7 +102,7 @@ function processAnalytics(registrations) {
     };
 }
 
-const Dashboard = ({ mode = 'general', onBack }) => {
+const Dashboard = ({ mode = 'general' }) => {
     const [selectedDay, setSelectedDay] = useState('Day 1');
     const [genderFilter, setGenderFilter] = useState('all'); // 'all', 'M', 'F'
 
@@ -115,111 +115,107 @@ const Dashboard = ({ mode = 'general', onBack }) => {
 
     const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
 
-    const filteredParticipants = useMemo(() => {
-        if (!registrations) return [];
-        let data = registrations.filter(r => r.type === 'participant' && !r.is_deleted);
-        if (genderFilter !== 'all') {
-            data = data.filter(p => p.gender === genderFilter);
-        }
-        return data;
-    }, [registrations, genderFilter]);
-
     if (registrations === undefined) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <div className="h-16 w-16 hff-gradient-bg rounded-2xl flex items-center justify-center text-white animate-bounce shadow-2xl shadow-hff-primary/40">
-                    <Database className="h-8 w-8" />
+                <div className="h-20 w-20 hff-gradient-bg rounded-3xl flex items-center justify-center text-white animate-bounce shadow-2xl shadow-[#71167F]/40 border-4 border-white">
+                    <Database className="h-10 w-10" />
                 </div>
-                <h2 className="text-2xl font-black text-gray-900 mt-8">Initializing Hyper-Data...</h2>
+                <h2 className="text-xl font-black text-gray-900 mt-8 uppercase tracking-widest">Waking up the data engine...</h2>
             </div>
         );
     }
 
     return (
-        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000 max-w-[1600px] mx-auto pb-20">
             
-            {/* 1. Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard
-                    title="Registered Participants"
-                    value={analytics.totalRegistrations}
-                    icon={Users}
-                    description="Total people recorded"
-                    trend="+12% Since yesterday"
-                    color="purple"
-                />
-                <StatsCard
-                    title="Facilitators"
-                    value={analytics.totalFacilitators}
-                    icon={Briefcase}
-                    description="Verified field agents"
-                    color="green"
-                />
-                <StatsCard
-                    title="Unique Individuals"
-                    value={analytics.uniqueAttendees}
-                    icon={Users2}
-                    description="Attendees with profiles"
-                    color="blue"
-                />
-                <StatsCard
-                    title="Avg Daily Attendance"
-                    value={analytics.avgAttendance}
-                    icon={TrendingUp}
-                    description="Current campaign avg"
-                    color="amber"
-                />
-            </div>
-
-            {/* 2. Campaign Launchpad */}
-            <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                    <div className="h-2 w-8 hff-gradient-bg rounded-full" />
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight text-[#71167F]">Campaign Launchpad</h2>
+            {/* 1. Header & Stats Section */}
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                <div className="xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <StatsCard
+                        title="Registered"
+                        value={analytics.totalRegistrations}
+                        icon={Users}
+                        description="Campaign total"
+                        color="purple"
+                    />
+                    <StatsCard
+                        title="Facilitators"
+                        value={analytics.totalFacilitators}
+                        icon={Briefcase}
+                        description="Field agents"
+                        color="green"
+                    />
+                    <StatsCard
+                        title="Attendees"
+                        value={analytics.uniqueAttendees}
+                        icon={Users2}
+                        description="With profiles"
+                        color="blue"
+                    />
+                    <StatsCard
+                        title="Daily Avg"
+                        value={analytics.avgAttendance}
+                        icon={TrendingUp}
+                        description="Current cycle"
+                        color="amber"
+                    />
                 </div>
-                <CampaignLaunchpad />
+                <div className="hidden xl:block">
+                   <NoticeBoard />
+                </div>
             </div>
 
-            {/* 3. Analytics Section: Day-by-Day Drill-down */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                <div className="xl:col-span-2 space-y-8">
-                    <div className="glass-card p-10">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+            {/* 2. Main Analytics Body */}
+            <div className="grid grid-cols-1 xxl:grid-cols-3 gap-10">
+                <div className="xxl:col-span-2 space-y-10">
+                    {/* Attendance Analysis Card */}
+                    <div className="glass-card p-10 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+                            <BarChart3 size={200} />
+                        </div>
+                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12 relative z-10">
                             <div>
-                                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Day-by-Day Analysis</h2>
-                                <p className="text-gray-400 font-bold mt-1 uppercase text-xs tracking-[0.2em]">Campaign Lifecycle Insights (Day 1-12)</p>
+                                <h2 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                                    <span className="p-2 hff-gradient-bg rounded-xl text-white shadow-lg shadow-[#71167F]/20"><LineChart size={24} /></span>
+                                    Campaign Performance
+                                </h2>
+                                <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.25em]">Day-by-Day Participation & Retention Trends</p>
                             </div>
-                            <div className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-2xl border border-gray-100">
-                                <button 
-                                    onClick={() => setGenderFilter('all')}
-                                    className={cn("px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", genderFilter === 'all' ? "bg-white text-gray-900 shadow-sm border border-gray-100" : "text-gray-400 hover:text-gray-600")}
-                                >All</button>
-                                <button 
-                                    onClick={() => setGenderFilter('M')}
-                                    className={cn("px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", genderFilter === 'M' ? "bg-white text-blue-600 shadow-sm border border-gray-100" : "text-gray-400 hover:text-gray-600")}
-                                >Male</button>
-                                <button 
-                                    onClick={() => setGenderFilter('F')}
-                                    className={cn("px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all", genderFilter === 'F' ? "bg-white text-pink-500 shadow-sm border border-gray-100" : "text-gray-400 hover:text-gray-600")}
-                                >Female</button>
+                            <div className="flex items-center gap-2 p-1.5 bg-gray-50/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-inner">
+                                {['all', 'M', 'F'].map((filter) => (
+                                    <button 
+                                        key={filter}
+                                        onClick={() => setGenderFilter(filter)}
+                                        className={cn(
+                                            "px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300", 
+                                            genderFilter === filter 
+                                                ? "bg-white text-[#71167F] shadow-md shadow-gray-200 border border-gray-100 scale-105" 
+                                                : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
+                                        )}
+                                    >
+                                        {filter === 'all' ? 'Universal' : filter === 'M' ? 'Male' : 'Female'}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        {/* Line graph for Day-by-Day Comparison */}
-                        <div className="h-[400px] w-full">
+                        {/* Chart Container */}
+                        <div className="h-[450px] w-full relative z-10 transition-all">
                             <AttendanceChart data={analytics.dailyStats} compareWithRetention={true} />
                         </div>
 
-                        <div className="flex flex-wrap gap-2 mt-10 p-2 bg-gray-50/50 rounded-2xl border border-gray-100 justify-center">
+                        {/* Day Selector */}
+                        <div className="flex flex-wrap gap-2 mt-12 p-3 bg-gray-50/50 rounded-3xl border border-gray-100/50 justify-center relative z-10">
                             {days.map((day) => (
                                 <button
                                     key={day}
                                     onClick={() => setSelectedDay(day)}
                                     className={cn(
-                                        "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        "px-5 py-2.5 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all duration-500",
                                         selectedDay === day
-                                            ? "hff-gradient-bg text-white shadow-lg shadow-hff-primary/20 scale-105"
-                                            : "bg-white text-gray-400 border border-gray-100 hover:border-hff-primary/30"
+                                            ? "hff-gradient-bg text-white shadow-xl shadow-[#71167F]/30 scale-110 -translate-y-1"
+                                            : "bg-white text-gray-400 border border-transparent hover:border-[#71167F]/20 hover:text-[#71167F]"
                                     )}
                                 >
                                     {day}
@@ -228,47 +224,66 @@ const Dashboard = ({ mode = 'general', onBack }) => {
                         </div>
                     </div>
 
-                    {/* Age Distribution Panel */}
-                    <div className="glass-card p-10">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="h-8 w-1 hff-gradient-bg rounded-full" />
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Age Distribution</h2>
+                    {/* Demographics Split */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="glass-card p-10">
+                            <div className="flex items-center gap-3 mb-10">
+                                <div className="h-6 w-1.5 hff-gradient-bg rounded-full shadow-sm" />
+                                <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">Gender Split</h3>
+                            </div>
+                            <div className="h-[280px]">
+                                <GenderChart data={analytics.demographics.gender} />
+                            </div>
                         </div>
-                        <div className="h-[300px]">
-                            <AgeChart data={analytics.ageDistribution} />
+                        <div className="glass-card p-10">
+                            <div className="flex items-center gap-3 mb-10">
+                                <div className="h-6 w-1.5 hff-gradient-bg rounded-full shadow-sm" />
+                                <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">Age Groups</h3>
+                            </div>
+                            <div className="h-[280px]">
+                                <AgeChart data={analytics.ageDistribution} />
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Side Panel: AI Insights & notices */}
-                <div className="space-y-8">
+                {/* Side Insights Column */}
+                <div className="space-y-10">
                     <ActionPanel />
-                    <NoticeBoard />
-                </div>
-            </div>
-
-            {/* 4. Demographic Row */}
-            <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                    <div className="h-2 w-8 hff-gradient-bg rounded-full" />
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Participant Demographics</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="glass-card p-8">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Gender Breakdown</h3>
-                        <GenderChart data={analytics.demographics.gender} />
+                    <div className="glass-card p-8 bg-gradient-to-br from-[#71167F] to-[#3EB049] text-white">
+                        <h4 className="text-sm font-black uppercase tracking-widest mb-4">Quick Insights</h4>
+                        <div className="space-y-4">
+                            <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
+                                <p className="text-[10px] font-bold text-white/60 uppercase mb-1">Top Education</p>
+                                <p className="text-lg font-black truncate">Tertiary Degree</p>
+                            </div>
+                            <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
+                                <p className="text-[10px] font-bold text-white/60 uppercase mb-1">Active Window</p>
+                                <p className="text-lg font-black truncate">Days 4 - 8</p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="glass-card p-8">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Education Levels</h3>
-                        <EducationChart data={analytics.demographics.education} />
-                    </div>
-                    <div className="glass-card p-8">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Marital Status</h3>
-                        <MaritalStatusChart data={analytics.demographics.maritalStatus} />
+                    <div className="xl:hidden">
+                        <NoticeBoard />
                     </div>
                 </div>
             </div>
 
+            {/* 3. Deep Demographics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="glass-card p-10">
+                  <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8">Education Spectrum</h3>
+                  <div className="h-[250px]">
+                    <EducationChart data={analytics.demographics.education} />
+                  </div>
+                </div>
+                <div className="glass-card p-10">
+                  <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8">Marital Status</h3>
+                  <div className="h-[250px]">
+                    <MaritalStatusChart data={analytics.demographics.maritalStatus} />
+                  </div>
+                </div>
+            </div>
         </div>
     );
 };

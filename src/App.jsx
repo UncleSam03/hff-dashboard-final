@@ -11,38 +11,34 @@ import FacilitatorDashboard from './components/FacilitatorDashboard';
 
 function AppContent() {
   const { role, signOut } = useAuth();
-  const [mode, setMode] = useState('home'); // 'home', 'phikwe', 'general', 'collect', 'hub'
+  const [mode, setMode] = useState('overview'); // 'overview', 'collect', 'hub', 'analysis'
 
   const handleSelectMode = (newMode) => {
     setMode(newMode);
   };
 
   const handleBackToHome = () => {
-    setMode('home');
+    setMode('overview');
   };
 
   // Facilitator role — dedicated dashboard
   if (role === 'facilitator') {
     return (
-      <Layout onBackToHome={signOut} isHome={true} showNav={false}>
-        <FacilitatorDashboard onBack={signOut} />
-      </Layout>
+      <FacilitatorDashboard onBack={signOut} />
     );
   }
 
-
-
-  // Admin role — full dashboard access (existing behavior)
+  // Admin role — full dashboard access using Sidebar
   return (
-    <Layout onBackToHome={handleBackToHome} isHome={mode === 'home'}>
-      {mode === 'home' ? (
-        <Home onSelectMode={handleSelectMode} />
+    <Layout activeTab={mode} onTabChange={handleSelectMode}>
+      {mode === 'overview' ? (
+        <Dashboard mode="general" />
       ) : mode === 'collect' ? (
         <OfflineCollect onBack={handleBackToHome} />
       ) : mode === 'hub' ? (
         <Hub onBack={handleBackToHome} />
       ) : (
-        <Dashboard mode={mode} onBack={handleBackToHome} />
+        <Dashboard mode="general" />
       )}
     </Layout>
   );

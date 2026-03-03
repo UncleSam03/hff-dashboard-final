@@ -88,23 +88,16 @@ const OfflineCollect = ({ onBack }) => {
     );
 
     return (
-        <div className="max-w-4xl mx-auto p-4 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <button onClick={goBack} className="flex items-center gap-2 text-gray-600 hover:text-hff-primary transition-colors">
-                    <ArrowLeft className="h-5 w-5" />
-                    {view === 'menu' ? 'Back to Home' : 'Back'}
-                </button>
-                <div className="flex items-center gap-2 bg-hff-primary/10 text-hff-primary px-3 py-1 rounded-full text-sm font-semibold">
-                    <Database className="h-4 w-4" />
-                    {pendingCount} Pending Sync
-                </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden min-h-[600px] flex flex-col">
-                <div className="bg-hff-primary p-6 text-white text-center shrink-0">
-                    <h2 className="text-2xl font-bold">Offline Data Collection</h2>
-                    <p className="text-hff-primary-light opacity-90">Collect participant data without internet.</p>
+        <div className="max-w-5xl mx-auto p-4 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-100/50 overflow-hidden min-h-[650px] flex flex-col relative">
+                <div className="absolute top-0 left-0 right-0 h-2 hff-gradient-bg" />
+                <div className="p-10 pb-0 text-center shrink-0">
+                    <div className="inline-flex items-center gap-2 bg-[#71167F]/5 text-[#71167F] px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-[#71167F]/10 mb-6">
+                        <Database size={14} />
+                        {pendingCount} Pending Sync
+                    </div>
+                    <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight mb-2">Omni-Collect Interface</h2>
+                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em] opacity-80">Synchronized Offline Registration Engine</p>
                 </div>
 
                 <div className="p-8 flex-1 flex flex-col">
