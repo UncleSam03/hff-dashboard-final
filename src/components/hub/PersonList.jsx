@@ -154,11 +154,16 @@ const PersonList = () => {
                                 </div>
                             </div>
 
-                            <div className="text-right">
+                            <div className="text-right flex flex-col gap-1 items-end">
                                 <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${person.sync_status === 'synced' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
                                     }`}>
                                     {person.sync_status === 'synced' ? 'Synced' : 'Pending'}
                                 </span>
+                                {person.processed && (
+                                    <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-tight">
+                                        Processed
+                                    </span>
+                                )}
                             </div>
                         </div>
                     ))}
