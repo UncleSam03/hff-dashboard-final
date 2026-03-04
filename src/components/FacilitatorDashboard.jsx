@@ -45,7 +45,7 @@ export default function FacilitatorDashboard({ onBack }) {
             if (isConfigured) {
                 const { data, error } = await supabase
                     .from("registrations")
-                    .select("uuid, first_name, last_name, contact, attendance")
+                    .select("uuid, first_name, last_name, contact, attendance, books_received")
                     .eq("facilitator_uuid", user.id)
                     .eq("type", "participant");
 
@@ -66,6 +66,7 @@ export default function FacilitatorDashboard({ onBack }) {
                 last_name: p.last_name,
                 contact: p.contact || p.phone || "",
                 attendance: p.attendance || Array(TOTAL_DAYS).fill(false),
+                books_received: p.books_received || false,
             })));
         } catch (err) {
             console.error("Error loading participants:", err);
