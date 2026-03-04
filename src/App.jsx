@@ -9,6 +9,7 @@ import OfflineCollect from './components/OfflineCollect';
 import Hub from './components/Hub';
 import DeepAnalysis from './components/DeepAnalysis';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
+import FacilitatorOnboarding from './components/FacilitatorOnboarding';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
@@ -30,6 +31,9 @@ function AppContent() {
 
   // Facilitator role — dedicated dashboard
   if (role === 'facilitator') {
+    if (!profile?.onboarding_completed) {
+      return <FacilitatorOnboarding onComplete={() => window.location.reload()} />;
+    }
     return (
       <FacilitatorDashboard onBack={signOut} />
     );

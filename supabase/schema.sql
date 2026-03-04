@@ -18,11 +18,10 @@ create table if not exists public.profiles (
   role text check (role in ('admin', 'facilitator', 'participant')) not null default 'participant',
   full_name text,
   phone text,
-  age integer,
-  gender text,
   education text,
   marital_status text,
   place text,
+  onboarding_completed boolean default false,
   created_at timestamptz default now()
 );
 
@@ -48,67 +47,15 @@ create policy "Admins can view all profiles" on public.profiles
 -- Auto-create profile on sign-up
 create or replace function public.handle_new_user()
 returns trigger as $$
-declare
-  first_name_val text;
-  last_name_val text;
-  full_name_val text;
 begin
-  full_name_val := coalesce(new.raw_user_meta_data->>'full_name', '');
-  
-  -- Simple split for full name
-  if position(' ' in full_name_val) > 0 then
-    first_name_val := split_part(full_name_val, ' ', 1);
-    last_name_val := substring(full_name_val from position(' ' in full_name_val) + 1);
-  else
-    first_name_val := full_name_val;
-    last_name_val := '';
-  end if;
-
   -- 1. Insert into profiles
-  insert into public.profiles (id, role, full_name, phone, age, gender, education, marital_status, place)
+  insert into public.profiles (id, role, full_name, phone)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'role', 'participant'),
-    full_name_val,
-    coalesce(new.raw_user_meta_data->>'phone', new.phone, ''),
-    (new.raw_user_meta_data->>'age')::integer,
-    new.raw_user_meta_data->>'gender',
-    new.raw_user_meta_data->>'education',
-    new.raw_user_meta_data->>'marital_status',
-    new.raw_user_meta_data->>'place'
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'username', ''),
+    coalesce(new.raw_user_meta_data->>'phone', new.phone, '')
   );
-
-  -- 2. If facilitator, insert into registrations
-  if (new.raw_user_meta_data->>'role') = 'facilitator' then
-    insert into public.registrations (
-      uuid, 
-      first_name, 
-      last_name, 
-      age, 
-      gender, 
-      contact, 
-      place, 
-      education, 
-      marital_status, 
-      type, 
-      facilitator_uuid,
-      source
-    )
-    values (
-      new.id,
-      first_name_val,
-      last_name_val,
-      (new.raw_user_meta_data->>'age')::integer,
-      new.raw_user_meta_data->>'gender',
-      coalesce(new.raw_user_meta_data->>'phone', new.phone, ''),
-      new.raw_user_meta_data->>'place',
-      new.raw_user_meta_data->>'education',
-      new.raw_user_meta_data->>'marital_status',
-      'facilitator',
-      new.id,
-      'facilitator-signup'
-    );
-  end if;
 
   return new;
 end;
