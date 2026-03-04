@@ -42,11 +42,11 @@ const Dashboard = ({ analytics }) => {
                         color="purple"
                     />
                     <StatsCard
-                        title="Facilitators"
-                        value={analytics.totalFacilitators}
-                        icon={Briefcase}
-                        description="Field agents"
-                        color="green"
+                        title="Books"
+                        value={analytics.totalBooksGiven}
+                        icon={CheckCircle2}
+                        description="Distributed"
+                        color="emerald"
                     />
                     <StatsCard
                         title="Attendees"

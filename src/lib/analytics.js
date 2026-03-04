@@ -27,8 +27,8 @@ export function processAnalytics(registrations) {
     // Attendance
     const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
 
-    const dailyStats = days.map(day => {
-        const count = participants.filter(p => p.attendance && p.attendance[day]).length;
+    const dailyStats = days.map((day, i) => {
+        const count = participants.filter(p => p.attendance && p.attendance[i]).length;
         const retention = participants.length > 0 ? (count / participants.length) * 100 : 0;
         return { date: day, count, retention: parseFloat(retention.toFixed(1)) };
     });
@@ -91,12 +91,16 @@ export function processAnalytics(registrations) {
         }
     });
 
+    // Book distribution
+    const totalBooksGiven = participants.filter(p => p.books_received === true).length;
+
     return {
         totalRegistrations: participants.length,
         totalFacilitators: facilitators.length,
         totalRegistered: registrations.length,
         uniqueAttendees,
         avgAttendance,
+        totalBooksGiven, // New metric
         dailyStats,
         ageDistribution: ageBuckets,
         demographics: { gender, education, maritalStatus },
