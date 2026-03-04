@@ -88,6 +88,7 @@ export default function FacilitatorDashboard({ onBack }) {
                 type: "participant",
                 facilitator_uuid: user.id,
                 attendance: Array(TOTAL_DAYS).fill(false),
+                books_received: false, // Default to false
                 source: "facilitator-dashboard",
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
@@ -102,7 +103,10 @@ export default function FacilitatorDashboard({ onBack }) {
                 const { sync_status, ...supabasePayload } = record;
                 const { error } = await supabase.from("registrations").insert(supabasePayload);
                 if (!error) {
-                    await db.registrations.where("uuid").equals(newUuid).modify({ sync_status: "synced" });
+                    await db.registrations.where("uuid").equals(newUuid).modify({
+                        sync_status: "synced",
+                        synced_at: new Date().toISOString()
+                    });
                 } else {
                     console.error("Supabase sync error:", error);
                 }
@@ -110,10 +114,52 @@ export default function FacilitatorDashboard({ onBack }) {
 
             setRegMessage(`${regForm.first_name} ${regForm.last_name} registered successfully!`);
             setRegForm({ first_name: "", last_name: "", phone: "", age: "", gender: "" });
+            loadParticipants(); // Refresh list after registration
         } catch (err) {
             setRegError(err.message || "Failed to register participant.");
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function toggleBookReceived(participantUuid) {
+        setParticipants(prev =>
+            prev.map(p => {
+                if (p.uuid !== participantUuid) return p;
+                return { ...p, books_received: !p.books_received };
+            })
+        );
+
+        try {
+            const participant = participants.find(p => p.uuid === participantUuid);
+            const newStatus = !participant?.books_received;
+
+            // Update locally
+            await db.registrations
+                .where("uuid")
+                .equals(participantUuid)
+                .modify({
+                    books_received: newStatus,
+                    updated_at: new Date().toISOString(),
+                    sync_status: "pending"
+                });
+
+            // Update Supabase
+            if (isConfigured) {
+                const { error } = await supabase
+                    .from("registrations")
+                    .update({ books_received: newStatus, updated_at: new Date().toISOString() })
+                    .eq("uuid", participantUuid);
+
+                if (!error) {
+                    await db.registrations
+                        .where("uuid")
+                        .equals(participantUuid)
+                        .modify({ sync_status: "synced", synced_at: new Date().toISOString() });
+                }
+            }
+        } catch (err) {
+            console.error("Error updating book status:", err);
         }
     }
 
@@ -136,14 +182,25 @@ export default function FacilitatorDashboard({ onBack }) {
             await db.registrations
                 .where("uuid")
                 .equals(participantUuid)
-                .modify({ attendance: att, updated_at: new Date().toISOString() });
+                .modify({
+                    attendance: att,
+                    updated_at: new Date().toISOString(),
+                    sync_status: "pending"
+                });
 
             // Update Supabase
             if (isConfigured) {
-                await supabase
+                const { error } = await supabase
                     .from("registrations")
                     .update({ attendance: att, updated_at: new Date().toISOString() })
                     .eq("uuid", participantUuid);
+
+                if (!error) {
+                    await db.registrations
+                        .where("uuid")
+                        .equals(participantUuid)
+                        .modify({ sync_status: "synced", synced_at: new Date().toISOString() });
+                }
             }
         } catch (err) {
             console.error("Error updating attendance:", err);

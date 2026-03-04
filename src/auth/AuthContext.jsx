@@ -68,22 +68,17 @@ export function AuthProvider({ children }) {
         }
 
         // STRICT DOMAIN ENFORCEMENT
+        // Any account with @thehealthyfamilies.net is ALWAYS an admin.
+        // Any other account is ALWAYS a facilitator.
+        const expectedRole = isAdminEmail ? "admin" : "facilitator";
 
-        if (isAdminEmail && currentProfile.role !== "admin") {
-          console.log("[AuthContext] Upgrading user to admin based on email domain");
-          currentProfile = { ...currentProfile, role: "admin" };
+        if (currentProfile.role !== expectedRole) {
+          console.log(`[AuthContext] Correcting user role to ${expectedRole} based on email domain`);
+          currentProfile = { ...currentProfile, role: expectedRole };
 
-          // Background sync to DB
-          supabase.from("profiles").update({ role: "admin" }).eq("id", authUser.id).then(({ error }) => {
-            if (error) console.error("[AuthContext] Failed to sync admin role upgrade:", error);
-          });
-        } else if (!isAdminEmail && currentProfile.role === "admin") {
-          console.warn("[AuthContext] Restricted domain: Downgrading admin to facilitator");
-          currentProfile = { ...currentProfile, role: "facilitator" };
-
-          // Background sync to DB
-          supabase.from("profiles").update({ role: "facilitator" }).eq("id", authUser.id).then(({ error }) => {
-            if (error) console.error("[AuthContext] Failed to sync admin role downgrade:", error);
+          // Sync to database
+          supabase.from("profiles").update({ role: expectedRole }).eq("id", authUser.id).then(({ error }) => {
+            if (error) console.error("[AuthContext] Failed to sync role update:", error);
           });
         }
 
