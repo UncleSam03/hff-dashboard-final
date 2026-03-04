@@ -78,6 +78,13 @@ export default function AuthPage() {
   const [otpToken, setOtpToken] = useState("");
   const [otpSent, setOtpSent] = useState(false);
 
+  // Onboarding fields
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [education, setEducation] = useState("");
+  const [maritalStatus, setMaritalStatus] = useState("");
+  const [place, setPlace] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -128,6 +135,14 @@ export default function AuthPage() {
       setError("Passwords do not match.");
       setSubmitting(false);
       return;
+    }
+
+    if (authMode === "signup") {
+      if (!fullName.trim() || !phone.trim() || !age || !gender || !education || !maritalStatus || !place) {
+        setError("Please fill in all onboarding fields.");
+        setSubmitting(false);
+        return;
+      }
     }
 
     try {
@@ -186,6 +201,11 @@ export default function AuthPage() {
               role: metadataRole,
               full_name: fullName.trim(),
               phone: phone.trim(),
+              age: parseInt(age),
+              gender,
+              education,
+              marital_status: maritalStatus,
+              place,
             },
           },
         });
@@ -272,6 +292,11 @@ export default function AuthPage() {
             role: "facilitator",
             full_name: fullName,
             phone: phone,
+            age: parseInt(age),
+            gender,
+            education,
+            marital_status: maritalStatus,
+            place,
           },
         },
       });
@@ -629,6 +654,84 @@ export default function AuthPage() {
                       className="w-full rounded-2xl border border-gray-200 pl-12 pr-12 py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hff-primary/20 focus:border-hff-primary transition-all font-medium"
                       placeholder="••••••••"
                       required={authMode === "signup"}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {authMode === "signup" && (
+                <div className="space-y-5 bg-gray-50/50 p-5 rounded-3xl border border-gray-100 mt-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <p className="text-[10px] font-black text-hff-primary uppercase tracking-[0.2em] mb-2 px-1">Facilitator Onboarding</p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-2 ml-1 uppercase">Age</label>
+                      <input
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
+                        className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-hff-primary/20"
+                        placeholder="e.g. 25"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-2 ml-1 uppercase">Gender</label>
+                      <select
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                        className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-hff-primary/20 bg-white"
+                        required
+                      >
+                        <option value="">Select</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-2 ml-1 uppercase">Education</label>
+                    <select
+                      value={education}
+                      onChange={(e) => setEducation(e.target.value)}
+                      className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-hff-primary/20 bg-white"
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="None">None</option>
+                      <option value="Primary">Primary</option>
+                      <option value="Secondary">Secondary</option>
+                      <option value="Tertiary">Tertiary</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-2 ml-1 uppercase">Marital Status</label>
+                    <select
+                      value={maritalStatus}
+                      onChange={(e) => setMaritalStatus(e.target.value)}
+                      className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-hff-primary/20 bg-white"
+                      required
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-2 ml-1 uppercase">Location / Place</label>
+                    <input
+                      type="text"
+                      value={place}
+                      onChange={(e) => setPlace(e.target.value)}
+                      className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-hff-primary/20"
+                      placeholder="e.g. Molepolole"
+                      required
                     />
                   </div>
                 </div>
