@@ -17,6 +17,8 @@ export default function FacilitatorOnboarding({ onComplete }) {
         education: "",
         maritalStatus: "",
         place: "",
+        affiliation: "",
+        occupation: "",
     });
 
     async function handleSubmit(e) {
@@ -47,6 +49,8 @@ export default function FacilitatorOnboarding({ onComplete }) {
                     education: form.education,
                     marital_status: form.maritalStatus,
                     place: form.place,
+                    affiliation: form.affiliation,
+                    occupation: form.occupation,
                     onboarding_completed: true,
                 })
                 .eq("id", user.id);
@@ -66,6 +70,8 @@ export default function FacilitatorOnboarding({ onComplete }) {
                     place: form.place,
                     education: form.education,
                     marital_status: form.maritalStatus,
+                    affiliation: form.affiliation,
+                    occupation: form.occupation,
                     type: "facilitator",
                     facilitator_uuid: user.id,
                     source: "facilitator-onboarding"
@@ -175,6 +181,34 @@ export default function FacilitatorOnboarding({ onComplete }) {
                                     <option value="Divorced">Divorced</option>
                                     <option value="Widowed">Widowed</option>
                                 </select>
+                            </div>
+
+                            {/* Affiliation */}
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+                                    <Users className="h-3 w-3" /> Affiliation
+                                </label>
+                                <input
+                                    type="text"
+                                    value={form.affiliation}
+                                    onChange={e => setForm(f => ({ ...f, affiliation: e.target.value }))}
+                                    className="w-full rounded-2xl border border-gray-100 bg-gray-50/50 px-5 py-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-hff-primary/5 focus:border-hff-primary transition-all"
+                                    placeholder="e.g. Church, NGO"
+                                />
+                            </div>
+
+                            {/* Occupation */}
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+                                    <Sparkles className="h-3 w-3" /> Occupation
+                                </label>
+                                <input
+                                    type="text"
+                                    value={form.occupation}
+                                    onChange={e => setForm(f => ({ ...f, occupation: e.target.value }))}
+                                    className="w-full rounded-2xl border border-gray-100 bg-gray-50/50 px-5 py-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-hff-primary/5 focus:border-hff-primary transition-all"
+                                    placeholder="e.g. Teacher"
+                                />
                             </div>
                         </div>
 

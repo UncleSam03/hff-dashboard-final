@@ -14,6 +14,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
         place: '',
         education: '',
         maritalStatus: '',
+        affiliation: '',
+        occupation: '',
         participantsCount: 1,
         booksDistributed: 0,
     });
@@ -88,6 +90,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                 place: formData.place,
                 education: formData.education,
                 marital_status: formData.maritalStatus,
+                affiliation: formData.affiliation,
+                occupation: formData.occupation,
                 type: type, // 'facilitator' or 'participant'
                 // Facilitator specific
                 participants_count: type === 'facilitator' ? parseInt(formData.participantsCount) : null,
@@ -117,6 +121,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                 place: '',
                 education: '',
                 maritalStatus: '',
+                affiliation: '',
+                occupation: '',
                 participantsCount: 1,
                 booksDistributed: 0,
             });
@@ -315,6 +321,31 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                             <option value="Widowed">Widowed</option>
                             <option value="Cohabiting">Cohabiting</option>
                         </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Affiliation (e.g. Church, School)</label>
+                        <input
+                            type="text"
+                            name="affiliation"
+                            value={formData.affiliation}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
+                            placeholder="Organization name"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
+                        <input
+                            type="text"
+                            name="occupation"
+                            value={formData.occupation}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
+                            placeholder="e.g. Teacher, Farmer"
+                        />
                     </div>
                 </div>
 
