@@ -389,14 +389,29 @@ export default function FacilitatorDashboard({ onBack }) {
                         <div className="space-y-2">
                             {filteredParticipants.map((p, i) => (
                                 <div key={p.uuid || i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                    <div>
-                                        <p className="font-semibold text-gray-900">{p.first_name} {p.last_name}</p>
-                                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                                            <Phone className="h-3.5 w-3.5" />
-                                            {p.contact || "No phone"}
-                                        </p>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex flex-col items-end">
+                                            <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Books Given</label>
+                                            <button
+                                                onClick={() => toggleBookReceived(p.uuid)}
+                                                className={`p-2 rounded-lg border transition-all ${p.books_received
+                                                        ? "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm"
+                                                        : "bg-gray-50 border-gray-100 text-gray-300 hover:border-gray-200"
+                                                    }`}
+                                                title={p.books_received ? "Book Given" : "Mark as Given"}
+                                            >
+                                                <CheckCircle2 className={`h-5 w-5 ${p.books_received ? "opacity-100" : "opacity-30"}`} />
+                                            </button>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-semibold text-gray-900">{p.first_name} {p.last_name}</p>
+                                            <p className="text-sm text-gray-500 flex items-center justify-end gap-1">
+                                                <Phone className="h-3.5 w-3.5" />
+                                                {p.contact || "No phone"}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="text-sm text-gray-400">
+                                    <div className="text-sm text-gray-400 font-medium">
                                         {(p.attendance || []).filter(Boolean).length}/{TOTAL_DAYS} days
                                     </div>
                                 </div>
@@ -446,12 +461,27 @@ export default function FacilitatorDashboard({ onBack }) {
                                             onClick={() => setExpandedId(isExpanded ? null : p.uuid)}
                                             className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                                         >
-                                            <div className="text-left">
-                                                <p className="font-semibold text-gray-900">{p.first_name} {p.last_name}</p>
-                                                <p className="text-sm text-gray-500">{attended}/{TOTAL_DAYS} days attended</p>
+                                            <div className="text-left flex items-center gap-4">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleBookReceived(p.uuid);
+                                                    }}
+                                                    className={`p-2 rounded-lg border transition-all ${p.books_received
+                                                            ? "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm"
+                                                            : "bg-gray-50 border-gray-100 text-gray-300 hover:border-gray-200"
+                                                        }`}
+                                                    title={p.books_received ? "Book Given" : "Mark as Given"}
+                                                >
+                                                    <CheckCircle2 className={`h-5 w-5 ${p.books_received ? "opacity-100" : "opacity-30"}`} />
+                                                </button>
+                                                <div>
+                                                    <p className="font-semibold text-gray-900">{p.first_name} {p.last_name}</p>
+                                                    <p className="text-sm text-gray-500">{attended}/{TOTAL_DAYS} days attended</p>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                <div className="hidden sm:block w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all"
                                                         style={{ width: `${(attended / TOTAL_DAYS) * 100}%` }}
