@@ -25,6 +25,9 @@ export default function FacilitatorDashboard({ onBack }) {
         phone: "",
         age: "",
         gender: "",
+        place: "",
+        education: "",
+        marital_status: "",
     });
     const [regMessage, setRegMessage] = useState("");
     const [regError, setRegError] = useState("");
@@ -85,6 +88,9 @@ export default function FacilitatorDashboard({ onBack }) {
                 contact: regForm.phone,
                 age: regForm.age ? parseInt(regForm.age) : null,
                 gender: regForm.gender || null,
+                place: regForm.place || "",
+                education: regForm.education || "",
+                marital_status: regForm.marital_status || "",
                 type: "participant",
                 facilitator_uuid: user.id,
                 attendance: Array(TOTAL_DAYS).fill(false),
@@ -113,7 +119,7 @@ export default function FacilitatorDashboard({ onBack }) {
             }
 
             setRegMessage(`${regForm.first_name} ${regForm.last_name} registered successfully!`);
-            setRegForm({ first_name: "", last_name: "", phone: "", age: "", gender: "" });
+            setRegForm({ first_name: "", last_name: "", phone: "", age: "", gender: "", place: "", education: "", marital_status: "" });
             loadParticipants(); // Refresh list after registration
         } catch (err) {
             setRegError(err.message || "Failed to register participant.");
@@ -278,13 +284,13 @@ export default function FacilitatorDashboard({ onBack }) {
 
             {/* Register Form */}
             {view === "register" && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 max-w-md mx-auto">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 max-w-2xl mx-auto">
                     <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                         <UserPlus className="h-5 w-5 text-emerald-600" />
                         Register Participant
                     </h2>
                     <form onSubmit={handleRegister} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                                 <input
@@ -317,7 +323,8 @@ export default function FacilitatorDashboard({ onBack }) {
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
                                 <input
@@ -325,6 +332,7 @@ export default function FacilitatorDashboard({ onBack }) {
                                     value={regForm.age}
                                     onChange={e => setRegForm(p => ({ ...p, age: e.target.value }))}
                                     className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+                                    required
                                 />
                             </div>
                             <div>
@@ -332,13 +340,59 @@ export default function FacilitatorDashboard({ onBack }) {
                                 <select
                                     value={regForm.gender}
                                     onChange={e => setRegForm(p => ({ ...p, gender: e.target.value }))}
-                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 bg-white"
+                                    required
                                 >
-                                    <option value="">Select</option>
+                                    <option value="">Select Gender</option>
                                     <option value="M">Male</option>
                                     <option value="F">Female</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Education Level</label>
+                                <select
+                                    value={regForm.education}
+                                    onChange={e => setRegForm(p => ({ ...p, education: e.target.value }))}
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 bg-white"
+                                >
+                                    <option value="">Select Education</option>
+                                    <option value="Primary">Primary</option>
+                                    <option value="Junior Secondary">Junior Secondary</option>
+                                    <option value="Senior Secondary">Senior Secondary</option>
+                                    <option value="Vocational">Vocational</option>
+                                    <option value="Tertiary">Tertiary</option>
+                                    <option value="None">None</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Marital Status</label>
+                                <select
+                                    value={regForm.marital_status}
+                                    onChange={e => setRegForm(p => ({ ...p, marital_status: e.target.value }))}
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 bg-white"
+                                >
+                                    <option value="">Select Status</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                    <option value="Cohabiting">Cohabiting</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Village / Site Name</label>
+                            <input
+                                type="text"
+                                value={regForm.place}
+                                onChange={e => setRegForm(p => ({ ...p, place: e.target.value }))}
+                                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+                                placeholder="Location"
+                            />
                         </div>
 
                         {regError && (
@@ -395,8 +449,8 @@ export default function FacilitatorDashboard({ onBack }) {
                                             <button
                                                 onClick={() => toggleBookReceived(p.uuid)}
                                                 className={`p-2 rounded-lg border transition-all ${p.books_received
-                                                        ? "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm"
-                                                        : "bg-gray-50 border-gray-100 text-gray-300 hover:border-gray-200"
+                                                    ? "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm"
+                                                    : "bg-gray-50 border-gray-100 text-gray-300 hover:border-gray-200"
                                                     }`}
                                                 title={p.books_received ? "Book Given" : "Mark as Given"}
                                             >
@@ -468,8 +522,8 @@ export default function FacilitatorDashboard({ onBack }) {
                                                         toggleBookReceived(p.uuid);
                                                     }}
                                                     className={`p-2 rounded-lg border transition-all ${p.books_received
-                                                            ? "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm"
-                                                            : "bg-gray-50 border-gray-100 text-gray-300 hover:border-gray-200"
+                                                        ? "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm"
+                                                        : "bg-gray-50 border-gray-100 text-gray-300 hover:border-gray-200"
                                                         }`}
                                                     title={p.books_received ? "Book Given" : "Mark as Given"}
                                                 >
