@@ -71,6 +71,7 @@ export default function AuthPage() {
   // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -98,6 +99,7 @@ export default function AuthPage() {
     setMessage("");
     setOtpSent(false);
     setOtpToken("");
+    setConfirmPassword("");
   }
 
   async function handleEmailAuth(e) {
@@ -108,6 +110,7 @@ export default function AuthPage() {
 
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
+    const trimmedConfirmPassword = confirmPassword.trim();
 
     if (!trimmedEmail) {
       setError("Please enter your email.");
@@ -117,6 +120,12 @@ export default function AuthPage() {
 
     if (authMode === "signup" && !trimmedEmail.includes("@")) {
       setError("Please enter a valid email address.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (authMode === "signup" && trimmedPassword !== trimmedConfirmPassword) {
+      setError("Passwords do not match.");
       setSubmitting(false);
       return;
     }
@@ -195,6 +204,13 @@ export default function AuthPage() {
     setSubmitting(true);
     setError("");
     setMessage("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const { error: err } = await supabase.auth.updateUser({ password });
       if (err) throw err;
@@ -434,6 +450,23 @@ export default function AuthPage() {
                   </button>
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Confirm New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 pl-12 pr-12 py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hff-primary/20 focus:border-hff-primary transition-all font-medium"
+                    placeholder="Repeat new password"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
               <p className="text-xs text-gray-500 font-medium ml-1">Please set a secure password you will remember.</p>
               {error && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 font-medium">{error}</div>}
               {message && <div className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-2xl px-4 py-3 font-medium">{message}</div>}
@@ -582,6 +615,24 @@ export default function AuthPage() {
                   </button>
                 </div>
               </div>
+
+              {authMode === "signup" && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      className="w-full rounded-2xl border border-gray-200 pl-12 pr-12 py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hff-primary/20 focus:border-hff-primary transition-all font-medium"
+                      placeholder="••••••••"
+                      required={authMode === "signup"}
+                    />
+                  </div>
+                </div>
+              )}
 
               {error && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 font-medium">{error}</div>}
               {message && <div className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-2xl px-4 py-3 font-medium">{message}</div>}
