@@ -15,11 +15,19 @@ import { db } from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
 
 function AppContent() {
-  const { role, signOut } = useAuth();
+  const { role, profile, signOut, loading } = useAuth();
   const [mode, setMode] = useState('overview'); // 'overview', 'collect', 'hub', 'analysis'
 
   const registrations = useLiveQuery(() => db.registrations.toArray()) || [];
   const analytics = processAnalytics(registrations);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FDFCF9] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-hff-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   const handleSelectMode = (newMode) => {
     setMode(newMode);
