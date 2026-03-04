@@ -8,7 +8,6 @@ import { GenderChart, EducationChart, MaritalStatusChart } from './DemographicsC
 import CampaignLaunchpad from './CampaignLaunchpad';
 import ActionPanel from './ActionPanel';
 import NoticeBoard from './NoticeBoard';
-import FacilitatorLeaderboard from './FacilitatorLeaderboard';
 import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2, LineChart } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -153,7 +152,6 @@ const Dashboard = ({ analytics }) => {
                 {/* Side Insights Column */}
                 <div className="space-y-12">
                     <ActionPanel />
-                    <FacilitatorLeaderboard />
                     <div className="2xl:hidden">
                         <NoticeBoard />
                     </div>
