@@ -41,12 +41,27 @@ export default function FacilitatorDashboard({ onBack }) {
     async function loadParticipants() {
         setLoading(true);
         try {
-            // Try Supabase first
+            let facilitatorIds = [user.id];
+
+            // 1. Identify all IDs associated with this facilitator (Legacy + Auth)
             if (isConfigured) {
+                // Find any facilitator record matching this user's identity
+                const { data: facRecords } = await supabase
+                    .from("registrations")
+                    .select("uuid")
+                    .eq("type", "facilitator")
+                    .or(`uuid.eq.${user.id},contact.eq.${profile?.phone || user?.phone || 'none'}`);
+
+                if (facRecords) {
+                    const ids = facRecords.map(r => r.uuid);
+                    facilitatorIds = [...new Set([...facilitatorIds, ...ids])];
+                }
+
+                // 2. Fetch participants linked to ANY of these facilitator IDs
                 const { data, error } = await supabase
                     .from("registrations")
                     .select("uuid, first_name, last_name, contact, attendance, books_received")
-                    .eq("facilitator_uuid", user.id)
+                    .in("facilitator_uuid", facilitatorIds)
                     .eq("type", "participant");
 
                 if (!error && data) {
@@ -55,11 +70,23 @@ export default function FacilitatorDashboard({ onBack }) {
                     return;
                 }
             }
+
             // Fallback to local Dexie
-            const local = await db.registrations
-                .where("facilitator_uuid")
-                .equals(user.id)
+            let localFacIds = [user.id];
+            const phoneStr = profile?.phone || user?.phone || 'none';
+            const localFacs = await db.registrations
+                .where("type").equals("facilitator")
+                .filter(r => r.uuid === user.id || r.contact === phoneStr)
                 .toArray();
+
+            if (localFacs.length > 0) {
+                localFacIds = [...new Set([...localFacIds, ...localFacs.map(f => f.uuid)])];
+            }
+
+            const local = await db.registrations
+                .filter(r => r.type === 'participant' && localFacIds.includes(r.facilitator_uuid))
+                .toArray();
+
             setParticipants(local.map(p => ({
                 uuid: p.uuid,
                 first_name: p.first_name,
