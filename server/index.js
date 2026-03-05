@@ -113,7 +113,7 @@ app.put("/api/register", authenticate, async (req, res) => {
 });
 
 
-app.post("/api/submissions", async (req, res) => {
+app.post("/api/submissions", authenticate, async (req, res) => {
   try {
     const { xml } = req.body || {};
     if (!xml) {

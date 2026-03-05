@@ -1,35 +1,41 @@
+/**
+ * GET /api/stats
+ * 
+ * PRODUCTION (Vercel): Reads registrations from Supabase (source of truth).
+ * The ?source=cloud param is still respected for backward compatibility,
+ * but both paths now read from Supabase.
+ *
+ * LOCAL (Express): Uses SQLite via server/index.js (kept for field use).
+ */
 import { NextResponse } from 'next/server';
-import { readLocalData, writeLocalData } from '@/lib/server/storage';
-import { getEnv } from '@/lib/server/env';
-import { parseHffRegisterRows } from '@/lib/hffRegister';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function GET(req) {
     try {
-        const { searchParams } = new URL(req.url);
-        const useCloud = searchParams.get('source') === 'cloud';
-
-        let values;
-        let sourceName = "sqlite_database";
-
-        if (useCloud) {
-            const { readRegisterValues } = await import("@/lib/server/googleSheets");
-            values = await readRegisterValues();
-            sourceName = "google_sheets";
-            // Cache results to DB if possible
-            try {
-                await writeLocalData(values);
-            } catch (e) {
-                console.warn("Failed to cache Google Sheets data to local DB:", e.message);
-            }
-        } else {
-            values = await readLocalData();
+        if (!supabaseUrl || !supabaseKey) {
+            return NextResponse.json({
+                error: "Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+            }, { status: 503 });
         }
 
-        const parsed = parseHffRegisterRows(values);
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // Fetch all registrations from Supabase
+        const { data: registrations, error } = await supabase
+            .from('registrations')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
         return NextResponse.json({
-            ...parsed,
-            source: sourceName,
-            rawRows: values
+            registrations: registrations || [],
+            source: 'supabase',
+            count: registrations?.length || 0,
+            timestamp: new Date().toISOString(),
         });
     } catch (err) {
         console.error('[API] /api/stats error:', err);

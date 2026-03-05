@@ -2,6 +2,7 @@
  * Centralized analytics processing for HFF Dashboard
  * Processes raw Dexie registrations into visualizable statistics
  */
+import { TOTAL_CAMPAIGN_DAYS } from './constants';
 
 export function processAnalytics(registrations) {
     if (!registrations || registrations.length === 0) {
@@ -25,7 +26,7 @@ export function processAnalytics(registrations) {
     const facilitators = registrations.filter(r => r.type === 'facilitator' && !r.is_deleted);
 
     // Attendance
-    const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
+    const days = Array.from({ length: TOTAL_CAMPAIGN_DAYS }, (_, i) => `Day ${i + 1}`);
 
     const dailyStats = days.map((day, i) => {
         const count = participants.filter(p => p.attendance && p.attendance[i]).length;

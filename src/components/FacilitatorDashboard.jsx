@@ -4,11 +4,13 @@ import { supabase, isConfigured } from "../lib/supabase";
 import { db } from "../lib/dexieDb";
 import {
     Users, UserPlus, ClipboardCheck, ArrowLeft, Search,
-    Phone, CheckCircle2, XCircle, ChevronDown, ChevronUp,
+    Phone, Check, XCircle, ChevronDown, ChevronUp,
     Calendar, Loader2
 } from "lucide-react";
 
-const TOTAL_DAYS = 12;
+import { TOTAL_CAMPAIGN_DAYS } from "../lib/constants";
+
+const TOTAL_DAYS = TOTAL_CAMPAIGN_DAYS;
 
 export default function FacilitatorDashboard({ onBack }) {
     const { user, profile } = useAuth();
@@ -157,17 +159,19 @@ export default function FacilitatorDashboard({ onBack }) {
     }
 
     async function toggleBookReceived(participantUuid) {
+        // Compute new value from current state to avoid race conditions
+        const participant = participants.find(p => p.uuid === participantUuid);
+        if (!participant) return;
+        const newStatus = !participant.books_received;
+
         setParticipants(prev =>
             prev.map(p => {
                 if (p.uuid !== participantUuid) return p;
-                return { ...p, books_received: !p.books_received };
+                return { ...p, books_received: newStatus };
             })
         );
 
         try {
-            const participant = participants.find(p => p.uuid === participantUuid);
-            const newStatus = !participant?.books_received;
-
             // Update locally
             await db.registrations
                 .where("uuid")
@@ -198,20 +202,20 @@ export default function FacilitatorDashboard({ onBack }) {
     }
 
     async function toggleAttendance(participantUuid, dayIndex) {
+        // Compute new attendance from current state to avoid race conditions
+        const participant = participants.find(p => p.uuid === participantUuid);
+        if (!participant) return;
+        const att = [...(participant.attendance || Array(TOTAL_DAYS).fill(false))];
+        att[dayIndex] = !att[dayIndex];
+
         setParticipants(prev =>
             prev.map(p => {
                 if (p.uuid !== participantUuid) return p;
-                const att = [...(p.attendance || Array(TOTAL_DAYS).fill(false))];
-                att[dayIndex] = !att[dayIndex];
                 return { ...p, attendance: att };
             })
         );
 
         try {
-            const participant = participants.find(p => p.uuid === participantUuid);
-            const att = [...(participant?.attendance || Array(TOTAL_DAYS).fill(false))];
-            att[dayIndex] = !att[dayIndex];
-
             // Update locally
             await db.registrations
                 .where("uuid")
@@ -482,7 +486,7 @@ export default function FacilitatorDashboard({ onBack }) {
                                                     }`}
                                                 title={p.books_received ? "Book Given" : "Mark as Given"}
                                             >
-                                                <CheckCircle2 className={`h-5 w-5 ${p.books_received ? "opacity-100" : "opacity-30"}`} />
+                                                <Check className={`h-5 w-5 ${p.books_received ? "opacity-100" : "opacity-30"}`} />
                                             </button>
                                         </div>
                                         <div className="text-right">
@@ -555,7 +559,7 @@ export default function FacilitatorDashboard({ onBack }) {
                                                         }`}
                                                     title={p.books_received ? "Book Given" : "Mark as Given"}
                                                 >
-                                                    <CheckCircle2 className={`h-5 w-5 ${p.books_received ? "opacity-100" : "opacity-30"}`} />
+                                                    <Check className={`h-5 w-5 ${p.books_received ? "opacity-100" : "opacity-30"}`} />
                                                 </button>
                                                 <div>
                                                     <p className="font-semibold text-gray-900">{p.first_name} {p.last_name}</p>
@@ -588,7 +592,7 @@ export default function FacilitatorDashboard({ onBack }) {
                                                         >
                                                             <span className="text-[10px] opacity-60">Day</span>
                                                             <span>{idx + 1}</span>
-                                                            {present ? <CheckCircle2 className="h-3 w-3 mt-0.5" /> : <XCircle className="h-3 w-3 mt-0.5 opacity-30" />}
+                                                            {present ? <Check className="h-3 w-3 mt-0.5" /> : <XCircle className="h-3 w-3 mt-0.5 opacity-30" />}
                                                         </button>
                                                     ))}
                                                 </div>

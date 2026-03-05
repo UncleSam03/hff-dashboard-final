@@ -1,21 +1,32 @@
 import { getPendingSubmissions, markAsSynced } from './offlineStorage';
 import { hffFetch } from './api';
 import { pushPendingToSupabase, pullFromSupabase } from './supabaseSync';
+import { supabase, isConfigured } from './supabase';
 
 let isSyncing = false;
 let isActuallyOnline = navigator.onLine;
 
 /**
- * Checks for true connectivity by pinging the health endpoint.
+ * Checks for true connectivity.
+ * 
+ * Uses Supabase as the primary connectivity probe (always available in production).
+ * Falls back to /api/health for Express-only dev environments.
  */
 export async function checkConnectivity() {
     const previousStatus = isActuallyOnline;
     try {
-        const resp = await hffFetch('/api/health', {
-            method: 'GET',
-            cache: 'no-store'
-        });
-        isActuallyOnline = resp.ok;
+        if (isConfigured && supabase) {
+            // Primary: ping Supabase (works on Vercel + Express + any environment)
+            const { error } = await supabase.from('registrations').select('uuid', { count: 'exact', head: true }).limit(0);
+            isActuallyOnline = !error;
+        } else {
+            // Fallback: try the Express health endpoint (dev-only)
+            const resp = await hffFetch('/api/health', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            isActuallyOnline = resp.ok;
+        }
     } catch (e) {
         isActuallyOnline = false;
     }

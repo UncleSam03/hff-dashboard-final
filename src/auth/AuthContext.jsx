@@ -95,6 +95,14 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Allows components to trigger a profile re-fetch (e.g. after onboarding)
+  async function refreshProfile() {
+    if (user) {
+      console.log("[AuthContext] Refreshing profile...");
+      await fetchProfile(user);
+    }
+  }
+
   useEffect(() => {
     if (!isConfigured) {
       setLoading(false);
@@ -122,9 +130,14 @@ export function AuthProvider({ children }) {
     });
 
     // Listen for auth changes
+    // Only show loading for meaningful auth events, not routine token refreshes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("[AuthContext] Auth state change:", event);
-      setLoading(true);
+
+      // Skip loading state for routine token refreshes — these should be invisible
+      const isSignificantEvent = ['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event);
+      if (isSignificantEvent) setLoading(true);
+
       try {
         const authUser = session?.user ?? null;
         setUser(authUser);
@@ -136,11 +149,18 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error("[AuthContext] Auth change error:", err);
       } finally {
-        setLoading(false);
+        if (isSignificantEvent) setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for profile-refresh events from other components
+    const handleProfileRefresh = () => refreshProfile();
+    window.addEventListener('hff-profile-refresh', handleProfileRefresh);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('hff-profile-refresh', handleProfileRefresh);
+    };
   }, []);
 
   async function signOut() {
@@ -154,7 +174,7 @@ export function AuthProvider({ children }) {
   const role = profile?.role || null;
 
   const value = useMemo(
-    () => ({ user, profile, role, loading, signOut }),
+    () => ({ user, profile, role, loading, signOut, refreshProfile }),
     [user, profile, role, loading]
   );
 

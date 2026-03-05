@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/dexieDb';
 
-import { Save, Search, User, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Save, Search, User, Check, AlertCircle } from 'lucide-react';
 
 const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
     // Form State
@@ -159,7 +159,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
             {message && (
                 <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
                     }`}>
-                    {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                    {message.type === 'success' ? <Check className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                     <span className="font-medium">{message.text}</span>
                 </div>
             )}
@@ -210,7 +210,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                             <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-purple-200">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-green-100 p-2 rounded-full">
-                                        <CheckCircle2 className="h-4 w-4 text-green-700" />
+                                        <Check className="h-4 w-4 text-green-700" />
                                     </div>
                                     <div>
                                         <div className="font-semibold text-gray-900">{selectedFacilitator.first_name} {selectedFacilitator.last_name}</div>

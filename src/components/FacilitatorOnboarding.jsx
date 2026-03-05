@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase, isConfigured } from "../lib/supabase";
 import { useAuth } from "../auth/AuthContext";
+import { db } from "../lib/dexieDb";
 import {
-    Sparkles, User, GraduationCap, Heart, MapPin,
-    Calendar, Loader2, ArrowRight, CheckCircle2
+    Sparkles, User, Users, GraduationCap, Heart, MapPin,
+    Calendar, Loader2, ArrowRight, Check
 } from "lucide-react";
 
 export default function FacilitatorOnboarding({ onComplete }) {
@@ -40,27 +41,56 @@ export default function FacilitatorOnboarding({ onComplete }) {
                 last_name = parts.slice(1).join(" ");
             }
 
-            // 1. Update Profile
-            const { error: profErr } = await supabase
-                .from("profiles")
-                .update({
-                    age: parseInt(form.age),
-                    gender: form.gender,
-                    education: form.education,
-                    marital_status: form.maritalStatus,
-                    place: form.place,
-                    affiliation: form.affiliation,
-                    occupation: form.occupation,
-                    onboarding_completed: true,
-                })
-                .eq("id", user.id);
+            let supabaseSuccess = false;
 
-            if (profErr) throw profErr;
+            // 1. Try Supabase first (if configured and online)
+            if (isConfigured && navigator.onLine) {
+                try {
+                    const { error: profErr } = await supabase
+                        .from("profiles")
+                        .update({
+                            age: parseInt(form.age),
+                            gender: form.gender,
+                            education: form.education,
+                            marital_status: form.maritalStatus,
+                            place: form.place,
+                            affiliation: form.affiliation,
+                            occupation: form.occupation,
+                            onboarding_completed: true,
+                        })
+                        .eq("id", user.id);
 
-            // 2. Create Registration Entry
-            const { error: regErr } = await supabase
-                .from("registrations")
-                .insert({
+                    if (profErr) throw profErr;
+
+                    const { error: regErr } = await supabase
+                        .from("registrations")
+                        .insert({
+                            uuid: user.id,
+                            first_name,
+                            last_name,
+                            age: parseInt(form.age),
+                            gender: form.gender,
+                            contact: phone,
+                            place: form.place,
+                            education: form.education,
+                            marital_status: form.maritalStatus,
+                            affiliation: form.affiliation,
+                            occupation: form.occupation,
+                            type: "facilitator",
+                            facilitator_uuid: user.id,
+                            source: "facilitator-onboarding"
+                        });
+
+                    if (regErr) throw regErr;
+                    supabaseSuccess = true;
+                } catch (cloudErr) {
+                    console.warn("[Onboarding] Supabase write failed, falling back to offline:", cloudErr.message);
+                }
+            }
+
+            // 2. Always save to Dexie as a local record (for offline-first)
+            try {
+                await db.registrations.add({
                     uuid: user.id,
                     first_name,
                     last_name,
@@ -74,14 +104,30 @@ export default function FacilitatorOnboarding({ onComplete }) {
                     occupation: form.occupation,
                     type: "facilitator",
                     facilitator_uuid: user.id,
-                    source: "facilitator-onboarding"
+                    source: "facilitator-onboarding",
+                    sync_status: supabaseSuccess ? "synced" : "pending",
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
                 });
+            } catch (dexieErr) {
+                // If a record with this uuid already exists, that's fine
+                if (!dexieErr.message?.includes('Key already exists')) {
+                    console.error("[Onboarding] Dexie save error:", dexieErr);
+                }
+            }
 
-            if (regErr) throw regErr;
+            // If Supabase failed, store a local flag so the profile update
+            // can be retried on next sync.
+            if (!supabaseSuccess) {
+                localStorage.setItem('hff_onboarding_pending', JSON.stringify({
+                    userId: user.id,
+                    ...form,
+                }));
+            }
 
             // Trigger reload/redirect
             if (onComplete) onComplete();
-            else window.location.reload();
+            else window.dispatchEvent(new Event('hff-profile-refresh'));
 
         } catch (err) {
             console.error("Onboarding error:", err);
@@ -249,7 +295,7 @@ export default function FacilitatorOnboarding({ onComplete }) {
                     </form>
 
                     <p className="mt-8 text-center text-xs text-gray-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-hff-secondary" /> Secure HFF Database Entry
+                        <Check className="h-4 w-4 text-hff-secondary" /> Secure HFF Database Entry
                     </p>
                 </div>
             </div>

@@ -1,5 +1,14 @@
 import Dexie from 'dexie';
 
+/**
+ * HFF_Offline_DB — Enketo XML submission queue
+ * 
+ * NOTE: This is a SEPARATE database from HFF_Dashboard_V2 (see dexieDb.js).
+ * - HFF_Offline_DB: stores raw Enketo XML submissions for sync to the Express/Next.js backend
+ * - HFF_Dashboard_V2: stores structured registrations/participants for sync to Supabase
+ * 
+ * The syncManager.js orchestrates both sync pipelines.
+ */
 export const db = new Dexie('HFF_Offline_DB');
 
 db.version(1).stores({

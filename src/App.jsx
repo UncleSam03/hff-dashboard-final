@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Home from './components/Home';
@@ -13,13 +13,26 @@ import FacilitatorOnboarding from './components/FacilitatorOnboarding';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
+import { pullFromSupabase } from './lib/supabaseSync';
 
 function AppContent() {
   const { role, profile, signOut, loading } = useAuth();
   const [mode, setMode] = useState('overview'); // 'overview', 'collect', 'hub', 'analysis'
+  const [initialSyncing, setInitialSyncing] = useState(false);
 
   const registrations = useLiveQuery(() => db.registrations.toArray()) || [];
   const analytics = processAnalytics(registrations);
+
+  // For admin users: pull cloud data into Dexie on first mount
+  // so the dashboard isn't empty on a new session / cleared browser
+  useEffect(() => {
+    if (role === 'admin' && navigator.onLine) {
+      setInitialSyncing(true);
+      pullFromSupabase()
+        .catch(err => console.warn('[App] Initial Supabase pull failed:', err))
+        .finally(() => setInitialSyncing(false));
+    }
+  }, [role]);
 
   if (loading) {
     return (
@@ -40,7 +53,11 @@ function AppContent() {
   // Facilitator role — dedicated dashboard
   if (role === 'facilitator') {
     if (!profile?.onboarding_completed) {
-      return <FacilitatorOnboarding onComplete={() => window.location.reload()} />;
+      return <FacilitatorOnboarding onComplete={() => {
+        // Re-fetch the profile to pick up onboarding_completed = true
+        // without doing a full page reload
+        window.dispatchEvent(new Event('hff-profile-refresh'));
+      }} />;
     }
     return (
       <FacilitatorDashboard onBack={signOut} />

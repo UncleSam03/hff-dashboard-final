@@ -1,5 +1,6 @@
 import { supabase, isConfigured } from './supabase';
 import db from './dexieDb';
+import { checkConnectivity } from './syncManager';
 
 /**
  * Supabase Sync Engine
@@ -16,7 +17,11 @@ let isSyncing = false;
  * Push all pending records from IndexedDB to Supabase for a specific store
  */
 async function pushStorePending(storeName) {
-    if (!isConfigured || !navigator.onLine) return;
+    if (!isConfigured) return;
+
+    // Use real connectivity check instead of unreliable navigator.onLine
+    const online = await checkConnectivity();
+    if (!online) return;
 
     const pending = await db[storeName]
         .where('sync_status')
@@ -48,7 +53,8 @@ async function pushStorePending(storeName) {
             });
         } else {
             console.error(`[SupabaseSync] Error syncing ${storeName} record ${record.uuid}:`, error.message);
-            await db[storeName].update(id, { sync_status: 'failed' });
+            // Keep as 'pending' so it retries on the next cycle instead of
+            // marking as 'failed' and losing it forever.
         }
     }
 }
@@ -60,7 +66,7 @@ let isPulling = false;
  */
 async function pullStoreUpdates(storeName) {
     if (!isConfigured || !navigator.onLine || isPulling) return;
-    
+
     isPulling = true;
     try {
         const latestLocal = await db[storeName].orderBy('updated_at').last();

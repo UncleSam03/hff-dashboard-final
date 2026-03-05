@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { AlertCircle, CheckCircle2, Users, FileText } from 'lucide-react';
+import { AlertCircle, Check, Users, FileText } from 'lucide-react';
 
 const NoticeBoard = () => {
     // We need facilitators and their linked participant counts
@@ -50,7 +50,7 @@ const NoticeBoard = () => {
                                     <p className="text-sm text-gray-500">{fac.place || 'Unknown Location'}</p>
                                 </div>
                                 {isUrgent && <AlertCircle className="h-6 w-6 text-red-500" />}
-                                {!isUrgent && isSynced && <CheckCircle2 className="h-6 w-6 text-green-500" />}
+                                {!isUrgent && isSynced && <Check className="h-6 w-6 text-green-500" />}
                             </div>
 
                             <div className="space-y-3">

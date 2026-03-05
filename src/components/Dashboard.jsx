@@ -8,14 +8,15 @@ import { GenderChart, EducationChart, MaritalStatusChart } from './DemographicsC
 import CampaignLaunchpad from './CampaignLaunchpad';
 import ActionPanel from './ActionPanel';
 import NoticeBoard from './NoticeBoard';
-import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2, LineChart } from 'lucide-react';
+import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2, LineChart, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { TOTAL_CAMPAIGN_DAYS } from '../lib/constants';
 
 const Dashboard = ({ analytics }) => {
     const [selectedDay, setSelectedDay] = useState('Day 1');
     const [genderFilter, setGenderFilter] = useState('all'); // 'all', 'M', 'F'
 
-    const days = Array.from({ length: 12 }, (_, i) => `Day ${i + 1}`);
+    const days = Array.from({ length: TOTAL_CAMPAIGN_DAYS }, (_, i) => `Day ${i + 1}`);
 
     if (!analytics || analytics.totalRegistered === undefined) {
         return (
@@ -44,7 +45,7 @@ const Dashboard = ({ analytics }) => {
                     <StatsCard
                         title="Books"
                         value={analytics.totalBooksGiven}
-                        icon={CheckCircle2}
+                        icon={Check}
                         description="Distributed"
                         color="emerald"
                     />

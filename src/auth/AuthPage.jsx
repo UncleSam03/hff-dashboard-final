@@ -3,7 +3,7 @@ import { supabase, isConfigured } from "../lib/supabase";
 import {
   AlertCircle, Key, Info, Shield, Users, User,
   Mail, Phone, Lock, Eye, EyeOff, ArrowRight,
-  CheckCircle2, ChevronLeft, Sparkles
+  Check, ChevronLeft, Sparkles
 } from "lucide-react";
 import LandingPage from "../components/LandingPage";
 
@@ -137,22 +137,33 @@ export default function AuthPage() {
 
         // If not an email, lookup in profiles by full_name
         if (!isEmail) {
-          const { data: profileMatch, error: lookupErr } = await supabase
+          const { data: profileMatches, error: lookupErr } = await supabase
             .from("profiles")
             .select("id, full_name, role")
             .ilike("full_name", trimmedEmail)
-            .single();
+            .limit(5);
 
-          if (lookupErr || !profileMatch) {
+          if (lookupErr || !profileMatches || profileMatches.length === 0) {
             throw new Error("Could not find a user with that name. Please check and try again.");
           }
 
-          const { data: userData, error: userErr } = await supabase.rpc('get_user_email_by_id', { user_id: profileMatch.id });
-
-          if (userErr || !userData) {
-            throw new Error("Unable to retrieve login identifier for this name. Please use email or contact admin.");
+          if (profileMatches.length > 1) {
+            throw new Error("Multiple accounts found with that name. Please sign in with your email address instead.");
           }
-          loginEmail = userData;
+
+          const profileMatch = profileMatches[0];
+
+          try {
+            const { data: userData, error: userErr } = await supabase.rpc('get_user_email_by_id', { user_id: profileMatch.id });
+
+            if (userErr || !userData) {
+              throw new Error("Unable to retrieve login identifier. Please use your email address to sign in.");
+            }
+            loginEmail = userData;
+          } catch (rpcErr) {
+            // RPC function may not exist in all Supabase setups
+            throw new Error("Name-based login is not available. Please sign in with your email address.");
+          }
         }
 
         const { data: signInData, error: err } = await supabase.auth.signInWithPassword({
@@ -224,7 +235,7 @@ export default function AuthPage() {
       if (profErr) throw profErr;
 
       setMessage("Password changed successfully! Redirecting...");
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.dispatchEvent(new Event('hff-profile-refresh')), 1500);
     } catch (err) {
       setError(friendlyAuthError(err));
     } finally {
