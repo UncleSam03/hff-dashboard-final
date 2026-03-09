@@ -32,8 +32,14 @@ db.version(6).stores(v2Schema);
 db.version(7).stores(v2Schema);
 db.version(8).stores(v2Schema);
 
-// v9: Current — full schema with all fields
+// v9: Previous schema 
 db.version(9).stores({
+    participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received'
+});
+
+// v10: Added affiliation and occupation
+db.version(10).stores({
     participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
     registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation'
 });
