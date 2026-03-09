@@ -29,3 +29,4 @@ hff-dashboard-*.json
 .vercel
 .next
 .env.vercel
+.env*.local

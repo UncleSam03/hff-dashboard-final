@@ -3,10 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
 import { Search, User, Briefcase, Filter, Download, Trash2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import FacilitatorDetail from './FacilitatorDetail';
+import ParticipantDetail from './ParticipantDetail';
 
 const PersonList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
+    const [selectedFacilitator, setSelectedFacilitator] = useState(null);
+    const [selectedParticipant, setSelectedParticipant] = useState(null);
 
     const people = useLiveQuery(async () => {
         let collection = db.registrations.orderBy('created_at').reverse();
@@ -72,6 +76,24 @@ const PersonList = () => {
         link.click();
     };
 
+    if (selectedFacilitator) {
+        return (
+            <FacilitatorDetail
+                facilitator={selectedFacilitator}
+                onBack={() => setSelectedFacilitator(null)}
+            />
+        );
+    }
+
+    if (selectedParticipant) {
+        return (
+            <ParticipantDetail
+                participant={selectedParticipant}
+                onBack={() => setSelectedParticipant(null)}
+            />
+        );
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
             {/* Advanced Control Bar */}
@@ -125,7 +147,14 @@ const PersonList = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
                     {people.map(person => (
-                        <div key={person.uuid} className="group glass-card p-6 bg-white hover:bg-gray-50/50 border border-gray-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-200/50 flex flex-col justify-between">
+                        <div
+                            key={person.uuid}
+                            onClick={() => {
+                                if (person.type === 'facilitator') setSelectedFacilitator(person);
+                                else if (person.type === 'participant') setSelectedParticipant(person);
+                            }}
+                            className="group glass-card p-6 bg-white hover:bg-gray-50/50 border border-gray-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-200/50 flex flex-col justify-between cursor-pointer"
+                        >
                             <div className="flex items-start justify-between mb-6">
                                 <div className="flex items-center gap-4">
                                     <div className={cn(
@@ -145,7 +174,10 @@ const PersonList = () => {
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => handleDelete(person)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(person);
+                                    }}
                                     className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                                 >
                                     <Trash2 size={18} />
@@ -157,7 +189,7 @@ const PersonList = () => {
                                     <span className="w-1.5 h-1.5 rounded-full hff-gradient-bg" />
                                     {person.place || 'Unspecified Cluster'}
                                 </div>
-                                
+
                                 {person.facilitatorName && (
                                     <div className="text-[10px] font-black text-[#71167F] uppercase tracking-widest flex items-center gap-2">
                                         <Briefcase size={12} />
