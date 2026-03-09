@@ -88,6 +88,8 @@ create table if not exists public.registrations (
   facilitator_uuid uuid,
   attendance jsonb,
   source text,
+  affiliation text,
+  occupation text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
