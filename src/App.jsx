@@ -7,7 +7,7 @@ import { useAuth } from "./auth/AuthContext";
 
 import OfflineCollect from './components/OfflineCollect';
 import Hub from './components/Hub';
-import DeepAnalysis from './components/DeepAnalysis';
+import UnderConstruction from './components/UnderConstruction';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
 import FacilitatorOnboarding from './components/FacilitatorOnboarding';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -74,7 +74,7 @@ function AppContent() {
       ) : mode === 'hub' ? (
         <Hub onBack={handleBackToHome} />
       ) : mode === 'analysis' ? (
-        <DeepAnalysis analytics={analytics} />
+        <UnderConstruction onBack={handleBackToHome} />
       ) : (
         <Dashboard analytics={analytics} />
       )}
