@@ -140,7 +140,7 @@ export default function FacilitatorDashboard({ onBack }) {
 
             // Try Supabase - strip internal fields
             if (isConfigured) {
-                const { sync_status, ...supabasePayload } = record;
+                const { id, sync_status, synced_at, ...supabasePayload } = record;
                 const { error } = await supabase.from("registrations").insert(supabasePayload);
                 if (!error) {
                     await db.registrations.where("uuid").equals(newUuid).modify({

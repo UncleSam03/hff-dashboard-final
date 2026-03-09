@@ -33,7 +33,16 @@ async function pushStorePending(storeName) {
     console.log(`[SupabaseSync] Syncing ${pending.length} records from ${storeName}...`);
 
     for (const record of pending) {
-        const { id, sync_status, ...recordToSync } = record;
+        // Strip out purely local tracking fields that don't exist in Supabase
+        const {
+            id,
+            sync_status,
+            synced_at,
+            processed,
+            processed_at,
+            is_deleted,
+            ...recordToSync
+        } = record;
 
         if (!recordToSync.updated_at) {
             recordToSync.updated_at = new Date().toISOString();
