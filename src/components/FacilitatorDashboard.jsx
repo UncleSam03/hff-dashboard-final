@@ -30,6 +30,8 @@ export default function FacilitatorDashboard({ onBack }) {
         place: "",
         education: "",
         marital_status: "",
+        affiliation: "",
+        occupation: "",
     });
     const [regMessage, setRegMessage] = useState("");
     const [regError, setRegError] = useState("");
@@ -121,6 +123,8 @@ export default function FacilitatorDashboard({ onBack }) {
                 place: regForm.place || "",
                 education: regForm.education || "",
                 marital_status: regForm.marital_status || "",
+                affiliation: regForm.affiliation || "",
+                occupation: regForm.occupation || "",
                 type: "participant",
                 facilitator_uuid: user.id,
                 attendance: Array(TOTAL_DAYS).fill(false),
@@ -149,7 +153,7 @@ export default function FacilitatorDashboard({ onBack }) {
             }
 
             setRegMessage(`${regForm.first_name} ${regForm.last_name} registered successfully!`);
-            setRegForm({ first_name: "", last_name: "", phone: "", age: "", gender: "", place: "", education: "", marital_status: "" });
+            setRegForm({ first_name: "", last_name: "", phone: "", age: "", gender: "", place: "", education: "", marital_status: "", affiliation: "", occupation: "" });
             loadParticipants(); // Refresh list after registration
         } catch (err) {
             setRegError(err.message || "Failed to register participant.");
@@ -413,6 +417,29 @@ export default function FacilitatorDashboard({ onBack }) {
                                     <option value="Widowed">Widowed</option>
                                     <option value="Cohabiting">Cohabiting</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Affiliation (e.g. Church, School)</label>
+                                <input
+                                    type="text"
+                                    value={regForm.affiliation}
+                                    onChange={e => setRegForm(p => ({ ...p, affiliation: e.target.value }))}
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+                                    placeholder="Organization name"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
+                                <input
+                                    type="text"
+                                    value={regForm.occupation}
+                                    onChange={e => setRegForm(p => ({ ...p, occupation: e.target.value }))}
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+                                    placeholder="e.g. Teacher, Farmer"
+                                />
                             </div>
                         </div>
 
