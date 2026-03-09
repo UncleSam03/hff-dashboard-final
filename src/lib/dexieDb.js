@@ -44,4 +44,11 @@ db.version(10).stores({
     registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation'
 });
 
+// v11: Added notices for broadcast communication
+db.version(11).stores({
+    participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation',
+    notices: '++id, uuid, title, type, priority, created_at'
+});
+
 export default db;

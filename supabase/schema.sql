@@ -138,3 +138,27 @@ create policy "Admins can view all testimonies" on public.testimonies
       select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'
     )
   );
+-- =========================
+-- 4. Notices & Announcements
+-- =========================
+create table if not exists public.notices (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  content text,
+  type text check (type in ('announcement', 'alert', 'resource')),
+  priority integer default 1,
+  url text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.notices enable row level security;
+
+create policy "Enable read access for all users on notices"
+on public.notices for select using (true);
+
+create policy "Only admins can manage notices"
+on public.notices for all using (
+  exists (
+    select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'
+  )
+);

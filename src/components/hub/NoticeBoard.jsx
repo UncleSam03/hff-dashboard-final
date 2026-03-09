@@ -1,16 +1,18 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { AlertCircle, Check, Users, FileText } from 'lucide-react';
+import { AlertCircle, Check, Users, FileText, Megaphone, ExternalLink, Activity, Info } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 const NoticeBoard = () => {
-    // We need facilitators and their linked participant counts
+    // Fetch facilitators, participants, and notices
     const data = useLiveQuery(async () => {
         const facilitators = await db.registrations.where('type').equals('facilitator').toArray();
         const participants = await db.registrations.where('type').equals('participant').toArray();
+        const bulletins = await db.notices.orderBy('created_at').reverse().toArray();
 
-        // Calculate stats
-        const grouped = facilitators.map(fac => {
+        // 1. Calculate Facilitator Health
+        const facilitatorStats = facilitators.map(fac => {
             const myParticipants = participants.filter(p => p.facilitator_uuid === fac.uuid);
             return {
                 ...fac,
@@ -19,79 +21,144 @@ const NoticeBoard = () => {
             };
         });
 
-        // Sort: Urgent ones first (0 participants or unsynced)
-        grouped.sort((a, b) => {
-            if (a.linkedCount === 0 && b.linkedCount > 0) return -1;
-            if (b.linkedCount === 0 && a.linkedCount > 0) return 1;
-            return 0;
+        // 2. Generate Smart Alerts (Data Health)
+        const alerts = [];
+        facilitatorStats.forEach(f => {
+            if (f.linkedCount === 0) {
+                alerts.push({
+                    id: `alert-zero-${f.uuid}`,
+                    title: 'Empty Cluster Detected',
+                    message: `Facilitator ${f.first_name} ${f.last_name} has registered 0 participants.`,
+                    priority: 3,
+                    type: 'health'
+                });
+            }
         });
 
-        return grouped;
+        const totalPending = participants.filter(p => p.sync_status === 'pending').length;
+        if (totalPending > 20) {
+            alerts.push({
+                id: 'alert-high-pending',
+                title: 'High Sync Latency',
+                message: `There are ${totalPending} records awaiting cloud synchronization. Connect to stable internet soon.`,
+                priority: 2,
+                type: 'sync'
+            });
+        }
+
+        return { facilitators: facilitatorStats, bulletins, alerts };
     }, []);
 
-    if (!data) return <div className="p-8 text-center text-gray-500">Loading notices...</div>;
+    const resources = [
+        { title: 'Training Manual V2', desc: 'Core curriculum and collection guide', url: '#', icon: <FileText size={18} /> },
+        { title: 'Brand Assets', desc: 'Logos and media kit for cluster leaders', url: '#', icon: <Info size={18} /> },
+        { title: 'Support Portal', desc: 'Technical help and escalating data issues', url: '#', icon: <Activity size={18} /> },
+    ];
+
+    if (!data) return (
+        <div className="flex items-center justify-center p-20">
+            <div className="w-8 h-8 rounded-full border-4 border-[#71167F]/20 border-t-[#71167F] animate-spin" />
+        </div>
+    );
+
+    const { bulletins, alerts } = data;
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {data.map(fac => {
-                    const isUrgent = fac.linkedCount === 0;
-                    const isSynced = fac.sync_status === 'synced';
+        <div className="space-y-10 animate-in fade-in duration-700 pb-20">
 
-                    return (
-                        <div
-                            key={fac.uuid}
-                            className={`notice-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 ${isUrgent ? 'alert' : isSynced ? 'success' : ''
-                                }`}
-                        >
-                            <div className="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 className="font-bold text-lg text-gray-900">{fac.first_name} {fac.last_name}</h3>
-                                    <p className="text-sm text-gray-500">{fac.place || 'Unknown Location'}</p>
-                                </div>
-                                {isUrgent && <AlertCircle className="h-6 w-6 text-red-500" />}
-                                {!isUrgent && isSynced && <Check className="h-6 w-6 text-green-500" />}
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div className="flex items-center gap-2 text-gray-600">
-                                        <Users className="h-4 w-4" />
-                                        <span className="text-sm font-medium">Participants</span>
-                                    </div>
-                                    <span className={`font-bold ${fac.linkedCount === 0 ? 'text-red-500' : 'text-gray-900'}`}>
-                                        {fac.linkedCount} / {fac.participants_count || '?'}
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div className="flex items-center gap-2 text-gray-600">
-                                        <FileText className="h-4 w-4" />
-                                        <span className="text-sm font-medium">Sync Status</span>
-                                    </div>
-                                    <span className={`text-sm font-semibold ${isSynced ? 'text-green-600' : 'text-amber-500'
-                                        }`}>
-                                        {isSynced ? 'Synced' : 'Pending'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {isUrgent && (
-                                <div className="mt-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg flex gap-2">
-                                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                                    <p>No participants linked to this facilitator yet.</p>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            {data.length === 0 && (
-                <div className="text-center py-10 text-gray-400">
-                    No facilitators found. Register facilitators to see them here.
+            {/* 1. Broadcast Section (Latest Announcements) */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <Megaphone className="text-[#71167F]" size={20} />
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Broadcast Feed</h3>
                 </div>
-            )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {bulletins.length === 0 ? (
+                        <div className="md:col-span-2 p-8 bg-gray-50/50 border-2 border-dashed border-gray-100 rounded-3xl text-center">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest italic">No active broadcasts from Mission Control</p>
+                        </div>
+                    ) : (
+                        bulletins.map(b => (
+                            <div key={b.uuid} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex gap-4 items-start border-l-4 border-l-[#71167F]">
+                                <div className="p-2 bg-[#71167F]/5 text-[#71167F] rounded-lg">
+                                    <Info size={18} />
+                                </div>
+                                <div>
+                                    <h4 className="font-black text-gray-900 leading-tight mb-1">{b.title}</h4>
+                                    <p className="text-sm text-gray-600 line-clamp-2">{b.content}</p>
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase mt-2 block">
+                                        Posted {new Date(b.created_at).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </section>
+
+            {/* 2. Intelligence Section (Smart Alerts) */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <Activity className="text-amber-500" size={20} />
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Campaign Intelligence</h3>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {alerts.map(a => (
+                        <div key={a.id} className="bg-white p-6 rounded-[2rem] border border-amber-100 shadow-lg shadow-amber-500/5 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
+                                <AlertCircle size={48} className="text-amber-500" />
+                            </div>
+                            <div className="flex items-center gap-2 text-amber-600 mb-3">
+                                <AlertCircle size={16} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{a.title}</span>
+                            </div>
+                            <p className="text-sm font-bold text-gray-900 leading-relaxed pr-8">{a.message}</p>
+                            <div className="mt-4 flex items-center gap-2">
+                                <span className={cn(
+                                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                                    a.priority === 3 ? "bg-red-50 text-red-600 border border-red-100" : "bg-amber-50 text-amber-600 border border-amber-100"
+                                )}>
+                                    Priority: {a.priority === 3 ? 'Critical' : 'Moderate'}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                    {alerts.length === 0 && (
+                        <div className="lg:col-span-3 p-10 bg-[#3EB049]/5 border border-[#3EB049]/10 rounded-[2rem] flex items-center justify-center gap-4 text-[#3EB049]">
+                            <Check className="stroke-[3px]" />
+                            <span className="text-sm font-black uppercase tracking-widest">All campaign nodes systems nominal</span>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* 3. Resource Hub */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <FileText className="text-blue-500" size={20} />
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Digital Resource Hub</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {resources.map((r, i) => (
+                        <a key={i} href={r.url} className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-50 text-blue-500 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                    {r.icon}
+                                </div>
+                                <div>
+                                    <h4 className="font-black text-gray-900 text-sm">{r.title}</h4>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{r.desc}</p>
+                                </div>
+                            </div>
+                            <ExternalLink size={14} className="text-gray-300 group-hover:text-blue-500" />
+                        </a>
+                    ))}
+                </div>
+            </section>
+
         </div>
     );
 };

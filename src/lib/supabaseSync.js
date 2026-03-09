@@ -130,6 +130,7 @@ export async function pushPendingToSupabase() {
     isSyncing = true;
     try {
         await pushStorePending('registrations');
+        // Notices are typically created by Admin in Supabase; facilitators only pull.
     } finally {
         isSyncing = false;
         window.dispatchEvent(new CustomEvent('hff-supabase-sync-complete'));
@@ -140,6 +141,9 @@ export async function pushPendingToSupabase() {
  * Orchestrates pull for registrations
  */
 export async function pullFromSupabase() {
-    await pullStoreUpdates('registrations');
+    await Promise.all([
+        pullStoreUpdates('registrations'),
+        pullStoreUpdates('notices')
+    ]);
 }
 
