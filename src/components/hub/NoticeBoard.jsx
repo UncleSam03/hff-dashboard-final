@@ -49,12 +49,6 @@ const NoticeBoard = () => {
         return { facilitators: facilitatorStats, bulletins, alerts };
     }, []);
 
-    const resources = [
-        { title: 'Training Manual V2', desc: 'Core curriculum and collection guide', url: '#', icon: <FileText size={18} /> },
-        { title: 'Brand Assets', desc: 'Logos and media kit for cluster leaders', url: '#', icon: <Info size={18} /> },
-        { title: 'Support Portal', desc: 'Technical help and escalating data issues', url: '#', icon: <Activity size={18} /> },
-    ];
-
     if (!data) return (
         <div className="flex items-center justify-center p-20">
             <div className="w-8 h-8 rounded-full border-4 border-[#71167F]/20 border-t-[#71167F] animate-spin" />
@@ -134,30 +128,7 @@ const NoticeBoard = () => {
                 </div>
             </section>
 
-            {/* 3. Resource Hub */}
-            <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                    <FileText className="text-blue-500" size={20} />
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Digital Resource Hub</h3>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {resources.map((r, i) => (
-                        <a key={i} href={r.url} className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-50 text-blue-500 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                                    {r.icon}
-                                </div>
-                                <div>
-                                    <h4 className="font-black text-gray-900 text-sm">{r.title}</h4>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{r.desc}</p>
-                                </div>
-                            </div>
-                            <ExternalLink size={14} className="text-gray-300 group-hover:text-blue-500" />
-                        </a>
-                    ))}
-                </div>
-            </section>
 
         </div>
     );
