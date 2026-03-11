@@ -11,6 +11,7 @@ export function AuthProvider({ children }) {
 
   // Fetch or create the profile row for the given user
   async function fetchProfile(authUser) {
+    console.log("[AuthContext] fetchProfile called for:", authUser?.id);
     if (!authUser || !isConfigured) {
       setProfile(null);
       return null;
@@ -31,12 +32,12 @@ export function AuthProvider({ children }) {
           .from("profiles")
           .select("*")
           .eq("id", authUser.id)
-          .single();
+          .maybeSingle();
 
         let currentProfile = existingProfile;
 
-        if (fetchErr && fetchErr.code === "PGRST116") {
-          // No profile row — legacy user or trigger didn't fire
+        if (fetchErr && (fetchErr.code === "PGRST116" || fetchErr.status === 406)) {
+          // No profile row (PGRST116 or 406) — legacy user or trigger didn't fire
           const role = isAdminEmail ? "admin" : (authUser.user_metadata?.role || "facilitator");
 
           const newProfile = {
@@ -49,7 +50,7 @@ export function AuthProvider({ children }) {
 
           const { data: inserted, error: insertErr } = await supabase
             .from("profiles")
-            .insert(newProfile)
+            .upsert(newProfile, { onConflict: 'id' })
             .select()
             .single();
 
@@ -98,8 +99,11 @@ export function AuthProvider({ children }) {
   // Allows components to trigger a profile re-fetch (e.g. after onboarding)
   async function refreshProfile() {
     if (user) {
-      console.log("[AuthContext] Refreshing profile...");
+      console.log("[AuthContext] refreshProfile triggered for user:", user.id);
       await fetchProfile(user);
+      console.log("[AuthContext] refreshProfile complete");
+    } else {
+      console.warn("[AuthContext] refreshProfile called but no user is logged in");
     }
   }
 

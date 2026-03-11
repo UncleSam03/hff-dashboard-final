@@ -46,9 +46,11 @@ export default function FacilitatorOnboarding({ onComplete }) {
             // 1. Try Supabase first (if configured and online)
             if (isConfigured && navigator.onLine) {
                 try {
+                    // 1a. Profiles (Use upsert to be safe, though id exists)
                     const { error: profErr } = await supabase
                         .from("profiles")
-                        .update({
+                        .upsert({
+                            id: user.id,
                             age: parseInt(form.age),
                             gender: form.gender,
                             education: form.education,
@@ -57,31 +59,38 @@ export default function FacilitatorOnboarding({ onComplete }) {
                             affiliation: form.affiliation,
                             occupation: form.occupation,
                             onboarding_completed: true,
-                        })
-                        .eq("id", user.id);
+                        }, { onConflict: 'id' });
 
                     if (profErr) throw profErr;
 
+                    // 1b. Registrations (Atomic upsert by UUID)
+                    const regPayload = {
+                        uuid: user.id,
+                        first_name,
+                        last_name,
+                        age: parseInt(form.age),
+                        gender: form.gender,
+                        contact: phone,
+                        place: form.place,
+                        education: form.education,
+                        marital_status: form.maritalStatus,
+                        affiliation: form.affiliation,
+                        occupation: form.occupation,
+                        type: "facilitator",
+                        facilitator_uuid: user.id,
+                        source: "facilitator-onboarding",
+                        updated_at: new Date().toISOString()
+                    };
+
                     const { error: regErr } = await supabase
                         .from("registrations")
-                        .insert({
-                            uuid: user.id,
-                            first_name,
-                            last_name,
-                            age: parseInt(form.age),
-                            gender: form.gender,
-                            contact: phone,
-                            place: form.place,
-                            education: form.education,
-                            marital_status: form.maritalStatus,
-                            affiliation: form.affiliation,
-                            occupation: form.occupation,
-                            type: "facilitator",
-                            facilitator_uuid: user.id,
-                            source: "facilitator-onboarding"
-                        });
+                        .upsert(regPayload, { onConflict: 'uuid' });
 
-                    if (regErr) throw regErr;
+                    if (regErr) {
+                        console.warn("[Onboarding] Registration upsert failed, but profile succeeded:", regErr.message);
+                    }
+                    
+                    supabaseSuccess = true;
                     supabaseSuccess = true;
                 } catch (cloudErr) {
                     console.warn("[Onboarding] Supabase write failed, falling back to offline:", cloudErr.message);
@@ -90,7 +99,8 @@ export default function FacilitatorOnboarding({ onComplete }) {
 
             // 2. Always save to Dexie as a local record (for offline-first)
             try {
-                await db.registrations.add({
+                const existing = await db.registrations.where("uuid").equals(user.id).first();
+                const regData = {
                     uuid: user.id,
                     first_name,
                     last_name,
@@ -106,14 +116,19 @@ export default function FacilitatorOnboarding({ onComplete }) {
                     facilitator_uuid: user.id,
                     source: "facilitator-onboarding",
                     sync_status: supabaseSuccess ? "synced" : "pending",
-                    created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
-                });
-            } catch (dexieErr) {
-                // If a record with this uuid already exists, that's fine
-                if (!dexieErr.message?.includes('Key already exists')) {
-                    console.error("[Onboarding] Dexie save error:", dexieErr);
+                };
+
+                if (existing) {
+                    await db.registrations.update(existing.id, regData);
+                } else {
+                    await db.registrations.add({
+                        ...regData,
+                        created_at: new Date().toISOString(),
+                    });
                 }
+            } catch (dexieErr) {
+                console.error("[Onboarding] Dexie save error:", dexieErr);
             }
 
             // If Supabase failed, store a local flag so the profile update
@@ -126,8 +141,13 @@ export default function FacilitatorOnboarding({ onComplete }) {
             }
 
             // Trigger reload/redirect
-            if (onComplete) onComplete();
-            else window.dispatchEvent(new Event('hff-profile-refresh'));
+            console.log("[Onboarding] Submission successful, triggering profile refresh...");
+            window.dispatchEvent(new Event('hff-profile-refresh'));
+            
+            if (onComplete) {
+                console.log("[Onboarding] Calling onComplete callback...");
+                onComplete();
+            }
 
         } catch (err) {
             console.error("Onboarding error:", err);

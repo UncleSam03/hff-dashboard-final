@@ -18,8 +18,12 @@ create table if not exists public.profiles (
   role text check (role in ('admin', 'facilitator', 'participant')) not null default 'participant',
   full_name text,
   phone text,
+  age integer,
+  gender text check (gender in ('M', 'F')),
   education text,
   marital_status text,
+  affiliation text,
+  occupation text,
   place text,
   onboarding_completed boolean default false,
   created_at timestamptz default now()
@@ -36,13 +40,20 @@ create policy "Users can update own profile" on public.profiles
 create policy "Enable insert for auth trigger" on public.profiles
   for insert with check (auth.uid() = id);
 
--- Admins can read all profiles (for management)
-create policy "Admins can view all profiles" on public.profiles
-  for select using (
-    exists (
-      select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'
-    )
+-- Helper to check if a user is an admin without causing RLS recursion
+create or replace function public.is_admin()
+returns boolean as $$
+begin
+  return exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
   );
+end;
+$$ language plpgsql security definer;
+
+-- Admins can read all profiles (using the helper to avoid recursion)
+create policy "Admins can view all profiles" on public.profiles
+  for select using (public.is_admin());
 
 -- Auto-create profile on sign-up
 create or replace function public.handle_new_user()

@@ -20,6 +20,8 @@ function AppContent() {
   const [mode, setMode] = useState('overview'); // 'overview', 'collect', 'hub', 'analysis'
   const [initialSyncing, setInitialSyncing] = useState(false);
 
+  console.log("[AppContent] Status:", { role, onboarding_completed: profile?.onboarding_completed, loading });
+
   const registrations = useLiveQuery(() => db.registrations.toArray()) || [];
   const analytics = processAnalytics(registrations);
 
