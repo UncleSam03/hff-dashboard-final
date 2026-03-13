@@ -56,9 +56,10 @@ function AppContent() {
   if (role === 'facilitator') {
     if (!profile?.onboarding_completed) {
       return <FacilitatorOnboarding onComplete={() => {
-        // Re-fetch the profile to pick up onboarding_completed = true
-        // without doing a full page reload
-        window.dispatchEvent(new Event('hff-profile-refresh'));
+        // Mark onboarding as just completed to trigger a custom redirect message on sign-in page
+        localStorage.setItem('hff_onboarding_just_completed', 'true');
+        // Sign out to force the user back to the login screen
+        signOut();
       }} />;
     }
     return (

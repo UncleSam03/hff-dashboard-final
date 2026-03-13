@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { supabase, isConfigured } from "../lib/supabase";
 import {
   AlertCircle, Key, Info, Shield, Users, User,
@@ -81,6 +81,17 @@ export default function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  // Handle post-onboarding redirect
+  useEffect(() => {
+    const onboardingDone = localStorage.getItem('hff_onboarding_just_completed');
+    if (onboardingDone) {
+      setScreen("auth");
+      setAuthMode("signin");
+      setMessage("Registration complete! You can now sign in with your account.");
+      localStorage.removeItem('hff_onboarding_just_completed');
+    }
+  }, []);
 
   if (!isConfigured) return <ConfigRequired />;
 
