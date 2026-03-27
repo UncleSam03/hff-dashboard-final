@@ -9,6 +9,18 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null); // { role, full_name, phone }
   const [loading, setLoading] = useState(true);
 
+  // #region agent log
+  function hffDebugLog(payload) {
+    try {
+      fetch('http://127.0.0.1:7491/ingest/d310bdd2-b950-4c68-be76-23013d6da606', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b0c4c' },
+        body: JSON.stringify({ sessionId: '4b0c4c', runId: 'baseline', ...payload, timestamp: Date.now() })
+      }).catch(() => { });
+    } catch { }
+  }
+  // #endregion agent log
+
   // Fetch or create the profile row for the given user
   async function fetchProfile(authUser) {
     console.log("[AuthContext] fetchProfile called for:", authUser?.id);
@@ -19,6 +31,16 @@ export function AuthProvider({ children }) {
 
     const email = authUser.email?.toLowerCase() || "";
     const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
+    const t0 = Date.now();
+
+    // #region agent log
+    hffDebugLog({
+      hypothesisId: 'B',
+      location: 'src/auth/AuthContext.jsx:fetchProfile:entry',
+      message: 'fetchProfile entry',
+      data: { hasUser: !!authUser, userIdPrefix: String(authUser?.id || '').slice(0, 8), isConfigured: !!isConfigured, isAdminEmail }
+    });
+    // #endregion agent log
 
     // Set a timeout of 10 seconds for the profile fetch
     const timeoutPromise = new Promise((_, reject) => {
@@ -33,6 +55,19 @@ export function AuthProvider({ children }) {
           .select("*")
           .eq("id", authUser.id)
           .maybeSingle();
+
+        // #region agent log
+        hffDebugLog({
+          hypothesisId: 'B',
+          location: 'src/auth/AuthContext.jsx:fetchProfile:profiles_select',
+          message: 'profiles select result',
+          data: {
+            ms: Date.now() - t0,
+            hasData: !!existingProfile,
+            error: fetchErr ? { message: fetchErr.message, code: fetchErr.code, status: fetchErr.status, name: fetchErr.name } : null
+          }
+        });
+        // #endregion agent log
 
         let currentProfile = existingProfile;
 
@@ -53,6 +88,19 @@ export function AuthProvider({ children }) {
             .upsert(newProfile, { onConflict: 'id' })
             .select()
             .single();
+
+          // #region agent log
+          hffDebugLog({
+            hypothesisId: 'B',
+            location: 'src/auth/AuthContext.jsx:fetchProfile:profiles_upsert',
+            message: 'profiles upsert result',
+            data: {
+              ms: Date.now() - t0,
+              inserted: !!inserted,
+              error: insertErr ? { message: insertErr.message, code: insertErr.code, status: insertErr.status, name: insertErr.name } : null
+            }
+          });
+          // #endregion agent log
 
           if (insertErr) {
             console.error("[AuthContext] Failed to create profile:", insertErr);
@@ -90,6 +138,14 @@ export function AuthProvider({ children }) {
       return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
       console.error("[AuthContext] Profile fetch error:", err);
+      // #region agent log
+      hffDebugLog({
+        hypothesisId: 'C',
+        location: 'src/auth/AuthContext.jsx:fetchProfile:catch',
+        message: 'fetchProfile threw/caught',
+        data: { ms: Date.now() - t0, error: err ? { message: err.message, name: err.name } : null }
+      });
+      // #endregion agent log
       const fallback = { id: authUser.id, role: isAdminEmail ? "admin" : "facilitator", full_name: "", phone: "" };
       setProfile(fallback);
       return fallback;

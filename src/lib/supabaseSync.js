@@ -80,10 +80,50 @@ async function pullStoreUpdates(storeName) {
         const latestLocal = await db[storeName].orderBy('updated_at').last();
         const lastSyncTime = latestLocal?.updated_at || new Date(0).toISOString();
 
+        // #region agent log
+        try {
+            fetch('http://127.0.0.1:7491/ingest/d310bdd2-b950-4c68-be76-23013d6da606', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b0c4c' },
+                body: JSON.stringify({
+                    sessionId: '4b0c4c',
+                    runId: 'baseline',
+                    hypothesisId: 'D',
+                    location: 'src/lib/supabaseSync.js:pullStoreUpdates:before',
+                    message: 'pullStoreUpdates about to query',
+                    data: { storeName, navigatorOnLine: !!navigator.onLine, lastSyncTime },
+                    timestamp: Date.now()
+                })
+            }).catch(() => { });
+        } catch { }
+        // #endregion agent log
+
         const { data, error } = await supabase
             .from(storeName)
             .select('*')
             .gt('updated_at', lastSyncTime);
+
+        // #region agent log
+        try {
+            fetch('http://127.0.0.1:7491/ingest/d310bdd2-b950-4c68-be76-23013d6da606', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b0c4c' },
+                body: JSON.stringify({
+                    sessionId: '4b0c4c',
+                    runId: 'baseline',
+                    hypothesisId: 'D',
+                    location: 'src/lib/supabaseSync.js:pullStoreUpdates:after',
+                    message: 'pullStoreUpdates query result',
+                    data: {
+                        storeName,
+                        rows: Array.isArray(data) ? data.length : null,
+                        error: error ? { message: error.message, code: error.code, status: error.status, name: error.name } : null
+                    },
+                    timestamp: Date.now()
+                })
+            }).catch(() => { });
+        } catch { }
+        // #endregion agent log
 
         if (error) {
             // Check for aborted signal (common in some browser states)

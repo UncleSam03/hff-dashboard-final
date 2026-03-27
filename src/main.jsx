@@ -7,6 +7,24 @@ import { startAutoSync } from './lib/syncManager'
 import { registerSW } from 'virtual:pwa-register'
 import { supabase, isConfigured } from './lib/supabase'
 
+// #region agent log
+try {
+  fetch('http://127.0.0.1:7491/ingest/d310bdd2-b950-4c68-be76-23013d6da606', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b0c4c' },
+    body: JSON.stringify({
+      sessionId: '4b0c4c',
+      runId: 'baseline',
+      hypothesisId: 'E',
+      location: 'src/main.jsx:boot',
+      message: 'App entrypoint executed',
+      data: { isConfigured: !!isConfigured },
+      timestamp: Date.now()
+    })
+  }).catch(() => { })
+} catch { }
+// #endregion agent log
+
 // Register Service Worker
 const updateSW = registerSW({
   onNeedRefresh() {
