@@ -40,7 +40,6 @@ async function pushStorePending(storeName) {
             synced_at,
             processed,
             processed_at,
-            is_deleted,
             ...recordToSync
         } = record;
 
