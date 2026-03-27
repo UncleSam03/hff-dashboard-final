@@ -147,3 +147,16 @@ export async function pullFromSupabase() {
     ]);
 }
 
+/**
+ * Optional initializer (called from `src/app/page.jsx`).
+ * Keeps startup resilient even if other sync engines change.
+ */
+export async function initSupabaseSync() {
+    // Best-effort initial pull (does not throw if offline / unconfigured).
+    try {
+        await pullFromSupabase();
+    } catch (_e) {
+        // no-op
+    }
+}
+

@@ -32,20 +32,10 @@ app.get("/api/health", (_req, res) => {
 // Protect data endpoints
 app.get("/api/stats", authenticate, async (req, res) => {
   try {
-    console.log(`[API] GET /api/stats from ${req.ip} (source=${req.query.source || 'default'})`);
-    const useCloud = req.query.source === "cloud";
+    console.log(`[API] GET /api/stats from ${req.ip}`);
     let values;
-    let sourceName = "sqlite_database";
-
-    if (useCloud) {
-      const { readRegisterValues } = await import("./googleSheets.js");
-      values = await readRegisterValues();
-      sourceName = "google_sheets";
-      // Optional: Cache cloud results to DB
-      await writeLocalData(values);
-    } else {
-      values = await readLocalData();
-    }
+    const sourceName = "sqlite_database";
+    values = await readLocalData();
 
     const parsed = parseHffRegisterRows(values);
     const responseData = { ...parsed, source: sourceName, rawRows: values };
@@ -62,24 +52,6 @@ app.get("/api/stats", authenticate, async (req, res) => {
   }
 });
 
-app.post("/api/cloud/sync", authenticate, async (_req, res) => {
-  try {
-    const { writeRegister } = await import("./googleSheets.js");
-    const values = await readLocalData();
-
-    console.log(`[API] Syncing ${values.length} rows to Google Sheets...`);
-    await writeRegister(values);
-
-    res.json({ ok: true, message: "Successfully synced to Google Sheets" });
-  } catch (err) {
-    console.error('[API] /api/cloud/sync error:', err);
-    res.status(500).json({
-      error: "Failed to sync to cloud",
-      details: err instanceof Error ? err.message : String(err),
-    });
-  }
-});
-
 app.put("/api/register", authenticate, async (req, res) => {
   try {
     const { rows } = req.body || {};
@@ -88,18 +60,6 @@ app.put("/api/register", authenticate, async (req, res) => {
     }
 
     await writeLocalData(rows);
-
-    // Optional: Auto-sync to cloud on write if configured
-    const autoSync = getEnv("HFF_AUTO_SYNC_CLOUD", { defaultValue: "false" }) === "true";
-    if (autoSync) {
-      try {
-        const { writeRegister } = await import("./googleSheets.js");
-        await writeRegister(rows);
-        console.log("[API] Auto-synced to Google Sheets");
-      } catch (cloudErr) {
-        console.error("[API] Auto-sync failed:", cloudErr.message);
-      }
-    }
 
     const parsed = parseHffRegisterRows(rows);
     res.json({ ok: true, ...parsed, rawRows: rows });

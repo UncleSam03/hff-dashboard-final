@@ -13,25 +13,17 @@ Create a `.env.local` file in the root directory:
 # Backend API Port
 HFF_API_PORT=8787
 
-# Google Sheets Integration
-HFF_SPREADSHEET_ID=1-_DBEqc6HRwl-krtjP2jMboWDNq6PZkul99WDXTljJY
-HFF_REGISTER_SHEET_NAME=Register
-
 # Supabase Auth
 VITE_SUPABASE_URL=https://kbmyukfgusldmljbponu.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
-## 3. Google Sheets Integration
-1. **Service Account**: A Google Cloud service account JSON file (e.g., `hff-dashboard-*.json`) must be placed in the project root.
-2. **Permissions**: Copy the `client_email` from the JSON file and share your Google Spreadsheet with it as an **Editor**.
-
-## 4. Supabase Authentication
+## 3. Supabase Authentication
 - The project uses Supabase for authentication.
 - Ensure the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are correctly set in `.env.local`.
 - Authentication logic is handled in `src/auth/` and `src/lib/supabase.js`.
 
-## 5. Running the Application
+## 4. Running the Application
 Open two separate terminals:
 
 ### Terminal 1: Backend API

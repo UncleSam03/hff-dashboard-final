@@ -15,17 +15,16 @@ let isActuallyOnline = navigator.onLine;
 export async function checkConnectivity() {
     const previousStatus = isActuallyOnline;
     try {
-        if (isConfigured && supabase) {
-            // Primary: ping Supabase (works on Vercel + Express + any environment)
+        // Primary: lightweight health probe (works on Vercel + local)
+        const health = await fetch('/api/health', { method: 'GET', cache: 'no-store' });
+        if (health.ok) {
+            isActuallyOnline = true;
+        } else if (isConfigured && supabase) {
+            // Secondary: Supabase probe (may fail with RLS in some configs)
             const { error } = await supabase.from('registrations').select('uuid', { count: 'exact', head: true }).limit(0);
             isActuallyOnline = !error;
         } else {
-            // Fallback: try the Express health endpoint (dev-only)
-            const resp = await hffFetch('/api/health', {
-                method: 'GET',
-                cache: 'no-store'
-            });
-            isActuallyOnline = resp.ok;
+            isActuallyOnline = false;
         }
     } catch (e) {
         isActuallyOnline = false;

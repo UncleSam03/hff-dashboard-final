@@ -28,7 +28,7 @@ The HFF Dashboard is a specialized data management and visualization platform fo
   - Average Daily Attendance.
   - Demographic distributions (Gender, Education, Marital Status).
 
-### B. Sync & Storage (`storage.js`, `db.js`, `googleSheets.js`)
+### B. Sync & Storage (`storage.js`, `db.js`)
 - **SQLite Migration**: Successfully migrated from flat JSON files to SQLite. This allows for transactional writes and better handling of concurrent requests.
 - **Two-Way Sync**:
   - **Load Live**: Pulls directly from a Google Sheet to populate the dashboard.

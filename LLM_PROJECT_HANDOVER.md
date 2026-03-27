@@ -24,7 +24,7 @@ The HFF Dashboard is a specialized data management platform designed for trackin
 - **Server**: Express.js server (`server/index.js`).
 - **Database**: **SQLite** (via `better-sqlite3`) for local file-based persistence.
 - **Cloud Sync**: 
-  - **Google Sheets API**: Service account based sync (`googleSheets.js`).
+  - **Google Sheets API**: (Removed) Supabase is the only source of truth now.
   - **Supabase**: Real-time sync of registrations and participants.
 
 ### **Data Processing**
@@ -42,7 +42,7 @@ The HFF Dashboard is a specialized data management platform designed for trackin
 | `src/lib/dexieDb.js` | **Schema**: Defines the local IndexedDB stores (`participants`, `registrations`). |
 | `server/index.js` | **Express API**: Handles file uploads, API key protection, and cloud sync triggers. |
 | `server/db.js` | **SQLite Schema**: Defines the server-side persistence for uploads. |
-| `server/googleSheets.js` | **Cloud Bridge**: Service account logic for reading/writing to the master sheet. |
+| `server/googleSheets.js` | (Removed) |
 | `src/forms/` | Contains the Enketo XML definitions and transformations. |
 
 ---
