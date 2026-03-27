@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Filter, Download, Trash2 } from 'lucide-react';
+import { Search, User, Briefcase, Download, Trash2, Plus, Pencil, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
@@ -11,6 +11,38 @@ const PersonList = () => {
     const [filterType, setFilterType] = useState('all');
     const [selectedFacilitator, setSelectedFacilitator] = useState(null);
     const [selectedParticipant, setSelectedParticipant] = useState(null);
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [editorMode, setEditorMode] = useState('create');
+    const [editingPerson, setEditingPerson] = useState(null);
+    const [editorError, setEditorError] = useState('');
+    const [editorSubmitting, setEditorSubmitting] = useState(false);
+    const [formData, setFormData] = useState({
+        type: 'participant',
+        first_name: '',
+        last_name: '',
+        age: '',
+        gender: '',
+        contact: '',
+        place: '',
+        education: '',
+        marital_status: '',
+        affiliation: '',
+        occupation: '',
+        facilitator_uuid: ''
+    });
+
+    const facilitators = useLiveQuery(async () => {
+        const results = await db.registrations.where('type').equals('facilitator').toArray();
+        return results.filter((person) => !person.is_deleted);
+    }, []);
+
+    const facilitatorOptions = useMemo(
+        () => (facilitators || []).map((fac) => ({
+            uuid: fac.uuid,
+            label: `${fac.first_name || ''} ${fac.last_name || ''}`.trim()
+        })),
+        [facilitators]
+    );
 
     const people = useLiveQuery(async () => {
         let collection = db.registrations.orderBy('created_at').reverse();
@@ -53,6 +85,106 @@ const PersonList = () => {
             });
         } catch (err) {
             console.error('Delete failed:', err);
+        }
+    };
+
+    const resetForm = (defaults = {}) => {
+        setFormData({
+            type: defaults.type || 'participant',
+            first_name: defaults.first_name || '',
+            last_name: defaults.last_name || '',
+            age: defaults.age ?? '',
+            gender: defaults.gender || '',
+            contact: defaults.contact || '',
+            place: defaults.place || '',
+            education: defaults.education || '',
+            marital_status: defaults.marital_status || '',
+            affiliation: defaults.affiliation || '',
+            occupation: defaults.occupation || '',
+            facilitator_uuid: defaults.facilitator_uuid || ''
+        });
+    };
+
+    const openCreateModal = (type) => {
+        setEditorMode('create');
+        setEditingPerson(null);
+        resetForm({ type });
+        setEditorError('');
+        setEditorOpen(true);
+    };
+
+    const openEditModal = (person) => {
+        setEditorMode('edit');
+        setEditingPerson(person);
+        resetForm(person);
+        setEditorError('');
+        setEditorOpen(true);
+    };
+
+    const handleFormChange = (event) => {
+        const { name, value } = event.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const closeEditor = () => {
+        if (editorSubmitting) return;
+        setEditorOpen(false);
+        setEditingPerson(null);
+        setEditorError('');
+    };
+
+    const handleSave = async (event) => {
+        event.preventDefault();
+        if (editorSubmitting) return;
+        setEditorError('');
+
+        if (!formData.first_name || !formData.last_name || !formData.age || !formData.gender) {
+            setEditorError('First name, last name, age, and gender are required.');
+            return;
+        }
+
+        if (Number.isNaN(Number(formData.age)) || Number(formData.age) < 1) {
+            setEditorError('Age must be a valid number greater than 0.');
+            return;
+        }
+
+        setEditorSubmitting(true);
+        try {
+            const now = new Date().toISOString();
+            const normalized = {
+                type: formData.type,
+                first_name: formData.first_name.trim(),
+                last_name: formData.last_name.trim(),
+                age: Number(formData.age),
+                gender: formData.gender,
+                contact: formData.contact?.trim() || '',
+                place: formData.place?.trim() || '',
+                education: formData.education || '',
+                marital_status: formData.marital_status || '',
+                affiliation: formData.affiliation?.trim() || '',
+                occupation: formData.occupation?.trim() || '',
+                facilitator_uuid: formData.type === 'participant' ? (formData.facilitator_uuid || null) : null,
+                sync_status: 'pending',
+                is_deleted: false,
+                updated_at: now
+            };
+
+            if (editorMode === 'edit' && editingPerson?.id) {
+                await db.registrations.update(editingPerson.id, normalized);
+            } else {
+                await db.registrations.add({
+                    ...normalized,
+                    uuid: globalThis.crypto.randomUUID(),
+                    created_at: now
+                });
+            }
+
+            closeEditor();
+        } catch (err) {
+            console.error('Save failed:', err);
+            setEditorError('Failed to save record. Please try again.');
+        } finally {
+            setEditorSubmitting(false);
         }
     };
 
@@ -132,6 +264,22 @@ const PersonList = () => {
                     >
                         <Download size={20} />
                     </button>
+                    <button
+                        onClick={() => openCreateModal('facilitator')}
+                        className="px-4 py-3 rounded-2xl bg-white border border-gray-100 text-[#71167F] hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                        title="Add facilitator"
+                    >
+                        <Plus size={16} />
+                        Add Facilitator
+                    </button>
+                    <button
+                        onClick={() => openCreateModal('participant')}
+                        className="px-4 py-3 rounded-2xl bg-[#71167F] text-white hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                        title="Add participant"
+                    >
+                        <Plus size={16} />
+                        Add Participant
+                    </button>
                 </div>
             </div>
 
@@ -182,6 +330,16 @@ const PersonList = () => {
                                 >
                                     <Trash2 size={18} />
                                 </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        openEditModal(person);
+                                    }}
+                                    className="p-2.5 text-gray-300 hover:text-[#71167F] hover:bg-[#71167F]/10 rounded-xl transition-all"
+                                    title="Edit record"
+                                >
+                                    <Pencil size={18} />
+                                </button>
                             </div>
 
                             <div className="space-y-4">
@@ -213,6 +371,196 @@ const PersonList = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {editorOpen && (
+                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="w-full max-w-3xl bg-white rounded-3xl border border-gray-100 shadow-2xl">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                            <div>
+                                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">
+                                    {editorMode === 'edit' ? 'Edit Campaign Record' : 'Add Campaign Record'}
+                                </h3>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                    Update original form data from Campaign Hub
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeEditor}
+                                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+                                aria-label="Close editor"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSave} className="p-6 space-y-5">
+                            {editorError && (
+                                <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-semibold">
+                                    {editorError}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Type</label>
+                                <select
+                                    name="type"
+                                    value={formData.type}
+                                    onChange={handleFormChange}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    disabled={editorMode === 'edit'}
+                                >
+                                    <option value="facilitator">Facilitator</option>
+                                    <option value="participant">Participant</option>
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">First Name *</label>
+                                    <input
+                                        name="first_name"
+                                        value={formData.first_name}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Last Name *</label>
+                                    <input
+                                        name="last_name"
+                                        value={formData.last_name}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Age *</label>
+                                    <input
+                                        name="age"
+                                        type="number"
+                                        min="1"
+                                        value={formData.age}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Gender *</label>
+                                    <select
+                                        name="gender"
+                                        value={formData.gender}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="M">Male</option>
+                                        <option value="F">Female</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Phone</label>
+                                    <input
+                                        name="contact"
+                                        value={formData.contact}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Village / Site</label>
+                                    <input
+                                        name="place"
+                                        value={formData.place}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Education</label>
+                                    <input
+                                        name="education"
+                                        value={formData.education}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Marital Status</label>
+                                    <input
+                                        name="marital_status"
+                                        value={formData.marital_status}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Affiliation</label>
+                                    <input
+                                        name="affiliation"
+                                        value={formData.affiliation}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Occupation</label>
+                                    <input
+                                        name="occupation"
+                                        value={formData.occupation}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    />
+                                </div>
+                            </div>
+
+                            {formData.type === 'participant' && (
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Facilitator (optional)</label>
+                                    <select
+                                        name="facilitator_uuid"
+                                        value={formData.facilitator_uuid}
+                                        onChange={handleFormChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    >
+                                        <option value="">Not assigned</option>
+                                        {facilitatorOptions.map((option) => (
+                                            <option key={option.uuid} value={option.uuid}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={closeEditor}
+                                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-xs font-black uppercase tracking-widest hover:bg-gray-50 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={editorSubmitting}
+                                    className="px-5 py-2.5 rounded-xl bg-[#71167F] text-white text-xs font-black uppercase tracking-widest hover:opacity-95 transition-all disabled:opacity-70"
+                                >
+                                    {editorSubmitting ? 'Saving...' : editorMode === 'edit' ? 'Save Changes' : 'Add Record'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>
