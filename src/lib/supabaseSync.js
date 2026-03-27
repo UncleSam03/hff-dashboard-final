@@ -147,6 +147,52 @@ export async function pullFromSupabase() {
 }
 
 /**
+ * Replace local IndexedDB state with the current Supabase snapshot.
+ * Useful when Supabase was edited out-of-band (e.g. rows deleted in dashboard)
+ * and you want local devices to match the authoritative server state.
+ */
+export async function resetLocalFromSupabase() {
+    if (!isConfigured) {
+        throw new Error("Supabase is not configured.");
+    }
+
+    const online = await checkConnectivity();
+    if (!online) {
+        throw new Error("Offline: cannot refresh from Supabase.");
+    }
+
+    const [{ data: registrations, error: regErr }, { data: notices, error: noticeErr }] = await Promise.all([
+        supabase.from('registrations').select('*').order('created_at', { ascending: true }),
+        supabase.from('notices').select('*').order('created_at', { ascending: true })
+    ]);
+
+    if (regErr) throw new Error(regErr.message);
+    if (noticeErr) throw new Error(noticeErr.message);
+
+    const now = new Date().toISOString();
+    const regRows = (registrations || []).map((r) => ({
+        ...r,
+        sync_status: 'synced',
+        synced_at: now,
+    }));
+    const noticeRows = (notices || []).map((n) => ({
+        ...n,
+        sync_status: 'synced',
+        synced_at: now,
+    }));
+
+    await db.transaction('rw', db.registrations, db.notices, async () => {
+        await db.registrations.clear();
+        await db.notices.clear();
+
+        if (regRows.length) await db.registrations.bulkAdd(regRows);
+        if (noticeRows.length) await db.notices.bulkAdd(noticeRows);
+    });
+
+    window.dispatchEvent(new CustomEvent('hff-supabase-data-updated'));
+}
+
+/**
  * Optional initializer (called from `src/app/page.jsx`).
  * Keeps startup resilient even if other sync engines change.
  */

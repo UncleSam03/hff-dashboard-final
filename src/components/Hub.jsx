@@ -3,7 +3,7 @@ import { Users, CalendarCheck, ClipboardList, ArrowLeft, CloudUpload, RefreshCw,
 import PersonList from './hub/PersonList';
 import AttendanceSheet from './hub/AttendanceSheet';
 import NoticeBoard from './hub/NoticeBoard';
-import { pushPendingToSupabase } from '../lib/supabaseSync';
+import { pushPendingToSupabase, resetLocalFromSupabase } from '../lib/supabaseSync';
 import { isConfigured } from '../lib/supabase';
 import db from '../lib/dexieDb';
 import './hub/Hub.css';
@@ -60,6 +60,23 @@ const Hub = ({ onBack }) => {
         }
 
         // Reset to idle after 3 seconds
+        setTimeout(() => setSyncState('idle'), 3000);
+    };
+
+    const handleResetFromCloud = async () => {
+        if (syncState === 'syncing') return;
+        if (!window.confirm("This will overwrite this device's local data with what's currently in Supabase. Continue?")) return;
+
+        setSyncState('syncing');
+        try {
+            await resetLocalFromSupabase();
+            await refreshPendingCount();
+            setSyncState('success');
+        } catch (err) {
+            console.error('[Hub] Reset from cloud failed:', err);
+            setSyncState('error');
+        }
+
         setTimeout(() => setSyncState('idle'), 3000);
     };
 
@@ -128,14 +145,24 @@ const Hub = ({ onBack }) => {
 
                 {/* Sync Button */}
                 {isConfigured && (
-                    <button
-                        onClick={handleSync}
-                        disabled={syncState === 'syncing'}
-                        className={`sync-button ${syncState}`}
-                        title={pendingCount > 0 ? `${pendingCount} record(s) pending sync` : 'All records synced'}
-                    >
-                        {getSyncButtonContent()}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleSync}
+                            disabled={syncState === 'syncing'}
+                            className={`sync-button ${syncState}`}
+                            title={pendingCount > 0 ? `${pendingCount} record(s) pending sync` : 'All records synced'}
+                        >
+                            {getSyncButtonContent()}
+                        </button>
+                        <button
+                            onClick={handleResetFromCloud}
+                            disabled={syncState === 'syncing'}
+                            className="px-4 py-2.5 rounded-2xl bg-white border border-gray-100 text-gray-700 hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
+                            title="Overwrite local device cache from Supabase"
+                        >
+                            Refresh from Cloud
+                        </button>
+                    </div>
                 )}
 
                 {/* Navigation Tabs */}
