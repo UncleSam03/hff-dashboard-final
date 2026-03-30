@@ -70,7 +70,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
 
         try {
             // Validation
-            if (!formData.firstName || !formData.lastName || !formData.age || !formData.gender) {
+            if (!formData.firstName || !formData.lastName) {
                 throw new Error("Please fill in all required fields.");
             }
 
@@ -84,8 +84,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                 uuid: self.crypto.randomUUID(), // Consistency with other tables if needed
                 first_name: formData.firstName,
                 last_name: formData.lastName,
-                age: parseInt(formData.age),
-                gender: formData.gender,
+                age: formData.age ? parseInt(formData.age) : null,
+                gender: formData.gender || null,
                 contact: formData.contact,
                 place: formData.place,
                 education: formData.education,
@@ -259,9 +259,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Age <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
                         <input
-                            required
                             type="number"
                             name="age"
                             min="1"
@@ -273,9 +272,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Gender <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                         <select
-                            required
                             name="gender"
                             value={formData.gender}
                             onChange={handleChange}
