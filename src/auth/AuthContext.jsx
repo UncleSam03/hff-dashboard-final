@@ -11,13 +11,7 @@ export function AuthProvider({ children }) {
 
   // #region agent log
   function hffDebugLog(payload) {
-    try {
-      fetch('http://127.0.0.1:7491/ingest/d310bdd2-b950-4c68-be76-23013d6da606', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b0c4c' },
-        body: JSON.stringify({ sessionId: '4b0c4c', runId: 'baseline', ...payload, timestamp: Date.now() })
-      }).catch(() => { });
-    } catch { }
+      // Removed agent log
   }
   // #endregion agent log
 
