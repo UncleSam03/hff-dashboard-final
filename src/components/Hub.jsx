@@ -12,6 +12,7 @@ const Hub = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState('people'); // 'people', 'attendance', 'notice'
     const [syncState, setSyncState] = useState('idle'); // 'idle' | 'syncing' | 'success' | 'error'
     const [pendingCount, setPendingCount] = useState(0);
+    const [resetError, setResetError] = useState('');
 
     // Fetch pending count from Dexie
     const refreshPendingCount = useCallback(async () => {
@@ -68,13 +69,16 @@ const Hub = ({ onBack }) => {
         if (!window.confirm("This will overwrite this device's local data with what's currently in Supabase. Continue?")) return;
 
         setSyncState('syncing');
+        setResetError('');
         try {
             await resetLocalFromSupabase();
             await refreshPendingCount();
             setSyncState('success');
+            setResetError('');
         } catch (err) {
             console.error('[Hub] Reset from cloud failed:', err);
             setSyncState('error');
+            setResetError(err instanceof Error ? err.message : String(err));
         }
 
         setTimeout(() => setSyncState('idle'), 3000);
@@ -162,6 +166,12 @@ const Hub = ({ onBack }) => {
                         >
                             Refresh from Cloud
                         </button>
+                    </div>
+                )}
+
+                {resetError && (
+                    <div className="w-full mt-2 px-4 py-2 rounded-2xl bg-red-50 border border-red-100 text-red-700 text-xs font-bold">
+                        {resetError}
                     </div>
                 )}
 

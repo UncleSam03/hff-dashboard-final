@@ -25,29 +25,6 @@ if (isConfigured) {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 
-// #region agent log
-try {
-    const host = (() => {
-        try {
-            return supabaseUrl ? new URL(supabaseUrl).host : null;
-        } catch {
-            return "invalid_url";
-        }
-    })();
-    fetch('http://127.0.0.1:7491/ingest/d310bdd2-b950-4c68-be76-23013d6da606', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b0c4c' },
-        body: JSON.stringify({
-            sessionId: '4b0c4c',
-            runId: 'baseline',
-            hypothesisId: 'A',
-            location: 'src/lib/supabase.js:log_config',
-            message: 'Supabase configuration snapshot',
-            data: { isConfigured: !!isConfigured, hasUrl: !!supabaseUrl, urlHost: host, hasAnonKey: !!supabaseAnonKey },
-            timestamp: Date.now()
-        })
-    }).catch(() => { });
-} catch { }
-// #endregion agent log
+// Removed agent log
 
 export { supabase, isConfigured };
