@@ -47,14 +47,13 @@ export async function checkConnectivity() {
  */
 export async function syncSubmissions() {
     if (isSyncing) return;
-
-    // Check true connectivity before attempting sync
-    const online = await checkConnectivity();
-    if (!online) return;
-
     isSyncing = true;
 
     try {
+        // Check true connectivity before attempting sync
+        const online = await checkConnectivity();
+        if (!online) return;
+
         // 1. Sync Enketo submissions via API
         const pending = await getPendingSubmissions();
         if (pending.length > 0) {
@@ -89,7 +88,9 @@ export async function syncSubmissions() {
 /**
  * Starts the background sync interval.
  */
-export function startAutoSync(syncIntervalMs = 30000, heartbeatIntervalMs = 15000) {
+// syncIntervalMs: full sync cadence (registrations/participants via Supabase + submission sync)
+// heartbeatIntervalMs: lightweight connectivity check cadence
+export function startAutoSync(syncIntervalMs = 15 * 60 * 1000, heartbeatIntervalMs = 5 * 60 * 1000) {
     checkConnectivity();
     syncSubmissions();
 

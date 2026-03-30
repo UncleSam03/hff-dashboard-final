@@ -47,12 +47,26 @@ async function pushStorePending(storeName) {
             recordToSync.updated_at = new Date().toISOString();
         }
 
-        const { error } = await supabase
+        // Bug Fix #2: Avoid onConflict upsert without DB unique constraint
+        const { data: existing } = await supabase
             .from(storeName)
-            .upsert(recordToSync, {
-                onConflict: 'uuid',
-                ignoreDuplicates: false
-            });
+            .select('uuid')
+            .eq('uuid', recordToSync.uuid)
+            .maybeSingle();
+
+        let error;
+        if (existing) {
+            const { error: updateError } = await supabase
+                .from(storeName)
+                .update(recordToSync)
+                .eq('uuid', recordToSync.uuid);
+            error = updateError;
+        } else {
+            const { error: insertError } = await supabase
+                .from(storeName)
+                .insert(recordToSync);
+            error = insertError;
+        }
 
         if (!error) {
             await db[storeName].update(id, {
@@ -201,32 +215,56 @@ export async function resetLocalFromSupabase() {
         throw new Error("Offline: cannot refresh from Supabase.");
     }
 
-    const [{ data: registrations, error: regErr }, { data: notices, error: noticeErr }] = await Promise.all([
+    const [regRes, noticeRes] = await Promise.allSettled([
         supabase.from('registrations').select('*').order('created_at', { ascending: true }),
         supabase.from('notices').select('*').order('created_at', { ascending: true })
     ]);
 
+    if (regRes.status !== 'fulfilled') {
+        throw new Error(regRes.reason?.message || String(regRes.reason));
+    }
+    const { data: registrations, error: regErr } = regRes.value;
     if (regErr) throw new Error(regErr.message);
-    if (noticeErr) throw new Error(noticeErr.message);
+
+    let notices = [];
+    let noticeOk = false;
+    if (noticeRes.status === 'fulfilled') {
+        const { data, error } = noticeRes.value;
+        if (!error) {
+            notices = data || [];
+            noticeOk = true;
+        } else {
+            // Notices are ancillary; allow reset-from-cloud to still clear registrations.
+            console.warn('[SupabaseSync] resetLocalFromSupabase: notices select failed:', error.message);
+        }
+    }
 
     const now = new Date().toISOString();
-    const regRows = (registrations || []).map((r) => ({
-        ...r,
+    const regRows = (registrations || []).map((r) => {
+        // Dexie uses its own auto-increment `id`; avoid inserting Supabase `id` if present.
+        const { id: _supabaseId, is_deleted, ...rest } = r;
+        return {
+        ...rest,
+        is_deleted: is_deleted ?? false,
         sync_status: 'synced',
         synced_at: now,
-    }));
-    const noticeRows = (notices || []).map((n) => ({
-        ...n,
+        };
+    });
+    const noticeRows = (notices || []).map((n) => {
+        const { id: _supabaseId, ...rest } = n;
+        return {
+        ...rest,
         sync_status: 'synced',
         synced_at: now,
-    }));
+        };
+    });
 
-    await db.transaction('rw', db.registrations, db.notices, async () => {
+    await db.transaction('rw', ...(noticeOk ? [db.registrations, db.notices] : [db.registrations]), async () => {
         await db.registrations.clear();
-        await db.notices.clear();
+        if (noticeOk) await db.notices.clear();
 
         if (regRows.length) await db.registrations.bulkAdd(regRows);
-        if (noticeRows.length) await db.notices.bulkAdd(noticeRows);
+        if (noticeOk && noticeRows.length) await db.notices.bulkAdd(noticeRows);
     });
 
     window.dispatchEvent(new CustomEvent('hff-supabase-data-updated'));
