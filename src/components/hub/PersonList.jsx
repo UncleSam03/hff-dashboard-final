@@ -29,7 +29,9 @@ const PersonList = () => {
         affiliation: '',
         occupation: '',
         facilitator_uuid: '',
-        books_received: false
+        books_received: false,
+        participants_count: 1,
+        books_distributed: 0
     });
 
     const facilitators = useLiveQuery(async () => {
@@ -103,7 +105,9 @@ const PersonList = () => {
             affiliation: defaults.affiliation || '',
             occupation: defaults.occupation || '',
             facilitator_uuid: defaults.facilitator_uuid || '',
-            books_received: defaults.books_received || false
+            books_received: defaults.books_received || false,
+            participants_count: defaults.participants_count || 1,
+            books_distributed: defaults.books_distributed || 0
         });
     };
 
@@ -166,7 +170,9 @@ const PersonList = () => {
                 affiliation: formData.affiliation?.trim() || '',
                 occupation: formData.occupation?.trim() || '',
                 facilitator_uuid: formData.type === 'participant' ? (formData.facilitator_uuid || null) : null,
-                books_received: formData.books_received || false,
+                books_received: formData.type === 'participant' ? (formData.books_received || false) : false,
+                participants_count: formData.type === 'facilitator' ? Number(formData.participants_count) : null,
+                books_distributed: formData.type === 'facilitator' ? Number(formData.books_distributed) : null,
                 sync_status: 'pending',
                 is_deleted: false,
                 updated_at: now
@@ -455,6 +461,7 @@ const PersonList = () => {
                                 <div>
                                     <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">First Name *</label>
                                     <input
+                                        required
                                         name="first_name"
                                         value={formData.first_name}
                                         onChange={handleFormChange}
@@ -464,6 +471,7 @@ const PersonList = () => {
                                 <div>
                                     <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Last Name *</label>
                                     <input
+                                        required
                                         name="last_name"
                                         value={formData.last_name}
                                         onChange={handleFormChange}
@@ -510,7 +518,7 @@ const PersonList = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Village / Site</label>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Village / Site Name</label>
                                     <input
                                         name="place"
                                         value={formData.place}
@@ -519,28 +527,43 @@ const PersonList = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Education</label>
-                                    <input
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Education Level</label>
+                                    <select
                                         name="education"
                                         value={formData.education}
                                         onChange={handleFormChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
-                                    />
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    >
+                                        <option value="">Select Education</option>
+                                        <option value="Primary">Primary</option>
+                                        <option value="Junior Secondary">Junior Secondary</option>
+                                        <option value="Senior Secondary">Senior Secondary</option>
+                                        <option value="Vocational">Vocational</option>
+                                        <option value="Tertiary">Tertiary</option>
+                                        <option value="None">None</option>
+                                    </select>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Marital Status</label>
-                                    <input
+                                    <select
                                         name="marital_status"
                                         value={formData.marital_status}
                                         onChange={handleFormChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
-                                    />
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                    >
+                                        <option value="">Select Status</option>
+                                        <option value="Single">Single</option>
+                                        <option value="Married">Married</option>
+                                        <option value="Divorced">Divorced</option>
+                                        <option value="Widowed">Widowed</option>
+                                        <option value="Cohabiting">Cohabiting</option>
+                                    </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Affiliation</label>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Affiliation (e.g. Church, School)</label>
                                     <input
                                         name="affiliation"
                                         value={formData.affiliation}
@@ -575,6 +598,33 @@ const PersonList = () => {
                                             </option>
                                         ))}
                                     </select>
+                                </div>
+                            )}
+
+                            {formData.type === 'facilitator' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">No. of Participants</label>
+                                        <input
+                                            type="number"
+                                            name="participants_count"
+                                            min="1"
+                                            value={formData.participants_count}
+                                            onChange={handleFormChange}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Books Given</label>
+                                        <input
+                                            type="number"
+                                            name="books_distributed"
+                                            min="0"
+                                            value={formData.books_distributed}
+                                            onChange={handleFormChange}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                        />
+                                    </div>
                                 </div>
                             )}
 

@@ -18,6 +18,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
         occupation: '',
         participantsCount: 1,
         booksDistributed: 0,
+        booksReceived: false
     });
 
     const [selectedFacilitator, setSelectedFacilitator] = useState(null);
@@ -98,6 +99,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                 books_distributed: type === 'facilitator' ? parseInt(formData.booksDistributed) : null,
                 // Participant specific
                 facilitator_uuid: (type === 'participant' && inGroup && selectedFacilitator) ? selectedFacilitator.uuid : null,
+                books_received: type === 'participant' ? formData.booksReceived : null,
 
                 // Metadata
                 source: 'pwa_offline',
@@ -125,6 +127,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                 occupation: '',
                 participantsCount: 1,
                 booksDistributed: 0,
+                booksReceived: false
             });
             setSelectedFacilitator(null);
             setSearchTerm('');
@@ -400,6 +403,23 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                                 />
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* --- Participant Specific Books (New) --- */}
+                {type === 'participant' && (
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <input
+                            type="checkbox"
+                            id="booksReceived"
+                            name="booksReceived"
+                            checked={formData.booksReceived}
+                            onChange={(e) => setFormData(prev => ({ ...prev, booksReceived: e.target.checked }))}
+                            className="h-5 w-5 rounded border-gray-300 text-hff-primary focus:ring-hff-primary/20"
+                        />
+                        <label htmlFor="booksReceived" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                            Campaign Book Distributed
+                        </label>
                     </div>
                 )}
 
