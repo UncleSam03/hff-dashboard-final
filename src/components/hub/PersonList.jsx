@@ -28,7 +28,8 @@ const PersonList = () => {
         marital_status: '',
         affiliation: '',
         occupation: '',
-        facilitator_uuid: ''
+        facilitator_uuid: '',
+        books_received: false
     });
 
     const facilitators = useLiveQuery(async () => {
@@ -101,7 +102,8 @@ const PersonList = () => {
             marital_status: defaults.marital_status || '',
             affiliation: defaults.affiliation || '',
             occupation: defaults.occupation || '',
-            facilitator_uuid: defaults.facilitator_uuid || ''
+            facilitator_uuid: defaults.facilitator_uuid || '',
+            books_received: defaults.books_received || false
         });
     };
 
@@ -164,6 +166,7 @@ const PersonList = () => {
                 affiliation: formData.affiliation?.trim() || '',
                 occupation: formData.occupation?.trim() || '',
                 facilitator_uuid: formData.type === 'participant' ? (formData.facilitator_uuid || null) : null,
+                books_received: formData.books_received || false,
                 sync_status: 'pending',
                 is_deleted: false,
                 updated_at: now
@@ -319,6 +322,15 @@ const PersonList = () => {
                                         <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
                                             {person.type} • {person.gender === 'M' ? 'Male' : 'Female'} • {person.age} Yrs
                                         </div>
+                                        {person.type === 'participant' && (
+                                            <div className={cn(
+                                                "mt-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest",
+                                                person.books_received ? "text-[#3EB049]" : "text-gray-300"
+                                            )}>
+                                                <BookOpen size={10} />
+                                                {person.books_received ? "Book Received" : "Book Pending"}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <button
@@ -340,6 +352,29 @@ const PersonList = () => {
                                 >
                                     <Pencil size={18} />
                                 </button>
+                                {person.type === 'participant' && (
+                                    <button
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                                await db.registrations.update(person.id, {
+                                                    books_received: !person.books_received,
+                                                    sync_status: 'pending',
+                                                    updated_at: new Date().toISOString()
+                                                });
+                                            } catch (err) {
+                                                console.error("Book toggle failed:", err);
+                                            }
+                                        }}
+                                        className={cn(
+                                            "p-2.5 rounded-xl transition-all",
+                                            person.books_received ? "text-[#3EB049] bg-[#3EB049]/10" : "text-gray-300 hover:text-[#3EB049] hover:bg-[#3EB049]/10"
+                                        )}
+                                        title={person.books_received ? "Mark as not received" : "Mark book as received"}
+                                    >
+                                        <BookOpen size={18} />
+                                    </button>
+                                )}
                             </div>
 
                             <div className="space-y-4">
@@ -540,6 +575,22 @@ const PersonList = () => {
                                             </option>
                                         ))}
                                     </select>
+                                </div>
+                            )}
+
+                            {formData.type === 'participant' && (
+                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                    <input
+                                        type="checkbox"
+                                        id="books_received"
+                                        name="books_received"
+                                        checked={formData.books_received}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, books_received: e.target.checked }))}
+                                        className="h-5 w-5 rounded border-gray-300 text-[#71167F] focus:ring-[#71167F]/20"
+                                    />
+                                    <label htmlFor="books_received" className="text-sm font-black text-gray-700 uppercase tracking-widest cursor-pointer">
+                                        Campaign Book Distributed
+                                    </label>
                                 </div>
                             )}
 

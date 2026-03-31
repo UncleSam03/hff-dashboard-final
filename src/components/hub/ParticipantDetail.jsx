@@ -127,16 +127,37 @@ const ParticipantDetail = ({ participant, onBack }) => {
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                             <BookOpen size={12} /> Book Received
                         </p>
-                        <div className="flex items-center gap-3">
-                            <div className={cn(
-                                "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
-                                participant.books_received ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
-                            )}>
-                                {participant.books_received ? <CheckCircle size={16} /> : <div className="w-2 h-2 rounded-full bg-gray-300" />}
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className={cn(
+                                    "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
+                                    participant.books_received ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+                                )}>
+                                    {participant.books_received ? <CheckCircle size={16} /> : <div className="w-2 h-2 rounded-full bg-gray-300" />}
+                                </div>
+                                <span className="font-black text-gray-900 text-sm">
+                                    {participant.books_received ? "Yes, Received" : "Not yet distributed"}
+                                </span>
                             </div>
-                            <span className="font-black text-gray-900 text-sm">
-                                {participant.books_received ? "Yes, Received" : "Not yet distributed"}
-                            </span>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await db.registrations.update(participant.id, {
+                                            books_received: !participant.books_received,
+                                            sync_status: 'pending',
+                                            updated_at: new Date().toISOString()
+                                        });
+                                    } catch (err) {
+                                        console.error("Book update failed:", err);
+                                    }
+                                }}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                    participant.books_received ? "bg-gray-100 text-gray-500" : "bg-[#71167F] text-white shadow-lg shadow-[#71167F]/20"
+                                )}
+                            >
+                                {participant.books_received ? "Undo" : "Mark Received"}
+                            </button>
                         </div>
                     </div>
 
@@ -144,13 +165,20 @@ const ParticipantDetail = ({ participant, onBack }) => {
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                             <CalendarDays size={12} /> Attendance Record
                         </p>
-                        {participant.attendance && participant.attendance.length > 0 ? (
+                        {participant.attendance && (Array.isArray(participant.attendance) ? participant.attendance.some(Boolean) : Object.values(participant.attendance).some(Boolean)) ? (
                             <div className="flex flex-wrap gap-2">
-                                {participant.attendance.map((day, i) => (
-                                    <div key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100 shadow-sm">
-                                        Day {day}
-                                    </div>
-                                ))}
+                                {Array.isArray(participant.attendance) 
+                                    ? participant.attendance.map((present, i) => present && (
+                                        <div key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100 shadow-sm">
+                                            Day {i + 1}
+                                        </div>
+                                    ))
+                                    : Object.entries(participant.attendance).map(([day, present]) => present && (
+                                        <div key={day} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100 shadow-sm">
+                                            {day.replace('D', 'Day ')}
+                                        </div>
+                                    ))
+                                }
                             </div>
                         ) : (
                             <p className="text-sm text-gray-500 font-bold">No days recorded</p>

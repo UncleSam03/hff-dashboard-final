@@ -55,11 +55,22 @@ const AttendanceSheet = () => {
         }
     }, [searchTerm, selectedFacilitator]);
 
-    const handleToggleAttendance = async (participant, day) => {
+    const handleToggleAttendance = async (participant, dayIndex) => {
         try {
-            const currentAttendance = participant.attendance || {};
-            const isPresent = !!currentAttendance[day];
-            const updatedAttendance = { ...currentAttendance, [day]: !isPresent };
+            // Ensure we have a 12-day array. If it's the legacy object or null/empty, create a new array.
+            let currentAttendance = participant.attendance;
+            if (!Array.isArray(currentAttendance)) {
+                currentAttendance = Array(12).fill(false);
+                // Migrating old object format to array if it existed
+                if (participant.attendance && typeof participant.attendance === 'object') {
+                    for (let i = 0; i < 12; i++) {
+                        if (participant.attendance[`D${i + 1}`]) currentAttendance[i] = true;
+                    }
+                }
+            }
+
+            const updatedAttendance = [...currentAttendance];
+            updatedAttendance[dayIndex] = !updatedAttendance[dayIndex];
 
             await db.registrations.update(participant.id, {
                 attendance: updatedAttendance,
@@ -190,12 +201,12 @@ const AttendanceSheet = () => {
                                                 <span className="text-sm font-black text-gray-900 group-hover/name:text-[#71167F] transition-colors">{p.first_name} {p.last_name}</span>
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5 opacity-60">REF: {p.uuid.slice(0, 8)}</span>
                                             </div>
-                                            {days.map(day => {
-                                                const isPresent = p.attendance && p.attendance[day];
+                                            {days.map((day, idx) => {
+                                                const isPresent = Array.isArray(p.attendance) ? p.attendance[idx] : (p.attendance && p.attendance[day]);
                                                 return (
                                                     <div
                                                         key={`${p.uuid}-${day}`}
-                                                        onClick={() => handleToggleAttendance(p, day)}
+                                                        onClick={() => handleToggleAttendance(p, idx)}
                                                         className={cn(
                                                             "p-5 border-b border-r border-gray-50 flex items-center justify-center cursor-pointer transition-all hover:bg-gray-50/50 group",
                                                             isPresent ? "bg-[#3EB049]/5" : "bg-white"

@@ -2,7 +2,7 @@
  * Centralized analytics processing for HFF Dashboard
  * Processes raw Dexie registrations into visualizable statistics
  */
-import { TOTAL_CAMPAIGN_DAYS } from './constants';
+import { TOTAL_CAMPAIGN_DAYS } from './constants.js';
 
 export function processAnalytics(registrations) {
     if (!registrations || registrations.length === 0) {
@@ -25,18 +25,25 @@ export function processAnalytics(registrations) {
     const participants = registrations.filter(r => r.type === 'participant' && !r.is_deleted);
     const facilitators = registrations.filter(r => r.type === 'facilitator' && !r.is_deleted);
 
-    // Attendance
+    // Attendance Helper: Normalize both array [true, false] and object {D1: true} formats
+    const isPresentOnDay = (attendance, dayIndex) => {
+        if (!attendance) return false;
+        if (Array.isArray(attendance)) return !!attendance[dayIndex];
+        // Legacy object format: { D1: true, D2: false }
+        return !!attendance[`D${dayIndex + 1}`];
+    };
+
     const days = Array.from({ length: TOTAL_CAMPAIGN_DAYS }, (_, i) => `Day ${i + 1}`);
 
     const dailyStats = days.map((day, i) => {
-        const count = participants.filter(p => p.attendance && p.attendance[i]).length;
+        const count = participants.filter(p => p.attendance && isPresentOnDay(p.attendance, i)).length;
         const retention = participants.length > 0 ? (count / participants.length) * 100 : 0;
         return { date: day, count, retention: parseFloat(retention.toFixed(1)) };
     });
 
     const uniqueAttendees = participants.filter(p => {
         if (!p.attendance) return false;
-        // In the database version, attendance is often an array or object
+        // Check if ANY day is true in array or object
         if (Array.isArray(p.attendance)) {
             return p.attendance.some(v => v === true);
         }
