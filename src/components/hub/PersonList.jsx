@@ -93,7 +93,7 @@ const PersonList = () => {
 
     const resetForm = (defaults = {}) => {
         setFormData({
-            type: defaults.type || 'participant',
+            type: (defaults.type || 'participant').toLowerCase(),
             first_name: defaults.first_name || '',
             last_name: defaults.last_name || '',
             age: defaults.age ?? '',
