@@ -230,6 +230,7 @@ const PersonList = ({ onRecordEdited }) => {
             <FacilitatorDetail
                 facilitator={selectedFacilitator}
                 onBack={() => setSelectedFacilitator(null)}
+                onNavigateToAttendance={onRecordEdited}
             />
         );
     }
@@ -239,6 +240,7 @@ const PersonList = ({ onRecordEdited }) => {
             <ParticipantDetail
                 participant={selectedParticipant}
                 onBack={() => setSelectedParticipant(null)}
+                onNavigateToAttendance={onRecordEdited}
             />
         );
     }

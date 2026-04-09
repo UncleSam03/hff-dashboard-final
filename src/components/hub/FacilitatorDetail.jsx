@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
 import ParticipantDetail from './ParticipantDetail';
 import RegistrationForm from '../RegistrationForm';
 
-const FacilitatorDetail = ({ facilitator, onBack }) => {
+const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [isAddingParticipant, setIsAddingParticipant] = useState(false);
@@ -160,6 +160,16 @@ const FacilitatorDetail = ({ facilitator, onBack }) => {
                     >
                         <Download size={18} />
                     </button>
+                    {onNavigateToAttendance && (
+                        <button
+                            onClick={() => onNavigateToAttendance(facilitator)}
+                            className="px-4 py-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shrink-0"
+                            title="Mark Attendance"
+                        >
+                            <CalendarDays size={16} />
+                            Mark Attendance
+                        </button>
+                    )}
                     <button
                         onClick={() => setIsAddingParticipant(true)}
                         className="px-4 py-2.5 rounded-xl bg-[#71167F] text-white hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shrink-0 shadow-md shadow-[#71167F]/20"

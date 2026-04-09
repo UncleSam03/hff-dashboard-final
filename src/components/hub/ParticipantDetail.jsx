@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-const ParticipantDetail = ({ participant, onBack }) => {
+const ParticipantDetail = ({ participant, onBack, onNavigateToAttendance }) => {
 
     const safeFormatTime = (dateStr) => {
         if (!dateStr) return 'N/A';
@@ -29,6 +29,14 @@ const ParticipantDetail = ({ participant, onBack }) => {
                     >
                         <ArrowLeft size={14} /> Back
                     </button>
+                    {onNavigateToAttendance && (
+                        <button
+                            onClick={() => onNavigateToAttendance(participant)}
+                            className="flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm mt-3"
+                        >
+                            <CalendarDays size={14} /> Mark Attendance
+                        </button>
+                    )}
 
                     <div className="flex items-center gap-5">
                         <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-[#3EB049] to-[#2A8233] text-white flex items-center justify-center shadow-xl shadow-[#3EB049]/30 text-3xl font-black shrink-0 relative overflow-hidden">
