@@ -13,6 +13,12 @@ const Hub = ({ onBack }) => {
     const [syncState, setSyncState] = useState('idle'); // 'idle' | 'syncing' | 'success' | 'error'
     const [pendingCount, setPendingCount] = useState(0);
     const [resetError, setResetError] = useState('');
+    const [initialAttendanceContext, setInitialAttendanceContext] = useState(null);
+
+    const handleRecordEdited = (record) => {
+        setInitialAttendanceContext(record);
+        setActiveTab('attendance');
+    };
 
     // Fetch pending count from Dexie
     const refreshPendingCount = useCallback(async () => {
@@ -123,9 +129,14 @@ const Hub = ({ onBack }) => {
     const renderContent = () => {
         switch (activeTab) {
             case 'people':
-                return <PersonList />;
+                return <PersonList onRecordEdited={handleRecordEdited} />;
             case 'attendance':
-                return <AttendanceSheet />;
+                return (
+                    <AttendanceSheet 
+                        initialContext={initialAttendanceContext} 
+                        onContextConsumed={() => setInitialAttendanceContext(null)} 
+                    />
+                );
             case 'notice':
                 return <NoticeBoard />;
             default:

@@ -18,7 +18,8 @@ const FacilitatorDetail = ({ facilitator, onBack }) => {
             const lowerFilter = searchTerm.toLowerCase();
             results = results.filter(p =>
                 (p.first_name + ' ' + p.last_name).toLowerCase().includes(lowerFilter) ||
-                (p.place && p.place.toLowerCase().includes(lowerFilter))
+                (p.place && p.place.toLowerCase().includes(lowerFilter)) ||
+                (p.affiliation && p.affiliation.toLowerCase().includes(lowerFilter))
             );
         }
 
@@ -118,7 +119,7 @@ const FacilitatorDetail = ({ facilitator, onBack }) => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search participants..."
+                            placeholder="Search by name, district or affiliation..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-100 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-xs font-bold shadow-sm"
@@ -174,6 +175,12 @@ const FacilitatorDetail = ({ facilitator, onBack }) => {
                                     <MapPin size={10} className="shrink-0" />
                                     <span className="truncate">{person.place || 'Unspecified Sector'}</span>
                                 </div>
+                                {person.affiliation && (
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-[#71167F] uppercase tracking-widest bg-[#71167F]/5 px-2 py-1 rounded-md w-fit max-w-full">
+                                        <Briefcase size={10} className="shrink-0" />
+                                        <span className="truncate">{person.affiliation}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="pt-4 border-t border-gray-50 flex items-center justify-between">

@@ -4,10 +4,34 @@ import { db } from '../../lib/dexieDb';
 import { Check, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-const AttendanceSheet = () => {
+const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFacilitator, setSelectedFacilitator] = useState(null);
+    const [highlightedParticipantUuid, setHighlightedParticipantUuid] = useState(null);
     const days = Array.from({ length: 12 }, (_, i) => `D${i + 1}`);
+
+    React.useEffect(() => {
+        if (initialContext) {
+            const applyContext = async () => {
+                let targetFacilitator = null;
+                if (initialContext.type === 'facilitator') {
+                    targetFacilitator = initialContext;
+                } else if (initialContext.type === 'participant' && initialContext.facilitator_uuid) {
+                    targetFacilitator = await db.registrations.where('uuid').equals(initialContext.facilitator_uuid).first();
+                    setHighlightedParticipantUuid(initialContext.uuid);
+                    
+                    // Clear highlight after 5 seconds
+                    setTimeout(() => setHighlightedParticipantUuid(null), 5000);
+                }
+
+                if (targetFacilitator) {
+                    setSelectedFacilitator(targetFacilitator);
+                }
+                onContextConsumed();
+            };
+            applyContext();
+        }
+    }, [initialContext, onContextConsumed]);
 
     const data = useLiveQuery(async () => {
         if (!selectedFacilitator) {
@@ -197,8 +221,16 @@ const AttendanceSheet = () => {
                                 ) : (
                                     list.map(p => (
                                         <React.Fragment key={p.uuid}>
-                                            <div className="px-8 py-5 border-b border-gray-50 flex flex-col justify-center bg-white group/name sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.05)]">
-                                                <span className="text-sm font-black text-gray-900 group-hover/name:text-[#71167F] transition-colors">{p.first_name} {p.last_name}</span>
+                                            <div className={cn(
+                                                "px-8 py-5 border-b border-gray-50 flex flex-col justify-center bg-white group/name sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.05)]",
+                                                highlightedParticipantUuid === p.uuid && "bg-[#71167F]/5"
+                                            )}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-black text-gray-900 group-hover/name:text-[#71167F] transition-colors">{p.first_name} {p.last_name}</span>
+                                                    {highlightedParticipantUuid === p.uuid && (
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-[#71167F] animate-ping" />
+                                                    )}
+                                                </div>
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5 opacity-60">REF: {p.uuid.slice(0, 8)}</span>
                                             </div>
                                             {days.map((day, idx) => {

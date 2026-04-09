@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Download, Trash2, Plus, Pencil, X } from 'lucide-react';
+import { Search, User, Briefcase, Download, Trash2, Plus, Pencil, X, BookOpen, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
 
-const PersonList = () => {
+const PersonList = ({ onRecordEdited }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
     const [selectedFacilitator, setSelectedFacilitator] = useState(null);
@@ -55,25 +55,26 @@ const PersonList = () => {
         let results = await collection.toArray();
         results = results.filter(p => !p.is_deleted);
 
+        // Map facilitators for name lookup & display
+        const facilitators = await db.registrations.where('type').equals('facilitator').toArray();
+        const facMap = facilitators.reduce((acc, f) => {
+            acc[f.uuid] = `${f.first_name} ${f.last_name}`;
+            return acc;
+        }, {});
+
+        results = results.map(p => ({
+            ...p,
+            facilitatorName: p.facilitator_uuid ? facMap[p.facilitator_uuid] : null
+        }));
+
         if (searchTerm) {
             const lowerFilter = searchTerm.toLowerCase();
             results = results.filter(p =>
                 (p.first_name + ' ' + p.last_name).toLowerCase().includes(lowerFilter) ||
-                (p.place && p.place.toLowerCase().includes(lowerFilter))
+                (p.place && p.place.toLowerCase().includes(lowerFilter)) ||
+                (p.affiliation && p.affiliation.toLowerCase().includes(lowerFilter)) ||
+                (p.facilitatorName && p.facilitatorName.toLowerCase().includes(lowerFilter))
             );
-        }
-
-        if (filterType === 'participant' || filterType === 'all') {
-            const facilitators = await db.registrations.where('type').equals('facilitator').toArray();
-            const facMap = facilitators.reduce((acc, f) => {
-                acc[f.uuid] = `${f.first_name} ${f.last_name}`;
-                return acc;
-            }, {});
-
-            results = results.map(p => ({
-                ...p,
-                facilitatorName: p.facilitator_uuid ? facMap[p.facilitator_uuid] : null
-            }));
         }
         return results;
     }, [searchTerm, filterType]);
@@ -180,6 +181,13 @@ const PersonList = () => {
 
             if (editorMode === 'edit' && editingPerson?.id) {
                 await db.registrations.update(editingPerson.id, normalized);
+                if (onRecordEdited) {
+                    onRecordEdited({
+                        ...normalized,
+                        id: editingPerson.id,
+                        uuid: editingPerson.uuid
+                    });
+                }
             } else {
                 await db.registrations.add({
                     ...normalized,
@@ -243,7 +251,7 @@ const PersonList = () => {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search by name or district..."
+                        placeholder="Search by name, district, affiliation or facilitator..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-12 pr-6 py-3.5 rounded-2xl bg-white border border-gray-100 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-bold text-gray-900 shadow-sm"
@@ -328,6 +336,11 @@ const PersonList = () => {
                                         <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
                                             {person.type} • {person.gender === 'M' ? 'Male' : 'Female'} • {person.age} Yrs
                                         </div>
+                                        {person.type === 'facilitator' && (
+                                            <div className="text-[9px] font-black text-[#71167F] uppercase tracking-widest mt-2 flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-all">
+                                                View Participants <ArrowLeft size={10} className="rotate-180" />
+                                            </div>
+                                        )}
                                         {person.type === 'participant' && (
                                             <div className={cn(
                                                 "mt-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest",
