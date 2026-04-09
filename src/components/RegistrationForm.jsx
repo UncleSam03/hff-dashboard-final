@@ -74,8 +74,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 throw new Error("Please fill in all required fields.");
             }
 
-            if (type === 'participant' && inGroup && !selectedFacilitator) {
-                throw new Error("Please select a facilitator or switch to 'Individual' if not in a group.");
+            if (type === 'participant' && inGroup && !selectedFacilitator && !formData.affiliation.trim()) {
+                throw new Error("Please provide an Affiliation / Group name, or link directly to a Facilitator.");
             }
 
             // Construct Payload
@@ -171,7 +171,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 {type === 'participant' && inGroup && (
                     <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
                         <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Link to Facilitator {!predefinedFacilitator && <span className="text-red-500">*</span>}
+                            Link to Facilitator {!predefinedFacilitator && <span className="text-purple-600 font-normal text-xs ml-1">(Optional if Affiliation is provided)</span>}
                         </label>
 
                         {predefinedFacilitator ? (
@@ -339,7 +339,10 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {type === 'participant' ? (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Affiliation / Group (e.g. Church, School)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Affiliation / Group (e.g. Church, School)
+                                {inGroup && !selectedFacilitator && <span className="text-red-500 ml-1">*</span>}
+                            </label>
                             <input
                                 type="text"
                                 name="affiliation"
