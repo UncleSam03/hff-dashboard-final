@@ -97,15 +97,22 @@ const PersonList = ({ onRecordEdited }) => {
 
     // Unique Affiliations for the Affiliation Tab
     const affiliationsList = useLiveQuery(async () => {
-        const all = await db.registrations.where('is_deleted').equals(0).toArray();
+        const all = await db.registrations.toArray();
         const set = new Set(['Self']);
         all.forEach(p => {
+            if (p.is_deleted) return;
             if (p.affiliation && p.affiliation.trim()) {
-                const parts = p.affiliation.split(',').map(s => s.trim()).filter(s => s && s.toLowerCase() !== 'self');
-                parts.forEach(s => set.add(s));
+                const parts = p.affiliation.split(',').map(s => s.trim().toLowerCase()).filter(s => s && s !== 'self');
+                parts.forEach(s => {
+                    // Find original casing if possible by looking at the input string
+                    // But for consistency let's just title-case or keep as is
+                    // Let's find the original string part to keep casing pretty
+                    const originalPart = p.affiliation.split(',').find(part => part.trim().toLowerCase() === s);
+                    set.add(originalPart ? originalPart.trim() : s);
+                });
             }
         });
-        return Array.from(set).sort((a, b) => a === 'Self' ? -1 : b === 'Self' ? 1 : a.localeCompare(b));
+        return Array.from(set).sort((a, b) => a.toLowerCase() === 'self' ? -1 : b.toLowerCase() === 'self' ? 1 : a.localeCompare(b));
     }, []);
 
     const handleDelete = async (person) => {
