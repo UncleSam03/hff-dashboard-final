@@ -37,7 +37,7 @@ const Dashboard = ({ analytics }) => {
                 <div className="2xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
                     <StatsCard
                         title="Registered"
-                        value={analytics.totalRegistrations}
+                        value={analytics.totalRegistered}
                         icon={Users}
                         description="Campaign total"
                         color="purple"

@@ -25,6 +25,14 @@ export function processAnalytics(registrations) {
     const participants = registrations.filter(r => (r.type || '').toLowerCase() === 'participant' && !r.is_deleted);
     const facilitators = registrations.filter(r => (r.type || '').toLowerCase() === 'facilitator' && !r.is_deleted);
 
+    console.log("[Analytics] Processing Summary:", {
+        total: registrations.length,
+        participants: participants.length,
+        facilitators: facilitators.length,
+        deleted: registrations.filter(r => r.is_deleted).length,
+        rawTypes: [...new Set(registrations.map(r => r.type))]
+    });
+
     // Attendance Helper: Normalize both array [true, false] and object {D1: true} formats
     const isPresentOnDay = (attendance, dayIndex) => {
         if (!attendance) return false;
