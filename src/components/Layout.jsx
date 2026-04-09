@@ -70,7 +70,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
                     activeTab === 'hub' ? 'Campaign Hub' : 'Data Analysis'}
               </h2>
               <p className="text-[10px] font-bold text-[#71167F] uppercase tracking-widest mt-1">
-                Real-Time Campaign Performance
+                Real-Time Campaign Performance (SYNCED)
               </p>
             </div>
           </div>
