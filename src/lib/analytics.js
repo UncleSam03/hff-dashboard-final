@@ -22,14 +22,16 @@ export function processAnalytics(registrations) {
         };
     }
 
-    const participants = registrations.filter(r => (r.type || '').toLowerCase() === 'participant' && !r.is_deleted);
-    const facilitators = registrations.filter(r => (r.type || '').toLowerCase() === 'facilitator' && !r.is_deleted);
+    // Filtering: Default any record without a specific 'facilitator' type to 'participant' if it's not deleted
+    const activePeople = registrations.filter(r => !r.is_deleted);
+    const facilitators = activePeople.filter(r => (r.type || '').toLowerCase() === 'facilitator');
+    const participants = activePeople.filter(r => (r.type || '').toLowerCase() !== 'facilitator');
 
     console.log("[Analytics] Processing Summary:", {
         total: registrations.length,
+        active: activePeople.length,
         participants: participants.length,
         facilitators: facilitators.length,
-        deleted: registrations.filter(r => r.is_deleted).length,
         rawTypes: [...new Set(registrations.map(r => r.type))]
     });
 
@@ -37,21 +39,20 @@ export function processAnalytics(registrations) {
     const isPresentOnDay = (attendance, dayIndex) => {
         if (!attendance) return false;
         if (Array.isArray(attendance)) return !!attendance[dayIndex];
-        // Legacy object format: { D1: true, D2: false }
         return !!attendance[`D${dayIndex + 1}`];
     };
 
     const days = Array.from({ length: TOTAL_CAMPAIGN_DAYS }, (_, i) => `Day ${i + 1}`);
 
+    // stats based on ALL active people (Facilitators + Participants)
     const dailyStats = days.map((day, i) => {
-        const count = participants.filter(p => p.attendance && isPresentOnDay(p.attendance, i)).length;
-        const retention = participants.length > 0 ? (count / participants.length) * 100 : 0;
+        const count = activePeople.filter(p => p.attendance && isPresentOnDay(p.attendance, i)).length;
+        const retention = activePeople.length > 0 ? (count / activePeople.length) * 100 : 0;
         return { date: day, count, retention: parseFloat(retention.toFixed(1)) };
     });
 
-    const uniqueAttendees = participants.filter(p => {
+    const uniqueAttendees = activePeople.filter(p => {
         if (!p.attendance) return false;
-        // Check if ANY day is true in array or object
         if (Array.isArray(p.attendance)) {
             return p.attendance.some(v => v === true);
         }
@@ -64,9 +65,9 @@ export function processAnalytics(registrations) {
         ? (totalAttendanceCount / activeDays.length).toFixed(1)
         : 0;
 
-    // Gender
+    // Demographics based on ALL active people
     const gender = { 'M': 0, 'F': 0, 'OTHER': 0, 'UNKNOWN': 0 };
-    participants.forEach(p => {
+    activePeople.forEach(p => {
         const g = (p.gender || 'Unknown').toUpperCase();
         if (g.startsWith('M')) gender['M']++;
         else if (g.startsWith('F')) gender['F']++;
@@ -74,21 +75,18 @@ export function processAnalytics(registrations) {
         else gender['UNKNOWN']++;
     });
 
-    // Education
     const education = {};
-    participants.forEach(p => {
+    activePeople.forEach(p => {
         const e = p.education || 'Unknown';
         education[e] = (education[e] || 0) + 1;
     });
 
-    // Marital Status
     const maritalStatus = {};
-    participants.forEach(p => {
+    activePeople.forEach(p => {
         const m = p.marital_status || 'Unknown';
         maritalStatus[m] = (maritalStatus[m] || 0) + 1;
     });
 
-    // Age distribution buckets
     const ageBuckets = [
         { range: '18-25', min: 18, max: 25, count: 0 },
         { range: '26-35', min: 26, max: 35, count: 0 },
@@ -96,7 +94,7 @@ export function processAnalytics(registrations) {
         { range: '50+', min: 51, max: 999, count: 0 },
     ];
 
-    participants.forEach(p => {
+    activePeople.forEach(p => {
         const age = parseInt(p.age);
         if (isNaN(age)) return;
         for (const bucket of ageBuckets) {
