@@ -430,8 +430,8 @@ const PersonList = ({ onRecordEdited }) => {
 
             {editorOpen && (
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-3xl bg-white rounded-3xl border border-gray-100 shadow-2xl max-h-[95vh] flex flex-col">
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                    <div className="w-full max-w-3xl bg-white rounded-3xl border border-gray-100 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
                             <div>
                                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">
                                     {editorMode === 'edit' ? 'Edit Campaign Record' : 'Add Campaign Record'}
@@ -442,14 +442,14 @@ const PersonList = ({ onRecordEdited }) => {
                             </div>
                             <button
                                 onClick={closeEditor}
-                                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+                                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all shrink-0"
                                 aria-label="Close editor"
                             >
                                 <X size={18} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-6 space-y-5 overflow-y-auto flex-1">
+                        <form onSubmit={handleSave} className="p-6 space-y-5 overflow-y-auto min-h-0 flex-1">
                             {editorError && (
                                 <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-semibold">
                                     {editorError}
