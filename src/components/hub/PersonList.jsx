@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Download, Trash2, Plus, Pencil, X, BookOpen, ArrowLeft } from 'lucide-react';
+import { Search, User, Briefcase, Download, Trash2, Plus, Pencil, X, BookOpen, ArrowLeft, CalendarCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
@@ -396,6 +396,16 @@ const PersonList = ({ onRecordEdited }) => {
                                         <BookOpen size={18} />
                                     </button>
                                 )}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onRecordEdited) onRecordEdited(person);
+                                    }}
+                                    className="p-2.5 text-gray-300 hover:text-[#71167F] hover:bg-[#71167F]/10 rounded-xl transition-all"
+                                    title="Quick Mark Attendance"
+                                >
+                                    <CalendarCheck size={18} />
+                                </button>
                             </div>
 
                             <div className="space-y-4">

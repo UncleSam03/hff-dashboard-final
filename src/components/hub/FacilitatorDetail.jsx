@@ -12,9 +12,22 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
     const [isAddingParticipant, setIsAddingParticipant] = useState(false);
 
     const participants = useLiveQuery(async () => {
-        let collection = db.registrations.where('facilitator_uuid').equals(facilitator.uuid);
-        let results = await collection.toArray();
-        results = results.filter(p => !p.is_deleted && p.type === 'participant');
+        // Fetch fresh facilitator to get latest managed groups
+        const freshFac = await db.registrations.get(facilitator.id) || facilitator;
+        const managedGroups = (freshFac.affiliation || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+        // Fetch all candidates
+        let allParticipants = await db.registrations.where('type').equals('participant').toArray();
+        let results = allParticipants.filter(p => {
+            if (p.is_deleted) return false;
+            
+            const matchesDirect = p.facilitator_uuid === facilitator.uuid;
+            let matchesGroup = false;
+            if (p.affiliation && managedGroups.length > 0) {
+                matchesGroup = managedGroups.some(g => g === p.affiliation.toLowerCase().trim());
+            }
+            return matchesDirect || matchesGroup;
+        });
 
         if (searchTerm) {
             const lowerFilter = searchTerm.toLowerCase();
