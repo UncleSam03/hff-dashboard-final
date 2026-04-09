@@ -103,7 +103,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-8 lg:p-12 space-y-12 scrollbar-hide">
+        <div className="flex-1 p-8 lg:p-12 space-y-12 overflow-y-auto">
           {children}
         </div>
       </main>

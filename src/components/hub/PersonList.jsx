@@ -430,7 +430,7 @@ const PersonList = ({ onRecordEdited }) => {
 
             {editorOpen && (
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-3xl bg-white rounded-3xl border border-gray-100 shadow-2xl">
+                    <div className="w-full max-w-3xl bg-white rounded-3xl border border-gray-100 shadow-2xl max-h-[95vh] flex flex-col">
                         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
                             <div>
                                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">
@@ -449,7 +449,7 @@ const PersonList = ({ onRecordEdited }) => {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-6 space-y-5">
+                        <form onSubmit={handleSave} className="p-6 space-y-5 overflow-y-auto flex-1">
                             {editorError && (
                                 <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-semibold">
                                     {editorError}

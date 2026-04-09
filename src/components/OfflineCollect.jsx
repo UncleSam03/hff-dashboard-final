@@ -89,7 +89,7 @@ const OfflineCollect = ({ onBack }) => {
 
     return (
         <div className="max-w-5xl mx-auto p-4 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-100/50 overflow-hidden min-h-[650px] flex flex-col relative">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-100/50 min-h-[650px] flex flex-col relative">
                 <div className="absolute top-0 left-0 right-0 h-2 hff-gradient-bg" />
                 <div className="p-10 pb-0 text-center shrink-0">
                     <div className="inline-flex items-center gap-2 bg-[#71167F]/5 text-[#71167F] px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-[#71167F]/10 mb-6">

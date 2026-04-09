@@ -3,7 +3,7 @@ import { db } from '../lib/dexieDb';
 
 import { Save, Search, User, Check, AlertCircle } from 'lucide-react';
 
-const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
+const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator }) => {
     // Form State
     const [formData, setFormData] = useState({
         firstName: '',
@@ -21,7 +21,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
         booksReceived: false
     });
 
-    const [selectedFacilitator, setSelectedFacilitator] = useState(null);
+    const [selectedFacilitator, setSelectedFacilitator] = useState(predefinedFacilitator || null);
     const [searchTerm, setSearchTerm] = useState('');
     const [facilitatorResults, setFacilitatorResults] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -172,10 +172,22 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup }) => {
                 {type === 'participant' && inGroup && (
                     <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
                         <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Link to Facilitator <span className="text-red-500">*</span>
+                            Link to Facilitator {!predefinedFacilitator && <span className="text-red-500">*</span>}
                         </label>
 
-                        {!selectedFacilitator ? (
+                        {predefinedFacilitator ? (
+                            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-purple-200">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-purple-100 p-2 rounded-full">
+                                        <User className="h-4 w-4 text-purple-700" />
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-gray-900">{predefinedFacilitator.first_name} {predefinedFacilitator.last_name}</div>
+                                        <div className="text-xs text-gray-500">Linked Facilitator</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : !selectedFacilitator ? (
                             <div className="relative">
                                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                                 <input

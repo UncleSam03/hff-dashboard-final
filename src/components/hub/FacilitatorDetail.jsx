@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Briefcase as OccupationIcon } from 'lucide-react';
+import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Briefcase as OccupationIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ParticipantDetail from './ParticipantDetail';
+import RegistrationForm from '../RegistrationForm';
 
 const FacilitatorDetail = ({ facilitator, onBack }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedParticipant, setSelectedParticipant] = useState(null);
+    const [isAddingParticipant, setIsAddingParticipant] = useState(false);
 
     const participants = useLiveQuery(async () => {
         let collection = db.registrations.where('facilitator_uuid').equals(facilitator.uuid);
@@ -56,6 +58,32 @@ const FacilitatorDetail = ({ facilitator, onBack }) => {
         link.download = `hff_facilitator_${facilitator.first_name}_${facilitator.last_name}_participants.csv`.replace(/\s+/g, '_');
         link.click();
     };
+
+    if (isAddingParticipant) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
+                            Add New Participant
+                        </h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                            Registering for {facilitator.first_name} {facilitator.last_name}
+                        </p>
+                    </div>
+                </div>
+                <RegistrationForm
+                    type="participant"
+                    inGroup={true}
+                    predefinedFacilitator={facilitator}
+                    onBack={() => setIsAddingParticipant(false)}
+                    onSaveSuccess={() => {
+                        setIsAddingParticipant(false);
+                    }}
+                />
+            </div>
+        );
+    }
 
     if (selectedParticipant) {
         return (
@@ -131,6 +159,14 @@ const FacilitatorDetail = ({ facilitator, onBack }) => {
                         title="Export Participants CSV"
                     >
                         <Download size={18} />
+                    </button>
+                    <button
+                        onClick={() => setIsAddingParticipant(true)}
+                        className="px-4 py-2.5 rounded-xl bg-[#71167F] text-white hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shrink-0 shadow-md shadow-[#71167F]/20"
+                        title="Add participant"
+                    >
+                        <Plus size={16} />
+                        Add Participant
                     </button>
                 </div>
             </div>
