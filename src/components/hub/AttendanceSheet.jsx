@@ -61,6 +61,9 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             }
             return { type: 'facilitators', list: results };
         } else {
+            // Fetch the updated latest facilitator object from DB first so it's fresh
+            const freshFacilitator = await db.registrations.get(selectedFacilitator.id) || selectedFacilitator;
+
             // Fetch Participants for selected Facilitator
             let results = await db.registrations
                 .where('type').equals('participant')
@@ -70,7 +73,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             results.sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
 
             // Add the facilitator themselves at the very top of the list
-            results.unshift(selectedFacilitator);
+            results.unshift(freshFacilitator);
 
             if (searchTerm) {
                 const lowerFilter = searchTerm.toLowerCase();
