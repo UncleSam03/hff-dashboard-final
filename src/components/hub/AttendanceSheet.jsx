@@ -69,6 +69,9 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
 
             results.sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
 
+            // Add the facilitator themselves at the very top of the list
+            results.unshift(selectedFacilitator);
+
             if (searchTerm) {
                 const lowerFilter = searchTerm.toLowerCase();
                 results = results.filter(p =>
@@ -231,7 +234,12 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
                                                         <span className="h-1.5 w-1.5 rounded-full bg-[#71167F] animate-ping" />
                                                     )}
                                                 </div>
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5 opacity-60">REF: {p.uuid.slice(0, 8)}</span>
+                                                <span className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-tighter mt-0.5",
+                                                    p.type === 'facilitator' ? "text-[#71167F]" : "text-gray-400 opacity-60"
+                                                )}>
+                                                    {p.type === 'facilitator' ? 'FACILITATOR' : `REF: ${p.uuid.slice(0, 8)}`}
+                                                </span>
                                             </div>
                                             {days.map((day, idx) => {
                                                 const isPresent = Array.isArray(p.attendance) ? p.attendance[idx] : (p.attendance && p.attendance[day]);
