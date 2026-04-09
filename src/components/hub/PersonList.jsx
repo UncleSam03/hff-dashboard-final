@@ -9,6 +9,7 @@ import ParticipantDetail from './ParticipantDetail';
 const PersonList = ({ onRecordEdited }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
+    const [selectedAffiliation, setSelectedAffiliation] = useState('Self');
     const [selectedFacilitator, setSelectedFacilitator] = useState(null);
     const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -49,9 +50,12 @@ const PersonList = ({ onRecordEdited }) => {
 
     const people = useLiveQuery(async () => {
         let collection = db.registrations.orderBy('created_at').reverse();
-        if (filterType !== 'all') {
+        
+        // Base filter by type
+        if (filterType !== 'all' && filterType !== 'affiliation') {
             collection = db.registrations.where('type').equals(filterType);
         }
+        
         let results = await collection.toArray();
         results = results.filter(p => !p.is_deleted);
 
@@ -67,6 +71,18 @@ const PersonList = ({ onRecordEdited }) => {
             facilitatorName: p.facilitator_uuid ? facMap[p.facilitator_uuid] : null
         }));
 
+        // Secondary filter by Affiliation if active
+        if (filterType === 'affiliation') {
+            const target = selectedAffiliation.toLowerCase().trim();
+            results = results.filter(p => {
+                const aff = (p.affiliation || '').toLowerCase().trim();
+                if (target === 'self') {
+                    return !aff || aff === 'self';
+                }
+                return aff === target;
+            });
+        }
+
         if (searchTerm) {
             const lowerFilter = searchTerm.toLowerCase();
             results = results.filter(p =>
@@ -77,7 +93,20 @@ const PersonList = ({ onRecordEdited }) => {
             );
         }
         return results;
-    }, [searchTerm, filterType]);
+    }, [searchTerm, filterType, selectedAffiliation]);
+
+    // Unique Affiliations for the Affiliation Tab
+    const affiliationsList = useLiveQuery(async () => {
+        const all = await db.registrations.where('is_deleted').equals(0).toArray();
+        const set = new Set(['Self']);
+        all.forEach(p => {
+            if (p.affiliation && p.affiliation.trim()) {
+                const parts = p.affiliation.split(',').map(s => s.trim()).filter(s => s && s.toLowerCase() !== 'self');
+                parts.forEach(s => set.add(s));
+            }
+        });
+        return Array.from(set).sort((a, b) => a === 'Self' ? -1 : b === 'Self' ? 1 : a.localeCompare(b));
+    }, []);
 
     const handleDelete = async (person) => {
         if (!window.confirm(`Permanently remove ${person.first_name}?`)) return;
@@ -262,7 +291,7 @@ const PersonList = ({ onRecordEdited }) => {
 
                 <div className="flex items-center gap-4 w-full lg:w-auto">
                     <div className="flex bg-gray-100/50 p-1.5 rounded-2xl border border-gray-100">
-                        {['all', 'facilitator', 'participant'].map(t => (
+                        {['all', 'facilitator', 'participant', 'affiliation'].map(t => (
                             <button
                                 key={t}
                                 onClick={() => setFilterType(t)}
@@ -271,7 +300,7 @@ const PersonList = ({ onRecordEdited }) => {
                                     filterType === t ? "bg-white text-[#71167F] shadow-sm shadow-gray-200" : "text-gray-400 hover:text-gray-600"
                                 )}
                             >
-                                {t}
+                                {t === 'affiliation' ? 'By Affiliation' : t}
                             </button>
                         ))}
                     </div>
@@ -301,6 +330,26 @@ const PersonList = ({ onRecordEdited }) => {
                     </button>
                 </div>
             </div>
+            
+            {/* Affiliation Secondary Selector */}
+            {filterType === 'affiliation' && affiliationsList && (
+                <div className="flex flex-wrap gap-2 px-6 py-4 bg-white/30 backdrop-blur-md rounded-3xl border border-white shadow-sm overflow-x-auto">
+                    {affiliationsList.map(aff => (
+                        <button
+                            key={aff}
+                            onClick={() => setSelectedAffiliation(aff)}
+                            className={cn(
+                                "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
+                                selectedAffiliation === aff 
+                                    ? "bg-[#71167F] text-white border-[#71167F] shadow-lg shadow-[#71167F]/20" 
+                                    : "bg-white text-gray-400 border-gray-100 hover:border-[#71167F]/20 hover:text-gray-600"
+                            )}
+                        >
+                            {aff}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* List Engine */}
             {people.length === 0 ? (
