@@ -392,7 +392,12 @@ const PersonList = ({ onRecordEdited }) => {
                                             {person.sync_status === 'pending' && <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />}
                                         </div>
                                         <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                                            {person.type} • {person.gender === 'M' ? 'Male' : 'Female'} • {person.age} Yrs
+                                            {person.type} • {
+                                                person.gender === 'M' ? 'Male' : 
+                                                person.gender === 'F' ? 'Female' : 
+                                                (person.Gender === 'M' || person.Gender === 'Male') ? 'Male' :
+                                                (person.Gender === 'F' || person.Gender === 'Female') ? 'Female' : 'Unknown'
+                                            } • {person.age || person.Age || '??'} Yrs
                                         </div>
                                         {person.type === 'facilitator' && (
                                             <div className="text-[9px] font-black text-[#71167F] uppercase tracking-widest mt-2 flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-all">

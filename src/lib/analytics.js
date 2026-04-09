@@ -68,22 +68,25 @@ export function processAnalytics(registrations) {
     // Demographics based on ALL active people
     const gender = { 'M': 0, 'F': 0, 'OTHER': 0, 'UNKNOWN': 0 };
     activePeople.forEach(p => {
-        const g = (p.gender || 'Unknown').toUpperCase();
-        if (g.startsWith('M')) gender['M']++;
-        else if (g.startsWith('F')) gender['F']++;
+        // Try all casing variants
+        const rawGender = p.gender || p.Gender || p.GENDER;
+        const g = (rawGender || 'Unknown').toString().toUpperCase().trim();
+        
+        if (g.startsWith('M') || g === 'MALE') gender['M']++;
+        else if (g.startsWith('F') || g === 'FEMALE') gender['F']++;
         else if (g === 'OTHER') gender['OTHER']++;
         else gender['UNKNOWN']++;
     });
 
     const education = {};
     activePeople.forEach(p => {
-        const e = p.education || 'Unknown';
+        const e = p.education || p.Education || 'Unknown';
         education[e] = (education[e] || 0) + 1;
     });
 
     const maritalStatus = {};
     activePeople.forEach(p => {
-        const m = p.marital_status || 'Unknown';
+        const m = p.marital_status || p.maritalStatus || p['Marital Status'] || 'Unknown';
         maritalStatus[m] = (maritalStatus[m] || 0) + 1;
     });
 
@@ -95,7 +98,8 @@ export function processAnalytics(registrations) {
     ];
 
     activePeople.forEach(p => {
-        const age = parseInt(p.age);
+        const rawAge = p.age || p.Age || p.AGE;
+        const age = parseInt(rawAge);
         if (isNaN(age)) return;
         for (const bucket of ageBuckets) {
             if (age >= bucket.min && age <= bucket.max) {
