@@ -578,13 +578,28 @@ const PersonList = ({ onRecordEdited }) => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Affiliation (e.g. Church, School)</label>
-                                    <input
-                                        name="affiliation"
-                                        value={formData.affiliation}
-                                        onChange={handleFormChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
-                                    />
+                                    {formData.type === 'participant' ? (
+                                        <>
+                                            <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Affiliation / Group</label>
+                                            <input
+                                                name="affiliation"
+                                                value={formData.affiliation}
+                                                onChange={handleFormChange}
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Managed Groups (Comma Separated)</label>
+                                            <input
+                                                name="affiliation"
+                                                value={formData.affiliation}
+                                                onChange={handleFormChange}
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                                placeholder="e.g. St Jude, Westside"
+                                            />
+                                        </>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Occupation</label>

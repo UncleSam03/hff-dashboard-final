@@ -38,14 +38,28 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             // Fetch All Facilitators
             let facilitators = await db.registrations.where('type').equals('facilitator').toArray();
 
-            // Count participants for each facilitator
+            // Count participants for each facilitator (Direct + Group Link)
             const participants = await db.registrations.where('type').equals('participant').toArray();
-            const counts = participants.reduce((acc, p) => {
+            const counts = {};
+            
+            participants.forEach(p => {
+                // Direct link count
                 if (p.facilitator_uuid) {
-                    acc[p.facilitator_uuid] = (acc[p.facilitator_uuid] || 0) + 1;
+                    counts[p.facilitator_uuid] = (counts[p.facilitator_uuid] || 0) + 1;
                 }
-                return acc;
-            }, {});
+                // Group link count
+                if (p.affiliation && p.type === 'participant') {
+                    facilitators.forEach(f => {
+                        if (f.affiliation) {
+                            const managedGroups = f.affiliation.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                            const inGroup = managedGroups.some(g => g === p.affiliation.toLowerCase().trim());
+                            if (inGroup && p.facilitator_uuid !== f.uuid) { // Avoid double count
+                                counts[f.uuid] = (counts[f.uuid] || 0) + 1;
+                            }
+                        }
+                    });
+                }
+            });
 
             let results = facilitators.map(f => ({
                 ...f,
@@ -64,10 +78,20 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             // Fetch the updated latest facilitator object from DB first so it's fresh
             const freshFacilitator = await db.registrations.get(selectedFacilitator.id) || selectedFacilitator;
 
-            // Fetch Participants for selected Facilitator
+            // Fetch Participants for selected Facilitator (Direct + Group Link)
             let results = await db.registrations
                 .where('type').equals('participant')
-                .filter(p => p.facilitator_uuid === selectedFacilitator.uuid)
+                .filter(p => {
+                    const matchesDirect = p.facilitator_uuid === selectedFacilitator.uuid;
+                    let matchesGroup = false;
+                    
+                    if (selectedFacilitator.affiliation && p.affiliation) {
+                        const managedGroups = selectedFacilitator.affiliation.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                        matchesGroup = managedGroups.some(g => g === p.affiliation.toLowerCase().trim());
+                    }
+                    
+                    return matchesDirect || matchesGroup;
+                })
                 .toArray();
 
             results.sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));

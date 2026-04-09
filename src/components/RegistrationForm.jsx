@@ -14,7 +14,6 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
         place: '',
         education: '',
         maritalStatus: '',
-        affiliation: '',
         occupation: '',
         participantsCount: 1,
         booksDistributed: 0,
@@ -91,7 +90,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 place: formData.place,
                 education: formData.education,
                 marital_status: formData.maritalStatus,
-                affiliation: formData.affiliation,
+                affiliation: formData.affiliation, // Used for both Single Group and Comma Separated Groups
                 occupation: formData.occupation,
                 type: type, // 'facilitator' or 'participant'
                 // Facilitator specific
@@ -338,17 +337,31 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Affiliation (e.g. Church, School)</label>
-                        <input
-                            type="text"
-                            name="affiliation"
-                            value={formData.affiliation}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
-                            placeholder="Organization name"
-                        />
-                    </div>
+                    {type === 'participant' ? (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Affiliation / Group (e.g. Church, School)</label>
+                            <input
+                                type="text"
+                                name="affiliation"
+                                value={formData.affiliation}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
+                                placeholder="Group name"
+                            />
+                        </div>
+                    ) : (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Managed Groups (Comma Separated)</label>
+                            <input
+                                type="text"
+                                name="affiliation"
+                                value={formData.affiliation}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
+                                placeholder="e.g. St Jude, Comm Center"
+                            />
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
                         <input
