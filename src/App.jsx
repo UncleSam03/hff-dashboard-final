@@ -11,7 +11,7 @@ import UnderConstruction from './components/UnderConstruction';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
 import FacilitatorOnboarding from './components/FacilitatorOnboarding';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from './lib/dexieDb';
+import db from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
 import { pullFromSupabase } from './lib/supabaseSync';
 
@@ -23,7 +23,13 @@ function AppContent() {
   console.log("[AppContent] Status:", { role, onboarding_completed: profile?.onboarding_completed, loading });
 
   const registrations = useLiveQuery(() => db.registrations.toArray()) || [];
-  const analytics = processAnalytics(registrations);
+  const analytics = useMemo(() => processAnalytics(registrations), [registrations]);
+
+  console.log("[App] Analytics Update:", { 
+    regCount: registrations.length, 
+    totalRegistered: analytics.totalRegistered,
+    mode 
+  });
 
   // For admin users: pull cloud data into Dexie on first mount
   // so the dashboard isn't empty on a new session / cleared browser

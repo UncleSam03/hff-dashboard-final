@@ -22,8 +22,8 @@ export function processAnalytics(registrations) {
         };
     }
 
-    const participants = registrations.filter(r => r.type === 'participant' && !r.is_deleted);
-    const facilitators = registrations.filter(r => r.type === 'facilitator' && !r.is_deleted);
+    const participants = registrations.filter(r => (r.type || '').toLowerCase() === 'participant' && !r.is_deleted);
+    const facilitators = registrations.filter(r => (r.type || '').toLowerCase() === 'facilitator' && !r.is_deleted);
 
     // Attendance Helper: Normalize both array [true, false] and object {D1: true} formats
     const isPresentOnDay = (attendance, dayIndex) => {
@@ -100,15 +100,17 @@ export function processAnalytics(registrations) {
     });
 
     // Book distribution
-    const totalBooksGiven = participants.filter(p => p.books_received === true).length;
+    const participantBooks = participants.filter(p => p.books_received === true).length;
+    const facilitatorBooks = facilitators.reduce((sum, f) => sum + (Number(f.books_distributed) || 0), 0);
+    const totalBooksGiven = participantBooks + facilitatorBooks;
 
     return {
         totalRegistrations: participants.length,
         totalFacilitators: facilitators.length,
-        totalRegistered: registrations.length,
+        totalRegistered: participants.length + facilitators.length,
         uniqueAttendees,
         avgAttendance,
-        totalBooksGiven, // New metric
+        totalBooksGiven,
         dailyStats,
         ageDistribution: ageBuckets,
         demographics: { gender, education, maritalStatus },
