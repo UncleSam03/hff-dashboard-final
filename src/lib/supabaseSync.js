@@ -36,10 +36,10 @@ async function pushStorePending(storeName) {
         // Strip out purely local tracking fields that don't exist in Supabase
         const {
             id,
-            sync_status,
-            synced_at,
-            processed,
-            processed_at,
+            sync_status: _unusedSyncStatus,
+            synced_at: _unusedSyncedAt,
+            processed: _unusedProcessed,
+            processed_at: _unusedProcessedAt,
             ...recordToSync
         } = record;
 
@@ -134,8 +134,52 @@ async function pullStoreUpdates(storeName) {
             }
             window.dispatchEvent(new CustomEvent(`hff-supabase-${storeName}-updated`));
         }
+
+        // Optional: Trigger reconciliation if this is a "deep pulse" sync
+        // or if explicitly requested. For now, we'll keep it as a separate call.
+
     } finally {
         isPulling = false;
+    }
+}
+
+/**
+ * Reconciliation: Fetches all UUIDs from Supabase and deletes local records that aren't in that list.
+ * This is the only way to handle HARD deletions from the Supabase dashboard/UI.
+ */
+export async function reconcileStoreDeletions(storeName) {
+    if (!isConfigured) return;
+    
+    const online = await checkConnectivity();
+    if (!online) return;
+
+    console.log(`[SupabaseSync] Reconciling deletions for ${storeName}...`);
+    
+    // Fetch ONLY UUIDs to keep bandwidth low
+    const { data: remoteUuids, error } = await supabase
+        .from(storeName)
+        .select('uuid');
+
+    if (error) {
+        console.error(`[SupabaseSync] Reconciliation failed for ${storeName}:`, error.message);
+        return;
+    }
+
+    const remoteUuidSet = new Set((remoteUuids || []).map(r => r.uuid));
+    const localRecords = await db[storeName].toArray();
+    
+    const toDelete = localRecords.filter(r => 
+        r.uuid && 
+        r.sync_status === 'synced' && // Only delete records that were previously synced
+        !remoteUuidSet.has(r.uuid)
+    );
+
+    if (toDelete.length > 0) {
+        console.log(`[SupabaseSync] Purging ${toDelete.length} ghost records from ${storeName}`);
+        const idsToDelete = toDelete.map(r => r.id);
+        await db[storeName].bulkDelete(idsToDelete);
+        window.dispatchEvent(new CustomEvent(`hff-supabase-${storeName}-updated`));
+        window.dispatchEvent(new CustomEvent('hff-supabase-data-updated'));
     }
 }
 
@@ -245,7 +289,7 @@ export async function initSupabaseSync() {
     // Best-effort initial pull (does not throw if offline / unconfigured).
     try {
         await pullFromSupabase();
-    } catch (_e) {
+    } catch (_) {
         // no-op
     }
 }

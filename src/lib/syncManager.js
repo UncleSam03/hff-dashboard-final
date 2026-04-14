@@ -1,6 +1,6 @@
 import { getPendingSubmissions, markAsSynced } from './offlineStorage';
 import { hffFetch } from './api';
-import { pushPendingToSupabase, pullFromSupabase } from './supabaseSync';
+import { pushPendingToSupabase, pullFromSupabase, reconcileStoreDeletions } from './supabaseSync';
 import { supabase, isConfigured } from './supabase';
 
 let isSyncing = false;
@@ -26,7 +26,7 @@ export async function checkConnectivity() {
         } else {
             isActuallyOnline = false;
         }
-    } catch (e) {
+    } catch (_) {
         isActuallyOnline = false;
     }
 
@@ -80,6 +80,43 @@ export async function syncSubmissions() {
         await pushPendingToSupabase();
         await pullFromSupabase();
 
+    } finally {
+        isSyncing = false;
+    }
+}
+
+/**
+ * Perform a deep reconciliation with the cloud.
+ * This is slower than syncSubmissions but ensures 100% parity 
+ * by checking for deleted records on the server.
+ */
+export async function reconcileWithCloud() {
+    if (isSyncing) return;
+    isSyncing = true;
+
+    try {
+        const online = await checkConnectivity();
+        if (!online) return;
+
+        console.log("[SyncManager] Starting Full Cloud Reconciliation...");
+        
+        // 1. First push any local changes
+        await pushPendingToSupabase();
+        
+        // 2. Pull all updates
+        await pullFromSupabase();
+        
+        // 3. Reconcile deletions for both registrations and notices
+        await reconcileStoreDeletions('registrations');
+        await reconcileStoreDeletions('notices');
+
+        console.log("[SyncManager] Reconciliation Complete.");
+        
+        // Trigger generic update event
+        window.dispatchEvent(new CustomEvent('hff-supabase-data-updated'));
+        
+    } catch (err) {
+        console.error("[SyncManager] Reconciliation error:", err);
     } finally {
         isSyncing = false;
     }

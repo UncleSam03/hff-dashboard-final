@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from "../auth/AuthContext";
 import Sidebar from './Sidebar';
-import { Bell, Search, Menu, X, User, Shield, Users } from 'lucide-react';
+import { Bell, Search, Menu, X, User, Shield, Users, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { reconcileWithCloud } from '../lib/syncManager';
+import { isConfigured } from '../lib/supabase';
 
 const ROLE_BADGES = {
   admin: { label: "Admin", icon: Shield, bg: "bg-amber-50", text: "text-amber-700" },
@@ -13,7 +15,19 @@ const Layout = ({ children, activeTab, onTabChange }) => {
   const { user, profile, role, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const badge = ROLE_BADGES[role] || ROLE_BADGES.facilitator;
+  const [isReconciling, setIsReconciling] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isReconciling) return;
+    setIsReconciling(true);
+    try {
+      await reconcileWithCloud();
+    } catch (err) {
+      console.error("[Layout] Manual refresh failed:", err);
+    } finally {
+      setIsReconciling(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-[#FDFBFF]">
@@ -93,6 +107,26 @@ const Layout = ({ children, activeTab, onTabChange }) => {
             </button>
 
             <div className="h-10 w-[1px] bg-gray-100 mx-1 hidden sm:block" />
+
+            {/* Sync Control */}
+            {isConfigured && (
+              <button 
+                onClick={handleRefresh}
+                disabled={isReconciling}
+                className={cn(
+                  "hidden sm:flex items-center gap-3 px-4 py-2 rounded-2xl border transition-all active:scale-95 group",
+                  isReconciling 
+                    ? "bg-[#71167F]/5 border-[#71167F]/20 text-[#71167F]" 
+                    : "bg-white border-gray-100 text-gray-400 hover:text-[#71167F] hover:border-[#71167F]/20 hover:shadow-sm"
+                )}
+                title="Force deep sync with cloud (handles deletions)"
+              >
+                <RefreshCw size={14} className={cn("transition-transform", isReconciling && "animate-spin")} />
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {isReconciling ? 'Reconciling...' : 'Refresh Hub'}
+                </span>
+              </button>
+            )}
 
             {/* Live Indicator */}
             <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-green-50 text-green-700 rounded-2xl border border-green-100 shadow-sm shadow-green-500/5">

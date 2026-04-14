@@ -13,7 +13,7 @@ import FacilitatorOnboarding from './components/FacilitatorOnboarding';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
-import { pullFromSupabase } from './lib/supabaseSync';
+import { reconcileWithCloud } from './lib/syncManager';
 
 function AppContent() {
   const { role, profile, signOut, loading } = useAuth();
@@ -36,8 +36,8 @@ function AppContent() {
   useEffect(() => {
     if (role === 'admin' && navigator.onLine) {
       setInitialSyncing(true);
-      pullFromSupabase()
-        .catch(err => console.warn('[App] Initial Supabase pull failed:', err))
+      reconcileWithCloud()
+        .catch(err => console.warn('[App] Initial Supabase reconciliation failed:', err))
         .finally(() => setInitialSyncing(false));
     }
   }, [role]);
