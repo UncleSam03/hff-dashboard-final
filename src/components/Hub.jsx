@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, CalendarCheck, ClipboardList, ArrowLeft, CloudUpload, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { Users, CalendarCheck, ClipboardList, ArrowLeft, CloudUpload, RefreshCw, Check, AlertCircle, Layers } from 'lucide-react';
 import PersonList from './hub/PersonList';
 import AttendanceSheet from './hub/AttendanceSheet';
 import NoticeBoard from './hub/NoticeBoard';
+import MaintenanceTool from './MaintenanceTool';
 import { pushPendingToSupabase, resetLocalFromSupabase } from '../lib/supabaseSync';
 import { isConfigured } from '../lib/supabase';
 import db from '../lib/dexieDb';
@@ -139,6 +140,8 @@ const Hub = ({ onBack }) => {
                 );
             case 'notice':
                 return <NoticeBoard />;
+            case 'maintenance':
+                return <MaintenanceTool />;
             default:
                 return <PersonList />;
         }
@@ -208,6 +211,13 @@ const Hub = ({ onBack }) => {
                     >
                         <ClipboardList className="h-5 w-5" />
                         <span>Notice Board</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('maintenance')}
+                        className={`hub-nav-button flex items-center gap-2 ${activeTab === 'maintenance' ? 'active' : ''}`}
+                    >
+                        <Layers className="h-5 w-5" />
+                        <span>Maintenance</span>
                     </button>
                 </div>
             </div>
