@@ -91,40 +91,73 @@ async function pullStoreUpdates(storeName) {
 
     isPulling = true;
     try {
-        const latestLocal = await db[storeName].orderBy('updated_at').last();
-        const lastSyncTime = latestLocal?.updated_at || new Date(0).toISOString();
-
-        // Removed agent log
-
-        const { data, error } = await supabase
+        // 1. Fetch metadata (uuid, updated_at) to avoid downloading all records
+        const { data: remoteMeta, error: metaError } = await supabase
             .from(storeName)
-            .select('*')
-            .gt('updated_at', lastSyncTime);
+            .select('uuid, updated_at');
 
-        // Removed agent log
-
-        if (error) {
+        if (metaError) {
             // Check for aborted signal (common in some browser states)
-            if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-                console.warn(`[SupabaseSync] Pull ${storeName} aborted:`, error.message);
+            if (metaError.name === 'AbortError' || metaError.message?.includes('aborted')) {
+                console.warn(`[SupabaseSync] Pull metadata ${storeName} aborted:`, metaError.message);
             } else {
-                console.error(`[SupabaseSync] Error pulling ${storeName} updates:`, error.message);
+                console.error(`[SupabaseSync] Error pulling ${storeName} metadata:`, metaError.message);
             }
             return;
         }
 
-        if (data && data.length > 0) {
-            console.log(`[SupabaseSync] Pulling ${data.length} new records from ${storeName}...`);
-            for (const remoteRecord of data) {
-                const existing = await db[storeName].where('uuid').equals(remoteRecord.uuid).first();
+        if (!remoteMeta || remoteMeta.length === 0) return;
 
+        // 2. Load local metadata
+        const localRecords = await db[storeName].toArray();
+        const localMetaMap = new Map();
+        for (const loc of localRecords) {
+            if (loc.uuid) {
+                localMetaMap.set(loc.uuid, loc.updated_at);
+            }
+        }
+
+        // 3. Find UUIDs that are missing or newer on the server
+        const uuidsToFetch = [];
+        for (const rem of remoteMeta) {
+            const locUpdated = localMetaMap.get(rem.uuid);
+            if (!locUpdated || new Date(rem.updated_at) > new Date(locUpdated)) {
+                uuidsToFetch.push(rem.uuid);
+            }
+        }
+
+        if (uuidsToFetch.length === 0) {
+            return; // Everything is up-to-date
+        }
+
+        console.log(`[SupabaseSync] Pulling ${uuidsToFetch.length} new/updated records from ${storeName}...`);
+
+        // 4. Fetch the full records in batches
+        const chunkSize = 100;
+        let fetchedData = [];
+        for (let i = 0; i < uuidsToFetch.length; i += chunkSize) {
+            const chunk = uuidsToFetch.slice(i, i + chunkSize);
+            const { data: chunkData, error: chunkError } = await supabase
+                .from(storeName)
+                .select('*')
+                .in('uuid', chunk);
+
+            if (!chunkError && chunkData) {
+                fetchedData = fetchedData.concat(chunkData);
+            } else if (chunkError && !chunkError.message?.includes('aborted')) {
+                console.error(`[SupabaseSync] Error pulling batch from ${storeName}:`, chunkError.message);
+            }
+        }
+
+        // 5. Upsert fetched records into local IndexedDB
+        if (fetchedData.length > 0) {
+            for (const remoteRecord of fetchedData) {
+                const existing = await db[storeName].where('uuid').equals(remoteRecord.uuid).first();
                 if (existing) {
-                    if (new Date(remoteRecord.updated_at) > new Date(existing.updated_at)) {
-                        await db[storeName].update(existing.id, {
-                            ...remoteRecord,
-                            sync_status: 'synced'
-                        });
-                    }
+                    await db[storeName].update(existing.id, {
+                        ...remoteRecord,
+                        sync_status: 'synced'
+                    });
                 } else {
                     await db[storeName].add({
                         ...remoteRecord,
@@ -134,10 +167,6 @@ async function pullStoreUpdates(storeName) {
             }
             window.dispatchEvent(new CustomEvent(`hff-supabase-${storeName}-updated`));
         }
-
-        // Optional: Trigger reconciliation if this is a "deep pulse" sync
-        // or if explicitly requested. For now, we'll keep it as a separate call.
-
     } finally {
         isPulling = false;
     }
