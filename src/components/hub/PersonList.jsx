@@ -17,6 +17,8 @@ const PersonList = ({ onRecordEdited }) => {
     const [editingPerson, setEditingPerson] = useState(null);
     const [editorError, setEditorError] = useState('');
     const [editorSubmitting, setEditorSubmitting] = useState(false);
+    const [facSearchTerm, setFacSearchTerm] = useState('');
+    const [facDropdownOpen, setFacDropdownOpen] = useState(false);
     const [formData, setFormData] = useState({
         type: 'participant',
         first_name: '',
@@ -152,6 +154,8 @@ const PersonList = ({ onRecordEdited }) => {
         setEditorMode('create');
         setEditingPerson(null);
         resetForm({ type });
+        setFacSearchTerm('');
+        setFacDropdownOpen(false);
         setEditorError('');
         setEditorOpen(true);
     };
@@ -160,6 +164,10 @@ const PersonList = ({ onRecordEdited }) => {
         setEditorMode('edit');
         setEditingPerson(person);
         resetForm(person);
+        // Find existing facilitator to set initial search term
+        const fac = facilitators?.find(f => f.uuid === person.facilitator_uuid);
+        setFacSearchTerm(fac ? `${fac.first_name || ''} ${fac.last_name || ''}`.trim() : '');
+        setFacDropdownOpen(false);
         setEditorError('');
         setEditorOpen(true);
     };
@@ -683,21 +691,55 @@ const PersonList = ({ onRecordEdited }) => {
                             </div>
 
                             {formData.type === 'participant' && (
-                                <div>
+                                <div className="relative">
                                     <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Facilitator (optional)</label>
-                                    <select
-                                        name="facilitator_uuid"
-                                        value={formData.facilitator_uuid}
-                                        onChange={handleFormChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
-                                    >
-                                        <option value="">Not assigned</option>
-                                        {facilitatorOptions.map((option) => (
-                                            <option key={option.uuid} value={option.uuid}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={facSearchTerm}
+                                            onChange={(e) => {
+                                                setFacSearchTerm(e.target.value);
+                                                setFacDropdownOpen(true);
+                                                setFormData(prev => ({ ...prev, facilitator_uuid: '' }));
+                                            }}
+                                            onFocus={() => setFacDropdownOpen(true)}
+                                            onBlur={() => setTimeout(() => setFacDropdownOpen(false), 200)}
+                                            placeholder="Search and select facilitator..."
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                        />
+                                        {facDropdownOpen && (
+                                            <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                                                <div 
+                                                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm font-bold text-gray-500 border-b border-gray-50"
+                                                    onClick={() => {
+                                                        setFacSearchTerm('');
+                                                        setFormData(prev => ({ ...prev, facilitator_uuid: '' }));
+                                                        setFacDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    Not assigned
+                                                </div>
+                                                {facilitatorOptions
+                                                    .filter(opt => opt.label.toLowerCase().includes(facSearchTerm.toLowerCase()))
+                                                    .map(option => (
+                                                        <div
+                                                            key={option.uuid}
+                                                            className="px-4 py-3 hover:bg-[#71167F]/5 cursor-pointer text-sm font-bold text-gray-900 transition-colors"
+                                                            onClick={() => {
+                                                                setFacSearchTerm(option.label);
+                                                                setFormData(prev => ({ ...prev, facilitator_uuid: option.uuid }));
+                                                                setFacDropdownOpen(false);
+                                                            }}
+                                                        >
+                                                            {option.label}
+                                                        </div>
+                                                    ))}
+                                                {facSearchTerm && facilitatorOptions.filter(opt => opt.label.toLowerCase().includes(facSearchTerm.toLowerCase())).length === 0 && (
+                                                    <div className="px-4 py-3 text-sm text-gray-400 italic font-medium">No exact match found</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
