@@ -536,7 +536,6 @@ const PersonList = ({ onRecordEdited }) => {
                                     value={formData.type}
                                     onChange={handleFormChange}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
-                                    disabled={editorMode === 'edit'}
                                 >
                                     <option value="facilitator">Facilitator</option>
                                     <option value="participant">Participant</option>
