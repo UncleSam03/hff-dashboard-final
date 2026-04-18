@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/dexieDb';
-import { pullFromSupabase, reconcileWithCloud } from '../lib/supabaseSync';
+import { pullFromSupabase } from '../lib/supabaseSync';
+import { reconcileWithCloud } from '../lib/syncManager';
 import StatsCard from './StatsCard';
 import AttendanceChart from './AttendanceChart';
 import AgeChart from './AgeChart';
