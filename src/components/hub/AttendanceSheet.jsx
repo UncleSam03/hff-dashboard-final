@@ -42,20 +42,26 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             const participants = await db.registrations.where('type').equals('participant').toArray();
             const counts = {};
             
-            participants.forEach(p => {
-                // Direct link count
-                if (p.facilitator_uuid) {
-                    counts[p.facilitator_uuid] = (counts[p.facilitator_uuid] || 0) + 1;
+            // First compute aliases for each facilitator to correctly match all linked UUIDs
+            const aliasesMap = {};
+            for (const f of facilitators) {
+                aliasesMap[f.uuid] = [f.uuid];
+                if (f.contact) {
+                    const aliases = await db.registrations.where('type').equals('facilitator')
+                        .filter(r => r.contact === f.contact)
+                        .toArray();
+                    aliases.forEach(a => {
+                        if (!aliasesMap[f.uuid].includes(a.uuid)) aliasesMap[f.uuid].push(a.uuid);
+                    });
                 }
-                // Group link count
-                if (p.affiliation && p.type === 'participant') {
+            }
+
+            participants.forEach(p => {
+                if (p.facilitator_uuid) {
+                    // Award this participant to any facilitator where their UUID is an alias
                     facilitators.forEach(f => {
-                        if (f.affiliation) {
-                            const managedGroups = f.affiliation.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-                            const inGroup = managedGroups.some(g => g === p.affiliation.toLowerCase().trim());
-                            if (inGroup && p.facilitator_uuid !== f.uuid) { // Avoid double count
-                                counts[f.uuid] = (counts[f.uuid] || 0) + 1;
-                            }
+                        if (aliasesMap[f.uuid] && aliasesMap[f.uuid].includes(p.facilitator_uuid)) {
+                            counts[f.uuid] = (counts[f.uuid] || 0) + 1;
                         }
                     });
                 }
@@ -78,20 +84,17 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             // Fetch the updated latest facilitator object from DB first so it's fresh
             const freshFacilitator = await db.registrations.get(selectedFacilitator.id) || selectedFacilitator;
 
-            // Fetch Participants for selected Facilitator (Direct + Group Link)
+            // First find any alias UUIDs for this facilitator
+            const aliases = await db.registrations.where('type').equals('facilitator')
+                .filter(r => !!(r.contact && freshFacilitator.contact && r.contact === freshFacilitator.contact))
+                .toArray();
+            const aliasUuids = aliases.map(a => a.uuid);
+            if (!aliasUuids.includes(freshFacilitator.uuid)) aliasUuids.push(freshFacilitator.uuid);
+
+            // Fetch Participants for selected Facilitator
             let results = await db.registrations
                 .where('type').equals('participant')
-                .filter(p => {
-                    const matchesDirect = p.facilitator_uuid === selectedFacilitator.uuid;
-                    let matchesGroup = false;
-                    
-                    if (selectedFacilitator.affiliation && p.affiliation) {
-                        const managedGroups = selectedFacilitator.affiliation.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-                        matchesGroup = managedGroups.some(g => g === p.affiliation.toLowerCase().trim());
-                    }
-                    
-                    return matchesDirect || matchesGroup;
-                })
+                .filter(p => aliasUuids.includes(p.facilitator_uuid))
                 .toArray();
 
             results.sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));

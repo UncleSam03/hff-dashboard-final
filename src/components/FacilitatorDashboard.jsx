@@ -5,7 +5,7 @@ import { db } from "../lib/dexieDb";
 import {
     Users, UserPlus, ClipboardCheck, ArrowLeft, Search,
     Phone, Check, XCircle, ChevronDown, ChevronUp,
-    Calendar, Loader2
+    Calendar, Loader2, Link2, AlertTriangle, User
 } from "lucide-react";
 
 import { TOTAL_CAMPAIGN_DAYS } from "../lib/constants";
@@ -35,6 +35,8 @@ export default function FacilitatorDashboard({ onBack }) {
     });
     const [regMessage, setRegMessage] = useState("");
     const [regError, setRegError] = useState("");
+    const [isSearching, setIsSearching] = useState(false);
+    const [lookupMatch, setLookupMatch] = useState(null); // { type: 'profile'|'registration', data: Object }
 
     useEffect(() => {
         if (view === "list" || view === "attendance") {
@@ -106,15 +108,117 @@ export default function FacilitatorDashboard({ onBack }) {
         }
     }
 
+    async function checkExistingParticipant(phone) {
+        if (!phone || phone.length < 7) {
+            setLookupMatch(null);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            // 1. Check Supabase profiles (Auth users)
+            if (isConfigured) {
+                const { data: profileMatch } = await supabase
+                    .from("profiles")
+                    .select("id, full_name, phone, age, gender, occupation, place")
+                    .eq("phone", phone)
+                    .maybeSingle();
+
+                if (profileMatch) {
+                    setLookupMatch({ type: 'profile', data: profileMatch });
+                    // Auto-fill form if name is empty
+                    if (!regForm.first_name) {
+                        const [first, ...rest] = (profileMatch.full_name || "").split(" ");
+                        setRegForm(p => ({
+                            ...p,
+                            first_name: first || "",
+                            last_name: rest.join(" ") || "",
+                            age: profileMatch.age || p.age,
+                            gender: profileMatch.gender || p.gender,
+                            occupation: profileMatch.occupation || p.occupation,
+                            place: profileMatch.place || p.place
+                        }));
+                    }
+                    return;
+                }
+
+                // 2. Check Supabase registrations
+                const { data: regMatch } = await supabase
+                    .from("registrations")
+                    .select("*")
+                    .eq("contact", phone)
+                    .eq("type", "participant")
+                    .maybeSingle();
+
+                if (regMatch) {
+                    setLookupMatch({ type: 'registration', data: regMatch });
+                    if (!regForm.first_name) {
+                        setRegForm(p => ({
+                            ...p,
+                            first_name: regMatch.first_name,
+                            last_name: regMatch.last_name,
+                            age: regMatch.age || p.age,
+                            gender: regMatch.gender || p.gender,
+                            place: regMatch.place || p.place,
+                            education: regMatch.education || p.education,
+                            marital_status: regMatch.marital_status || p.marital_status,
+                            occupation: regMatch.occupation || p.occupation,
+                            affiliation: regMatch.affiliation || p.affiliation
+                        }));
+                    }
+                    return;
+                }
+            }
+
+            // 3. Fallback/Local Dexie check
+            const localMatch = await db.registrations
+                .where("contact").equals(phone)
+                .filter(r => r.type === 'participant')
+                .first();
+
+            if (localMatch) {
+                setLookupMatch({ type: 'registration', data: localMatch });
+            } else {
+                setLookupMatch(null);
+            }
+        } catch (err) {
+            console.error("Lookup error:", err);
+        } finally {
+            setIsSearching(false);
+        }
+    }
+
+    // Debounce phone lookup
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (view === "register") checkExistingParticipant(regForm.phone);
+        }, 600);
+        return () => clearTimeout(timer);
+    }, [regForm.phone, view]);
+
     async function handleRegister(e) {
         e.preventDefault();
         setRegError("");
         setRegMessage("");
         setLoading(true);
         try {
-            const newUuid = crypto.randomUUID();
+            // Find the best facilitator UUID to use for this participant to avoid auth id mismatches
+            let primaryFacilitatorUuid = user.id;
+            const phoneStr = profile?.phone || user?.phone || 'none';
+            const localFac = await db.registrations
+                .where("type").equals("facilitator")
+                .filter(r => r.contact === phoneStr || r.uuid === user.id)
+                .first();
+            
+            if (localFac) {
+                primaryFacilitatorUuid = localFac.uuid;
+            }
+
+            // Use existing UUID if matching participant found, otherwise new
+            const finalUuid = lookupMatch ? (lookupMatch.type === 'profile' ? lookupMatch.data.id : lookupMatch.data.uuid) : crypto.randomUUID();
+
             const record = {
-                uuid: newUuid,
+                uuid: finalUuid,
                 first_name: regForm.first_name,
                 last_name: regForm.last_name,
                 contact: regForm.phone,
@@ -126,24 +230,40 @@ export default function FacilitatorDashboard({ onBack }) {
                 affiliation: regForm.affiliation || "",
                 occupation: regForm.occupation || "",
                 type: "participant",
-                facilitator_uuid: user.id,
-                attendance: Array(TOTAL_DAYS).fill(false),
-                books_received: false, // Default to false
+                facilitator_uuid: primaryFacilitatorUuid,
+                attendance: lookupMatch?.data?.attendance || Array(TOTAL_DAYS).fill(false),
+                books_received: lookupMatch?.data?.books_received || false,
                 source: "facilitator-dashboard",
-                created_at: new Date().toISOString(),
+                created_at: lookupMatch?.data?.created_at || new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 sync_status: "pending",
             };
 
-            // Save locally
-            await db.registrations.add(record);
+            // Save locally (using put instead of add to handle existing records)
+            const existingLocally = await db.registrations.where("uuid").equals(finalUuid).first();
+            if (existingLocally) {
+                await db.registrations.update(existingLocally.id, record);
+            } else {
+                await db.registrations.add(record);
+            }
 
-            // Try Supabase - strip internal fields
+            // Try Supabase
             if (isConfigured) {
                 const { id, sync_status, synced_at, ...supabasePayload } = record;
-                const { error } = await supabase.from("registrations").insert(supabasePayload);
+                
+                let error;
+                if (lookupMatch?.type === 'registration' || (isConfigured && (await supabase.from("registrations").select("uuid").eq("uuid", finalUuid).maybeSingle()).data)) {
+                    // Update existing registration
+                    const { error: updateError } = await supabase.from("registrations").update(supabasePayload).eq("uuid", finalUuid);
+                    error = updateError;
+                } else {
+                    // Insert new registration
+                    const { error: insertError } = await supabase.from("registrations").insert(supabasePayload);
+                    error = insertError;
+                }
+
                 if (!error) {
-                    await db.registrations.where("uuid").equals(newUuid).modify({
+                    await db.registrations.where("uuid").equals(finalUuid).modify({
                         sync_status: "synced",
                         synced_at: new Date().toISOString()
                     });
@@ -152,8 +272,9 @@ export default function FacilitatorDashboard({ onBack }) {
                 }
             }
 
-            setRegMessage(`${regForm.first_name} ${regForm.last_name} registered successfully!`);
+            setRegMessage(lookupMatch ? `Updated existing record for ${regForm.first_name}!` : `${regForm.first_name} ${regForm.last_name} registered successfully!`);
             setRegForm({ first_name: "", last_name: "", phone: "", age: "", gender: "", place: "", education: "", marital_status: "", affiliation: "", occupation: "" });
+            setLookupMatch(null);
             loadParticipants(); // Refresh list after registration
         } catch (err) {
             setRegError(err.message || "Failed to register participant.");
@@ -349,15 +470,40 @@ export default function FacilitatorDashboard({ onBack }) {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                            <input
-                                type="tel"
-                                value={regForm.phone}
-                                onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))}
-                                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
-                                placeholder="+267 71 234 567"
-                                required
-                            />
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                                {isSearching && <Loader2 className="h-3 w-3 text-emerald-500 animate-spin" />}
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="tel"
+                                    value={regForm.phone}
+                                    onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))}
+                                    className={`w-full rounded-xl border px-3 py-2.5 focus:outline-none focus:ring-2 transition-all ${lookupMatch ? 'border-amber-200 bg-amber-50 ring-amber-400/20' : 'border-gray-200 focus:ring-emerald-400/40'}`}
+                                    placeholder="+267 71 234 567"
+                                    required
+                                />
+                                {lookupMatch && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-amber-700 bg-white/80 px-2 py-0.5 rounded-lg border border-amber-100 shadow-sm animate-in fade-in zoom-in duration-200">
+                                        <AlertTriangle className="h-3.5 w-3.5" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">Matched</span>
+                                    </div>
+                                )}
+                            </div>
+                            {lookupMatch && (
+                                <div className="mt-2 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2 duration-300">
+                                    <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-sm">
+                                        <Link2 className="h-4 w-4 text-amber-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">Existing Participant Found</p>
+                                        <p className="text-sm text-amber-800">
+                                            {lookupMatch.type === 'profile' ? 'This user has a self-registered account.' : 'Already registered in the system.'}
+                                        </p>
+                                        <p className="text-xs text-amber-600 font-medium mt-0.5">Submitting will link this participant to your group.</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -464,9 +610,21 @@ export default function FacilitatorDashboard({ onBack }) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full rounded-xl bg-emerald-600 text-white font-bold px-4 py-3 hover:bg-emerald-700 disabled:opacity-50 transition-all"
+                            className={`w-full rounded-xl text-white font-bold px-4 py-3 disabled:opacity-50 transition-all flex items-center justify-center gap-2 ${lookupMatch ? 'bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-600/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20'}`}
                         >
-                            {loading ? "Registering…" : "Register Participant"}
+                            {loading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : lookupMatch ? (
+                                <>
+                                    <Link2 className="h-5 w-5" />
+                                    Link Existing Participant
+                                </>
+                            ) : (
+                                <>
+                                    <UserPlus className="h-5 w-5" />
+                                    Register New Participant
+                                </>
+                            )}
                         </button>
                     </form>
                 </div>

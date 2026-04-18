@@ -1,8 +1,19 @@
 import React from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../lib/dexieDb';
 import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-const ParticipantDetail = ({ participant, onBack, onNavigateToAttendance }) => {
+const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigateToAttendance }) => {
+    const liveParticipant = useLiveQuery(
+        () => db.registrations.get(initialParticipant.id),
+        [initialParticipant.id]
+    );
+
+    // Use live data if available, maintaining the facilitatorName from initial object
+    const participant = liveParticipant 
+        ? { ...liveParticipant, facilitatorName: initialParticipant.facilitatorName } 
+        : initialParticipant;
 
     const safeFormatTime = (dateStr) => {
         if (!dateStr) return 'N/A';

@@ -16,17 +16,22 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
         const freshFac = await db.registrations.get(facilitator.id) || facilitator;
         const managedGroups = (freshFac.affiliation || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
+        // Find alias UUIDs for this facilitator (e.g. self-registration UUID vs offline Registration UUID)
+        const aliases = await db.registrations
+            .where('type').equals('facilitator')
+            .filter(r => !!(r.contact && freshFac.contact && r.contact === freshFac.contact))
+            .toArray();
+            
+        const aliasUuids = aliases.map(a => a.uuid);
+        if (!aliasUuids.includes(freshFac.uuid)) aliasUuids.push(freshFac.uuid);
+
         // Fetch all candidates
         let allParticipants = await db.registrations.where('type').equals('participant').toArray();
         let results = allParticipants.filter(p => {
             if (p.is_deleted) return false;
             
-            const matchesDirect = p.facilitator_uuid === facilitator.uuid;
-            let matchesGroup = false;
-            if (p.affiliation && managedGroups.length > 0) {
-                matchesGroup = managedGroups.some(g => g === p.affiliation.toLowerCase().trim());
-            }
-            return matchesDirect || matchesGroup;
+            // Only map participants strictly by their associated facilitator uuid (including aliases)
+            return aliasUuids.includes(p.facilitator_uuid);
         });
 
         if (searchTerm) {
