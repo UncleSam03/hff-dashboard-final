@@ -91,6 +91,12 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             const aliasUuids = aliases.map(a => a.uuid);
             if (!aliasUuids.includes(freshFacilitator.uuid)) aliasUuids.push(freshFacilitator.uuid);
 
+            if (freshFacilitator.linked_facilitators) {
+                freshFacilitator.linked_facilitators.forEach(uuid => {
+                    if (!aliasUuids.includes(uuid)) aliasUuids.push(uuid);
+                });
+            }
+
             // Fetch Participants for selected Facilitator
             let results = await db.registrations
                 .where('type').equals('participant')
@@ -99,7 +105,17 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
 
             results.sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
 
-            // Add the facilitator themselves at the very top of the list
+            // Fetch linked co-facilitators to add them to the top of the list
+            let coFacilitators = [];
+            if (freshFacilitator.linked_facilitators && freshFacilitator.linked_facilitators.length > 0) {
+                coFacilitators = await db.registrations
+                    .where('type').equals('facilitator')
+                    .filter(f => freshFacilitator.linked_facilitators.includes(f.uuid))
+                    .toArray();
+            }
+
+            // Add the facilitator themselves and all linked co-facilitators at the very top of the list
+            results.unshift(...coFacilitators);
             results.unshift(freshFacilitator);
 
             if (searchTerm) {

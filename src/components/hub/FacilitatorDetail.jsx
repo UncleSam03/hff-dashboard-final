@@ -40,15 +40,28 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
 
     const handleSelectCoFacilitator = async (selectedFac) => {
         try {
-            const currentAffs = (selectedFac.affiliation || '').split(',').map(s => s.trim()).filter(Boolean);
-            const myAffs = (facilitator.affiliation || '').split(',').map(s => s.trim()).filter(Boolean);
-            const newAffs = Array.from(new Set([...currentAffs, ...myAffs])).join(', ');
+            const freshFac = await db.registrations.get(facilitator.id) || facilitator;
             
-            await db.registrations.update(selectedFac.id, {
-                affiliation: newAffs,
-                sync_status: 'pending',
-                updated_at: new Date().toISOString()
-            });
+            const myLinks = freshFac.linked_facilitators || [];
+            if (!myLinks.includes(selectedFac.uuid)) {
+                myLinks.push(selectedFac.uuid);
+                await db.registrations.update(freshFac.id, {
+                    linked_facilitators: myLinks,
+                    sync_status: 'pending',
+                    updated_at: new Date().toISOString()
+                });
+            }
+
+            const theirLinks = selectedFac.linked_facilitators || [];
+            if (!theirLinks.includes(freshFac.uuid)) {
+                theirLinks.push(freshFac.uuid);
+                await db.registrations.update(selectedFac.id, {
+                    linked_facilitators: theirLinks,
+                    sync_status: 'pending',
+                    updated_at: new Date().toISOString()
+                });
+            }
+            
             setIsAddingCoFacilitator(false);
             setCoFacSearchTerm('');
             setCoFacSearchResults(null);
@@ -57,10 +70,9 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
         }
     };
 
-    const participants = useLiveQuery(async () => {
+    const dashboardQuery = useLiveQuery(async () => {
         // Fetch fresh facilitator to get latest managed groups
         const freshFac = await db.registrations.get(facilitator.id) || facilitator;
-        const managedGroups = (freshFac.affiliation || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
         // Find alias UUIDs for this facilitator (e.g. self-registration UUID vs offline Registration UUID)
         const aliases = await db.registrations
@@ -71,12 +83,25 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
         const aliasUuids = aliases.map(a => a.uuid);
         if (!aliasUuids.includes(freshFac.uuid)) aliasUuids.push(freshFac.uuid);
 
+        // Add linked facilitators UUIDs
+        if (freshFac.linked_facilitators) {
+            freshFac.linked_facilitators.forEach(uuid => {
+                if (!aliasUuids.includes(uuid)) aliasUuids.push(uuid);
+            });
+        }
+
+        // Fetch co-facilitator objects
+        let allFacilitators = await db.registrations.where('type').equals('facilitator').toArray();
+        let coFacilitators = allFacilitators.filter(f => 
+            freshFac.linked_facilitators && freshFac.linked_facilitators.includes(f.uuid) && !f.is_deleted
+        );
+
         // Fetch all candidates
         let allParticipants = await db.registrations.where('type').equals('participant').toArray();
         let results = allParticipants.filter(p => {
             if (p.is_deleted) return false;
             
-            // Only map participants strictly by their associated facilitator uuid (including aliases)
+            // Only map participants strictly by their associated facilitator uuid (including aliases and linkages)
             return aliasUuids.includes(p.facilitator_uuid);
         });
 
@@ -95,8 +120,14 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
             facilitatorName: `${facilitator.first_name} ${facilitator.last_name}`
         }));
 
-        return results.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-    }, [facilitator.uuid, searchTerm]);
+        return {
+            participants: results.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)),
+            coFacilitators
+        };
+    }, [facilitator.id, searchTerm]);
+
+    const participants = dashboardQuery?.participants;
+    const coFacilitators = dashboardQuery?.coFacilitators;
 
     const exportToCSV = () => {
         if (!participants) return;
@@ -356,6 +387,25 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
                     </button>
                 </div>
             </div>
+
+            {coFacilitators && coFacilitators.length > 0 && (
+                <div className="mb-8">
+                    <h3 className="text-sm font-black text-gray-500 tracking-tight uppercase mb-4 px-2">Linked Co-Facilitators</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {coFacilitators.map(coFac => (
+                            <div key={coFac.uuid} className="bg-white/60 p-4 rounded-2xl border border-[#71167F]/20 flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-[#71167F]/10 text-[#71167F] flex items-center justify-center shrink-0">
+                                    <Briefcase size={16} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-gray-900 text-sm leading-tight">{coFac.first_name} {coFac.last_name}</h4>
+                                    <p className="text-[9px] font-black text-[#71167F] uppercase tracking-widest mt-0.5">Co-Facilitator</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Participant Grid */}
             {!participants ? (
