@@ -90,6 +90,47 @@ const DataIntegrity = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
+            {/* Deficiency Scorecard */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="glass-card p-6 border-l-4 border-red-500">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-red-50 text-red-600 rounded-2xl">
+                            <AlertCircle size={24} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Deficient Records</p>
+                            <h3 className="text-2xl font-black text-gray-900 leading-none">{incompleteRecords.length}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div className="glass-card p-6 border-l-4 border-blue-500">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                            <User size={24} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Participants</p>
+                            <h3 className="text-2xl font-black text-gray-900 leading-none">
+                                {incompleteRecords.filter(r => r.type === 'participant').length}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                <div className="glass-card p-6 border-l-4 border-amber-500">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+                            <Briefcase size={24} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Facilitators</p>
+                            <h3 className="text-2xl font-black text-gray-900 leading-none">
+                                {incompleteRecords.filter(r => r.type === 'facilitator').length}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Control Bar */}
             <div className="flex flex-col md:flex-row gap-6 items-center">
                 <div className="relative flex-1 w-full">
