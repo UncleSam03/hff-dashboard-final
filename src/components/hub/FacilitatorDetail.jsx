@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
 import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Briefcase as OccupationIcon } from 'lucide-react';
@@ -10,6 +10,52 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [isAddingParticipant, setIsAddingParticipant] = useState(false);
+
+    const [isAddingCoFacilitator, setIsAddingCoFacilitator] = useState(false);
+    const [coFacSearchTerm, setCoFacSearchTerm] = useState('');
+    const [coFacSearchResults, setCoFacSearchResults] = useState(null);
+    const [isRegisteringCoFacilitator, setIsRegisteringCoFacilitator] = useState(false);
+
+    useEffect(() => {
+        const handleSearch = async () => {
+            if (!coFacSearchTerm || coFacSearchTerm.length < 2) {
+                setCoFacSearchResults(null);
+                return;
+            }
+            try {
+                const results = await db.registrations.where('type').equals('facilitator').toArray();
+                const filtered = results.filter(f => 
+                    !f.is_deleted && 
+                    f.id !== facilitator.id && 
+                    (f.first_name + ' ' + f.last_name).toLowerCase().includes(coFacSearchTerm.toLowerCase())
+                );
+                setCoFacSearchResults(filtered);
+            } catch (err) {
+                console.error('Co-facilitator search failed', err);
+            }
+        };
+        const debounce = setTimeout(handleSearch, 300);
+        return () => clearTimeout(debounce);
+    }, [coFacSearchTerm, facilitator.id]);
+
+    const handleSelectCoFacilitator = async (selectedFac) => {
+        try {
+            const currentAffs = (selectedFac.affiliation || '').split(',').map(s => s.trim()).filter(Boolean);
+            const myAffs = (facilitator.affiliation || '').split(',').map(s => s.trim()).filter(Boolean);
+            const newAffs = Array.from(new Set([...currentAffs, ...myAffs])).join(', ');
+            
+            await db.registrations.update(selectedFac.id, {
+                affiliation: newAffs,
+                sync_status: 'pending',
+                updated_at: new Date().toISOString()
+            });
+            setIsAddingCoFacilitator(false);
+            setCoFacSearchTerm('');
+            setCoFacSearchResults(null);
+        } catch (e) {
+            console.error('Failed to link co-facilitator', e);
+        }
+    };
 
     const participants = useLiveQuery(async () => {
         // Fetch fresh facilitator to get latest managed groups
@@ -103,6 +149,110 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
         );
     }
 
+    if (isRegisteringCoFacilitator) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
+                            Register Co-Facilitator
+                        </h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                            For Group: {facilitator.affiliation || 'Unspecified Group'}
+                        </p>
+                    </div>
+                </div>
+                <RegistrationForm
+                    type="facilitator"
+                    onBack={() => setIsRegisteringCoFacilitator(false)}
+                    onSaveSuccess={() => {
+                        setIsRegisteringCoFacilitator(false);
+                        setIsAddingCoFacilitator(false);
+                    }}
+                />
+            </div>
+        );
+    }
+
+    if (isAddingCoFacilitator) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/50 backdrop-blur-xl p-6 rounded-[2rem] border border-white shadow-xl shadow-gray-200/40">
+                    <div className="flex flex-col gap-4">
+                        <button
+                            onClick={() => {
+                                setIsAddingCoFacilitator(false);
+                                setCoFacSearchTerm('');
+                                setCoFacSearchResults(null);
+                            }}
+                            className="flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#71167F] transition-colors"
+                        >
+                            <ArrowLeft size={14} /> Back to Overview
+                        </button>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
+                            Search Facilitator
+                        </h2>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm max-w-2xl mx-auto">
+                    <div className="relative mb-6">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Enter facilitator name..."
+                            value={coFacSearchTerm}
+                            onChange={(e) => setCoFacSearchTerm(e.target.value)}
+                            className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-bold"
+                            autoFocus
+                        />
+                    </div>
+
+                    {coFacSearchResults && (
+                        <div className="space-y-3 mb-6">
+                            {coFacSearchResults.length > 0 ? (
+                                coFacSearchResults.map(fac => (
+                                    <div key={fac.uuid} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-[#71167F]/30 hover:bg-[#71167F]/5 transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-10 w-10 rounded-full bg-[#71167F]/10 text-[#71167F] flex items-center justify-center">
+                                                <Briefcase size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-900">{fac.first_name} {fac.last_name}</p>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{fac.affiliation || 'No Affiliation'}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleSelectCoFacilitator(fac)}
+                                            className="px-4 py-2 rounded-lg bg-[#71167F] text-white text-[10px] font-black uppercase tracking-widest hover:shadow-lg transition-all"
+                                        >
+                                            Link
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                    <p className="text-sm font-bold text-gray-500 mb-2">No facilitator found matching "{coFacSearchTerm}"</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
+                    {(!coFacSearchResults || coFacSearchResults.length === 0) && (
+                        <div className="pt-6 border-t border-gray-100 text-center">
+                            <button
+                                onClick={() => setIsRegisteringCoFacilitator(true)}
+                                className="px-6 py-3 rounded-xl bg-white border-2 border-[#71167F] text-[#71167F] hover:bg-[#71167F] hover:text-white transition-all text-xs font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm"
+                            >
+                                <Plus size={16} />
+                                Register New Facilitator
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     if (selectedParticipant) {
         return (
             <ParticipantDetail
@@ -188,6 +338,14 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
                             Mark Attendance
                         </button>
                     )}
+                    <button
+                        onClick={() => setIsAddingCoFacilitator(true)}
+                        className="px-4 py-2.5 rounded-xl bg-purple-50 border border-purple-100 text-[#71167F] hover:bg-purple-100 hover:shadow-sm transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shrink-0"
+                        title="Add facilitator"
+                    >
+                        <Plus size={16} />
+                        Add Facilitator
+                    </button>
                     <button
                         onClick={() => setIsAddingParticipant(true)}
                         className="px-4 py-2.5 rounded-xl bg-[#71167F] text-white hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shrink-0 shadow-md shadow-[#71167F]/20"
