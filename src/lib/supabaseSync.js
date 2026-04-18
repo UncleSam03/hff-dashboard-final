@@ -14,6 +14,46 @@ import { checkConnectivity } from './syncManager';
 let isSyncing = false;
 
 /**
+ * Helper to fetch all records, overcoming Supabase's default 1,000 row limit.
+ */
+async function fetchAll(table, selectString, orderByCol = null) {
+    let allData = [];
+    let from = 0;
+    const step = 1000;
+    
+    while (true) {
+        let query = supabase
+            .from(table)
+            .select(selectString)
+            .range(from, from + step - 1);
+            
+        if (orderByCol) {
+            query = query.order(orderByCol, { ascending: true });
+        }
+            
+        const { data, error } = await query;
+            
+        if (error) {
+            return { data: null, error };
+        }
+        
+        if (!data || data.length === 0) {
+            break;
+        }
+        
+        allData = allData.concat(data);
+        
+        if (data.length < step) {
+            break;
+        }
+        
+        from += step;
+    }
+    
+    return { data: allData, error: null };
+}
+
+/**
  * Push all pending records from IndexedDB to Supabase for a specific store
  */
 async function pushStorePending(storeName) {
@@ -92,9 +132,7 @@ async function pullStoreUpdates(storeName) {
     isPulling = true;
     try {
         // 1. Fetch metadata (uuid, updated_at) to avoid downloading all records
-        const { data: remoteMeta, error: metaError } = await supabase
-            .from(storeName)
-            .select('uuid, updated_at');
+        const { data: remoteMeta, error: metaError } = await fetchAll(storeName, 'uuid, updated_at');
 
         if (metaError) {
             // Check for aborted signal (common in some browser states)
@@ -185,9 +223,7 @@ export async function reconcileStoreDeletions(storeName) {
     console.log(`[SupabaseSync] Reconciling deletions for ${storeName}...`);
     
     // Fetch ONLY UUIDs to keep bandwidth low
-    const { data: remoteUuids, error } = await supabase
-        .from(storeName)
-        .select('uuid');
+    const { data: remoteUuids, error } = await fetchAll(storeName, 'uuid');
 
     if (error) {
         console.error(`[SupabaseSync] Reconciliation failed for ${storeName}:`, error.message);
@@ -253,8 +289,8 @@ export async function resetLocalFromSupabase() {
     }
 
     const [regRes, noticeRes] = await Promise.allSettled([
-        supabase.from('registrations').select('*').order('created_at', { ascending: true }),
-        supabase.from('notices').select('*').order('created_at', { ascending: true })
+        fetchAll('registrations', '*', 'created_at'),
+        fetchAll('notices', '*', 'created_at')
     ]);
 
     if (regRes.status !== 'fulfilled') {
