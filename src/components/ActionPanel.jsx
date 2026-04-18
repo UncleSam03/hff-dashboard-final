@@ -59,24 +59,32 @@ const ActionPanel = ({ syncStatus = 'synced', onDownload, onSync }) => {
 
                 <button
                     onClick={onSync}
-                    className="w-full bg-white border border-gray-100 p-6 rounded-[2rem] flex items-center justify-between hover:bg-gray-50 transition-all group shadow-sm hover:shadow-md active:scale-95 border-b-4 border-b-[#3EB049]/20"
+                    disabled={syncStatus === 'syncing'}
+                    className="w-full bg-white border border-gray-100 p-6 rounded-[2rem] flex items-center justify-between hover:bg-gray-50 transition-all group shadow-sm hover:shadow-md active:scale-95 border-b-4 border-b-[#3EB049]/20 disabled:opacity-75 disabled:cursor-wait"
                 >
                     <div className="flex items-center gap-4">
                         <div className="p-3 rounded-2xl bg-[#3EB049]/10 text-[#3EB049]">
-                            <CloudLightning size={22} />
+                            <CloudLightning size={22} className={syncStatus === 'syncing' ? 'animate-pulse' : ''} />
                         </div>
                         <div className="text-left">
                             <div className="flex items-center gap-2">
-                                <span className="text-base font-black text-gray-900 uppercase tracking-tight">Cloud Sync</span>
+                                <span className="text-base font-black text-gray-900 uppercase tracking-tight">
+                                    {syncStatus === 'syncing' ? 'Syncing Now...' : 'Cloud Sync'}
+                                </span>
                                 {syncStatus === 'synced' && (
                                     <div className="w-2 h-2 rounded-full bg-[#3EB049] animate-pulse" />
                                 )}
                             </div>
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mt-0.5">Last active 2m ago</span>
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mt-0.5">
+                                {syncStatus === 'syncing' ? 'Connecting to Supabase' : 'Last active 2m ago'}
+                            </span>
                         </div>
                     </div>
-                    <div className="text-[10px] font-black text-[#3EB049] uppercase tracking-[0.2em]">
-                        Live
+                    <div className={cn(
+                        "text-[10px] font-black uppercase tracking-[0.2em]",
+                        syncStatus === 'syncing' ? "text-amber-500" : "text-[#3EB049]"
+                    )}>
+                        {syncStatus === 'syncing' ? 'Busy' : 'Live'}
                     </div>
                 </button>
             </div>

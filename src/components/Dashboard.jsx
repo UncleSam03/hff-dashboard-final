@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/dexieDb';
+import { pullFromSupabase, reconcileWithCloud } from '../lib/supabaseSync';
 import StatsCard from './StatsCard';
 import AttendanceChart from './AttendanceChart';
 import AgeChart from './AgeChart';
@@ -8,15 +9,34 @@ import { GenderChart, EducationChart, MaritalStatusChart } from './DemographicsC
 import CampaignLaunchpad from './CampaignLaunchpad';
 import ActionPanel from './ActionPanel';
 import NoticeBoard from './NoticeBoard';
-import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2, LineChart, Check } from 'lucide-react';
+import { Users, UserCheck, CalendarDays, Briefcase, Database, LayoutGrid, BarChart3, TrendingUp, Users2, LineChart, Check, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { TOTAL_CAMPAIGN_DAYS } from '../lib/constants';
 
 const Dashboard = ({ analytics }) => {
     const [selectedDay, setSelectedDay] = useState('Day 1');
     const [genderFilter, setGenderFilter] = useState('all'); // 'all', 'M', 'F'
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const days = Array.from({ length: TOTAL_CAMPAIGN_DAYS }, (_, i) => `Day ${i + 1}`);
+
+    // Automatically pull fresh data whenever dashboard is viewed
+    useEffect(() => {
+        pullFromSupabase().catch(e => console.warn('Silent auto-pull failed:', e));
+    }, []);
+
+    const handleManualSync = async () => {
+        if (isSyncing) return;
+        setIsSyncing(true);
+        try {
+            await reconcileWithCloud();
+        } catch (e) {
+            console.error('Manual sync failed:', e);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
 
     if (!analytics || analytics.totalRegistered === undefined) {
         return (
@@ -152,7 +172,10 @@ const Dashboard = ({ analytics }) => {
 
                 {/* Side Insights Column */}
                 <div className="space-y-12">
-                    <ActionPanel />
+                    <ActionPanel 
+                        onSync={handleManualSync} 
+                        syncStatus={isSyncing ? 'syncing' : 'synced'} 
+                    />
                     <div className="2xl:hidden">
                         <NoticeBoard />
                     </div>
