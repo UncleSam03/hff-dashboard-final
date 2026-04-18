@@ -4,8 +4,7 @@ import { Sparkles, Share2, DollarSign, TrendingUp, Target, ShieldCheck } from 'l
 import { cn } from "../lib/utils";
 
 const DeepAnalysis = ({ analytics }) => {
-    const [budget, setBudget] = useState(50000);
-    const [spend, setSpend] = useState(12500);
+
 
     if (!analytics || analytics.totalRegistered === undefined) {
         return (
@@ -22,8 +21,7 @@ const DeepAnalysis = ({ analytics }) => {
     const females = demographics.gender['F'] || 0;
     const femalePct = totalRegistered > 0 ? ((females / totalRegistered) * 100).toFixed(1) : 0;
 
-    const costPerParticipant = uniqueAttendees > 0 ? (spend / uniqueAttendees).toFixed(2) : 0;
-    const budgetPercentage = budget > 0 ? Math.min((spend / budget) * 100, 100) : 0;
+
 
     const generateTextReport = () => {
         return `
@@ -88,67 +86,9 @@ Current operational metrics validate regional expansion. Resource allocation is 
     return (
         <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* Top Grid: Financial vs AI */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* Financial Intelligence */}
-                <Card className="glass-card border-white/40 shadow-2xl shadow-gray-200/50 p-8 group overflow-hidden">
-                    <div className="flex items-center gap-4 mb-10">
-                        <div className="p-3 bg-[#3EB049] text-white rounded-2xl shadow-lg shadow-[#3EB049]/20">
-                            <DollarSign size={24} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black text-[#3EB049] uppercase tracking-widest mb-0.5">Efficiency Tracking</p>
-                            <CardTitle className="text-2xl font-black text-gray-900 uppercase">Financial Impact</CardTitle>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Campaign Budget (BWP)</label>
-                                <input
-                                    type="number"
-                                    value={budget}
-                                    onChange={(e) => setBudget(Number(e.target.value))}
-                                    className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#71167F] focus:border-transparent outline-none text-lg font-black text-gray-900 transition-all"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Operational Spend (BWP)</label>
-                                <input
-                                    type="number"
-                                    value={spend}
-                                    onChange={(e) => setSpend(Number(e.target.value))}
-                                    className="w-full p-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#71167F] focus:border-transparent outline-none text-lg font-black text-gray-900 transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col justify-center gap-6">
-                            <div className="p-6 rounded-3xl bg-gray-50/80 border border-white shadow-inner">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Cost Per Interaction</span>
-                                <div className="text-3xl font-black text-[#71167F]">BWP {costPerParticipant}</div>
-                                <div className="text-[10px] font-bold text-gray-400 mt-2 uppercase">Based on {uniqueAttendees} unique pax</div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-end">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Utilization</span>
-                                    <span className={cn("text-sm font-black", budgetPercentage > 90 ? "text-red-500" : "text-[#3EB049]")}>
-                                        {budgetPercentage.toFixed(1)}%
-                                    </span>
-                                </div>
-                                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-white shadow-sm">
-                                    <div
-                                        className="h-full hff-gradient-bg transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(113,22,127,0.3)]"
-                                        style={{ width: `${budgetPercentage}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
-
+            <div className="grid grid-cols-1 gap-8">
                 {/* AI Analysis Console */}
                 <Card className="glass-card border-white/40 shadow-2xl shadow-gray-200/50 p-8 group relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -175,7 +115,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
                         </button>
                     </div>
 
-                    <div className="relative z-10 h-[280px]">
+                    <div className="relative z-10 h-[320px]">
                         <div className="absolute inset-0 bg-gray-900 rounded-3xl p-6 overflow-hidden">
                             <div className="flex gap-2 mb-4">
                                 <div className="w-2 h-2 rounded-full bg-red-500" />
@@ -183,7 +123,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
                                 <div className="w-2 h-2 rounded-full bg-green-500" />
                             </div>
                             <textarea
-                                className="w-full h-full bg-transparent border-none text-green-400 font-mono text-xs leading-relaxed outline-none resize-none scrollbar-hide opacity-80"
+                                className="w-full h-full bg-transparent border-none text-green-400 font-mono text-sm leading-relaxed outline-none resize-none scrollbar-hide opacity-80"
                                 readOnly
                                 value={generateTextReport()}
                             />
