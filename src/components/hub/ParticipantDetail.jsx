@@ -1,10 +1,12 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil } from 'lucide-react';
+import RegistrationForm from '../RegistrationForm';
 import { cn } from '../../lib/utils';
 
 const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigateToAttendance }) => {
+    const [isEditing, setIsEditing] = React.useState(false);
     const liveParticipant = useLiveQuery(
         () => db.registrations.get(initialParticipant.id),
         [initialParticipant.id]
@@ -27,6 +29,32 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
     const getInitials = (first, last) => {
         return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase() || 'P';
     };
+
+    if (isEditing) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
+                            Edit Participant Profile
+                        </h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                            Updating details for {participant.first_name} {participant.last_name}
+                        </p>
+                    </div>
+                </div>
+                <RegistrationForm
+                    type="participant"
+                    initialData={participant}
+                    inGroup={!!participant.facilitator_uuid}
+                    onBack={() => setIsEditing(false)}
+                    onSaveSuccess={() => {
+                        setIsEditing(false);
+                    }}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto pb-24">
@@ -60,6 +88,13 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
                                 {participant.sync_status === 'synced' && (
                                     <CheckCircle className="text-green-500 h-5 w-5" title="Cloud Synced" />
                                 )}
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#71167F] hover:bg-[#71167F]/5 transition-all"
+                                    title="Edit Profile"
+                                >
+                                    <Pencil size={18} />
+                                </button>
                             </h2>
                             <p className="text-xs font-black text-[#3EB049] uppercase tracking-widest mt-2 flex items-center gap-2">
                                 Participant Profile • Registered {safeFormatTime(participant.created_at).split(',')[0]}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Briefcase as OccupationIcon } from 'lucide-react';
+import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Briefcase as OccupationIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ParticipantDetail from './ParticipantDetail';
 import RegistrationForm from '../RegistrationForm';
@@ -10,6 +10,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [isAddingParticipant, setIsAddingParticipant] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     const [isAddingCoFacilitator, setIsAddingCoFacilitator] = useState(false);
     const [coFacSearchTerm, setCoFacSearchTerm] = useState('');
@@ -205,6 +206,31 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
         );
     }
 
+    if (isEditing) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
+                            Edit Facilitator Profile
+                        </h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                            Updating details for {facilitator.first_name} {facilitator.last_name}
+                        </p>
+                    </div>
+                </div>
+                <RegistrationForm
+                    type="facilitator"
+                    initialData={facilitator}
+                    onBack={() => setIsEditing(false)}
+                    onSaveSuccess={() => {
+                        setIsEditing(false);
+                    }}
+                />
+            </div>
+        );
+    }
+
     if (isAddingCoFacilitator) {
         return (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-6">
@@ -310,9 +336,18 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
                             <Briefcase size={28} />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                                {facilitator.first_name} {facilitator.last_name}
-                            </h2>
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                                    {facilitator.first_name} {facilitator.last_name}
+                                </h2>
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#71167F] hover:bg-[#71167F]/5 transition-all"
+                                    title="Edit Profile"
+                                >
+                                    <Pencil size={16} />
+                                </button>
+                            </div>
                             <p className="text-[11px] font-black text-[#71167F] uppercase tracking-widest mt-1">
                                 Facilitator Overview
                             </p>

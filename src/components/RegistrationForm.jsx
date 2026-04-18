@@ -3,21 +3,22 @@ import { db } from '../lib/dexieDb';
 
 import { Save, Search, User, Check, AlertCircle } from 'lucide-react';
 
-const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator }) => {
+const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator, initialData }) => {
     // Form State
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        age: '',
-        gender: '',
-        contact: '',
-        place: '',
-        education: '',
-        maritalStatus: '',
-        occupation: '',
-        participantsCount: 1,
-        booksDistributed: 0,
-        booksReceived: false
+        firstName: initialData?.first_name || '',
+        lastName: initialData?.last_name || '',
+        age: initialData?.age || '',
+        gender: initialData?.gender || '',
+        contact: initialData?.contact || '',
+        place: initialData?.place || '',
+        education: initialData?.education || '',
+        maritalStatus: initialData?.marital_status || '',
+        affiliation: initialData?.affiliation || '',
+        occupation: initialData?.occupation || '',
+        participantsCount: initialData?.participants_count || 1,
+        booksDistributed: initialData?.books_distributed || 0,
+        booksReceived: initialData?.books_received || false
     });
 
     const [selectedFacilitator, setSelectedFacilitator] = useState(predefinedFacilitator || null);
@@ -35,9 +36,6 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             }
 
             try {
-                // Case-insensitive search on first_name OR last_name
-                // Dexie's below() / startsWithIgnoreCase() etc might differ based on indexing.
-                // Simple filter is robust for small offline datasets.
                 const results = await db.registrations
                     .where('type').equals('facilitator')
                     .filter(rec => {
@@ -74,14 +72,13 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 throw new Error("Please fill in all required fields.");
             }
 
-            if (type === 'participant' && inGroup && !selectedFacilitator && !formData.affiliation.trim()) {
+            if (type === 'participant' && inGroup && !selectedFacilitator && !formData.affiliation?.trim()) {
                 throw new Error("Please provide an Affiliation / Group name, or link directly to a Facilitator.");
             }
 
             // Construct Payload
-            const newRecord = {
-                id: self.crypto.randomUUID(),
-                uuid: self.crypto.randomUUID(), // Consistency with other tables if needed
+            const now = new Date().toISOString();
+            const recordData = {
                 first_name: formData.firstName,
                 last_name: formData.lastName,
                 age: formData.age ? parseInt(formData.age) : null,
@@ -90,49 +87,61 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 place: formData.place,
                 education: formData.education,
                 marital_status: formData.maritalStatus,
-                affiliation: formData.affiliation, // Used for both Single Group and Comma Separated Groups
+                affiliation: formData.affiliation,
                 occupation: formData.occupation,
                 type: type, // 'facilitator' or 'participant'
                 // Facilitator specific
                 participants_count: type === 'facilitator' ? parseInt(formData.participantsCount) : null,
                 books_distributed: type === 'facilitator' ? parseInt(formData.booksDistributed) : null,
                 // Participant specific
-                facilitator_uuid: (type === 'participant' && inGroup && selectedFacilitator) ? selectedFacilitator.uuid : null,
+                facilitator_uuid: (type === 'participant' && inGroup && selectedFacilitator) ? selectedFacilitator.uuid : (initialData?.facilitator_uuid || null),
                 books_received: type === 'participant' ? formData.booksReceived : null,
 
                 // Metadata
-                source: 'pwa_offline',
                 sync_status: 'pending',
-                created_at: new Date().toISOString(),
+                updated_at: now,
             };
 
-            // Save to Dexie
-            await db.registrations.add(newRecord);
+            if (initialData) {
+                // Update existing record
+                await db.registrations.update(initialData.id, recordData);
+                setMessage({ type: 'success', text: 'Update Saved to Device.' });
+            } else {
+                // Save new record
+                const newRecord = {
+                    ...recordData,
+                    id: self.crypto.randomUUID(),
+                    uuid: self.crypto.randomUUID(),
+                    source: 'pwa_offline',
+                    created_at: now,
+                };
+                await db.registrations.add(newRecord);
+                setMessage({ type: 'success', text: 'Saved to Device (Will sync when online).' });
+            }
 
-            // Success
-            setMessage({ type: 'success', text: 'Saved to Device (Will sync when online).' });
-
-            // Reset Form
-            setFormData({
-                firstName: '',
-                lastName: '',
-                age: '',
-                gender: '',
-                contact: '',
-                place: '',
-                education: '',
-                maritalStatus: '',
-                affiliation: '',
-                occupation: '',
-                participantsCount: 1,
-                booksDistributed: 0,
-                booksReceived: false
-            });
-            setSelectedFacilitator(null);
-            setSearchTerm('');
+            // Reset Form (only if not editing)
+            if (!initialData) {
+                setFormData({
+                    firstName: '',
+                    lastName: '',
+                    age: '',
+                    gender: '',
+                    contact: '',
+                    place: '',
+                    education: '',
+                    maritalStatus: '',
+                    affiliation: '',
+                    occupation: '',
+                    participantsCount: 1,
+                    booksDistributed: 0,
+                    booksReceived: false
+                });
+                setSelectedFacilitator(null);
+                setSearchTerm('');
+            }
 
             // Notify Parent
-            if (onSaveSuccess) setTimeout(onSaveSuccess, 1500); // Give user time to see toast
+            if (onSaveSuccess) setTimeout(onSaveSuccess, 1500);
 
         } catch (err) {
             console.error(err);
