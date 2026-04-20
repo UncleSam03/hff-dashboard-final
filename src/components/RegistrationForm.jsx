@@ -26,6 +26,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
     const [facilitatorResults, setFacilitatorResults] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState(null);
+    const [duplicateFound, setDuplicateFound] = useState(null);
+    const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
     // Search for Facilitators (local Dexie search)
     useEffect(() => {
@@ -52,6 +54,51 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
         const debounce = setTimeout(searchFacilitators, 300);
         return () => clearTimeout(debounce);
     }, [searchTerm]);
+
+    // Check for duplicates (Admin Side Protection)
+    useEffect(() => {
+        if (initialData) return; // Don't check if we are already editing
+
+        const checkDuplicates = async () => {
+            const fn = formData.firstName.trim().toLowerCase();
+            const ln = formData.lastName.trim().toLowerCase();
+            const ct = formData.contact.trim();
+
+            if (fn.length < 2 || ln.length < 2) {
+                setDuplicateFound(null);
+                return;
+            }
+
+            setIsCheckingDuplicate(true);
+            try {
+                // Search by phone if available
+                if (ct.length >= 7) {
+                    const match = await db.registrations.where('contact').equals(ct).first();
+                    if (match) {
+                        setDuplicateFound(match);
+                        setIsCheckingDuplicate(false);
+                        return;
+                    }
+                }
+
+                // Search by Name
+                const nameMatch = await db.registrations
+                    .filter(r => r.type === type && 
+                            r.first_name?.toLowerCase() === fn && 
+                            r.last_name?.toLowerCase() === ln)
+                    .first();
+                
+                setDuplicateFound(nameMatch || null);
+            } catch (err) {
+                console.warn("Duplicate check error:", err);
+            } finally {
+                setIsCheckingDuplicate(false);
+            }
+        };
+
+        const debounce = setTimeout(checkDuplicates, 600);
+        return () => clearTimeout(debounce);
+    }, [formData.firstName, formData.lastName, formData.contact, type, initialData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -168,10 +215,45 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             </div>
 
             {message && (
-                <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
+                <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
                     }`}>
                     {message.type === 'success' ? <Check className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                    <span className="font-medium">{message.text}</span>
+                    <span className="font-medium text-sm">{message.text}</span>
+                </div>
+            )}
+
+            {duplicateFound && !initialData && (
+                <div className="mb-6 p-5 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-300">
+                    <div className="flex items-start gap-4">
+                        <div className="p-3 bg-white rounded-xl shadow-sm border border-amber-100">
+                            <AlertCircle className="h-6 w-6 text-amber-600" />
+                        </div>
+                        <div>
+                            <h4 className="font-black text-amber-900 uppercase text-xs tracking-widest mb-1 leading-none">Potential Duplicate Detected</h4>
+                            <p className="text-sm text-amber-800 font-medium">
+                                A {duplicateFound.type} record for <strong>{duplicateFound.first_name} {duplicateFound.last_name}</strong> already exists in local storage ({duplicateFound.place || 'Location Unknown'}).
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-3 mt-2">
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                // Simulate editing the found record
+                                window.location.reload(); // Hard reset for now, or we could pass it up
+                            }}
+                            className="bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-amber-700 transition-all shadow-md active:scale-95"
+                        >
+                            View Existing
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => setDuplicateFound(null)}
+                            className="bg-white text-amber-600 border border-amber-200 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-amber-100 transition-all"
+                        >
+                            Ignore & Create New
+                        </button>
+                    </div>
                 </div>
             )}
 

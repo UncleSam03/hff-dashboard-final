@@ -108,79 +108,90 @@ export default function FacilitatorDashboard({ onBack }) {
         }
     }
 
-    async function checkExistingParticipant(phone) {
-        if (!phone || phone.length < 7) {
+    async function checkExistingParticipant(phone, firstName, lastName) {
+        // Standardize search inputs
+        const phoneClean = (phone || "").trim();
+        const firstClean = (firstName || "").trim().toLowerCase();
+        const lastClean = (lastName || "").trim().toLowerCase();
+
+        // Need at least phone OR full name to search
+        if (phoneClean.length < 7 && (firstClean.length < 2 || lastClean.length < 2)) {
             setLookupMatch(null);
             return;
         }
 
         setIsSearching(true);
         try {
-            // 1. Check Supabase profiles (Auth users)
-            if (isConfigured) {
-                const { data: profileMatch } = await supabase
-                    .from("profiles")
-                    .select("id, full_name, phone, age, gender, occupation, place")
-                    .eq("phone", phone)
-                    .maybeSingle();
+            // Priority 1: Phone Lookup (Highest confidence)
+            if (phoneClean.length >= 7) {
+                if (isConfigured) {
+                    const { data: profileMatch } = await supabase
+                        .from("profiles")
+                        .select("id, full_name, phone, age, gender, occupation, place")
+                        .eq("phone", phoneClean)
+                        .maybeSingle();
 
-                if (profileMatch) {
-                    setLookupMatch({ type: 'profile', data: profileMatch });
-                    // Auto-fill form if name is empty
-                    if (!regForm.first_name) {
-                        const [first, ...rest] = (profileMatch.full_name || "").split(" ");
-                        setRegForm(p => ({
-                            ...p,
-                            first_name: first || "",
-                            last_name: rest.join(" ") || "",
-                            age: profileMatch.age || p.age,
-                            gender: profileMatch.gender || p.gender,
-                            occupation: profileMatch.occupation || p.occupation,
-                            place: profileMatch.place || p.place
-                        }));
+                    if (profileMatch) {
+                        setLookupMatch({ type: 'profile', data: profileMatch, reason: 'phone' });
+                        if (!regForm.first_name) {
+                            const [f, ...rest] = (profileMatch.full_name || "").split(" ");
+                            setRegForm(p => ({ ...p, first_name: f || "", last_name: rest.join(" ") || "", age: profileMatch.age || p.age, gender: profileMatch.gender || p.gender, place: profileMatch.place || p.place }));
+                        }
+                        return;
                     }
-                    return;
+
+                    const { data: regMatch } = await supabase
+                        .from("registrations")
+                        .select("*")
+                        .eq("contact", phoneClean)
+                        .eq("type", "participant")
+                        .maybeSingle();
+
+                    if (regMatch) {
+                        setLookupMatch({ type: 'registration', data: regMatch, reason: 'phone' });
+                        return;
+                    }
                 }
-
-                // 2. Check Supabase registrations
-                const { data: regMatch } = await supabase
-                    .from("registrations")
-                    .select("*")
-                    .eq("contact", phone)
-                    .eq("type", "participant")
-                    .maybeSingle();
-
-                if (regMatch) {
-                    setLookupMatch({ type: 'registration', data: regMatch });
-                    if (!regForm.first_name) {
-                        setRegForm(p => ({
-                            ...p,
-                            first_name: regMatch.first_name,
-                            last_name: regMatch.last_name,
-                            age: regMatch.age || p.age,
-                            gender: regMatch.gender || p.gender,
-                            place: regMatch.place || p.place,
-                            education: regMatch.education || p.education,
-                            marital_status: regMatch.marital_status || p.marital_status,
-                            occupation: regMatch.occupation || p.occupation,
-                            affiliation: regMatch.affiliation || p.affiliation
-                        }));
-                    }
+                
+                const localMatch = await db.registrations.where("contact").equals(phoneClean).filter(r => r.type === 'participant').first();
+                if (localMatch) {
+                    setLookupMatch({ type: 'registration', data: localMatch, reason: 'phone' });
                     return;
                 }
             }
 
-            // 3. Fallback/Local Dexie check
-            const localMatch = await db.registrations
-                .where("contact").equals(phone)
-                .filter(r => r.type === 'participant')
-                .first();
+            // Priority 2: Name Lookup (If names are provided and no phone match yet)
+            if (firstClean.length >= 2 && lastClean.length >= 2) {
+                if (isConfigured) {
+                    // Try exact name match on Supabase
+                    const { data: nameMatch } = await supabase
+                        .from("registrations")
+                        .select("*")
+                        .ilike("first_name", firstClean)
+                        .ilike("last_name", lastClean)
+                        .eq("type", "participant")
+                        .maybeSingle();
 
-            if (localMatch) {
-                setLookupMatch({ type: 'registration', data: localMatch });
-            } else {
-                setLookupMatch(null);
+                    if (nameMatch) {
+                        setLookupMatch({ type: 'registration', data: nameMatch, reason: 'name' });
+                        return;
+                    }
+                }
+
+                // Local exact name match
+                const localNameMatch = await db.registrations
+                    .filter(r => r.type === 'participant' && 
+                            r.first_name?.toLowerCase() === firstClean && 
+                            r.last_name?.toLowerCase() === lastClean)
+                    .first();
+                
+                if (localNameMatch) {
+                    setLookupMatch({ type: 'registration', data: localNameMatch, reason: 'name' });
+                    return;
+                }
             }
+
+            setLookupMatch(null);
         } catch (err) {
             console.error("Lookup error:", err);
         } finally {
@@ -188,13 +199,15 @@ export default function FacilitatorDashboard({ onBack }) {
         }
     }
 
-    // Debounce phone lookup
+    // Debounce lookup for phone and names
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (view === "register") checkExistingParticipant(regForm.phone);
-        }, 600);
+            if (view === "register") {
+                checkExistingParticipant(regForm.phone, regForm.first_name, regForm.last_name);
+            }
+        }, 800);
         return () => clearTimeout(timer);
-    }, [regForm.phone, view]);
+    }, [regForm.phone, regForm.first_name, regForm.last_name, view]);
 
     async function handleRegister(e) {
         e.preventDefault();
@@ -493,14 +506,22 @@ export default function FacilitatorDashboard({ onBack }) {
                             {lookupMatch && (
                                 <div className="mt-2 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2 duration-300">
                                     <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-sm">
-                                        <Link2 className="h-4 w-4 text-amber-600" />
+                                        {lookupMatch.reason === 'phone' ? <Link2 className="h-4 w-4 text-amber-600" /> : <AlertTriangle className="h-4 w-4 text-amber-600" />}
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">Existing Participant Found</p>
-                                        <p className="text-sm text-amber-800">
-                                            {lookupMatch.type === 'profile' ? 'This user has a self-registered account.' : 'Already registered in the system.'}
+                                        <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">
+                                            {lookupMatch.reason === 'phone' ? 'Phone Match Found' : 'Similar Record Detected'}
                                         </p>
-                                        <p className="text-xs text-amber-600 font-medium mt-0.5">Submitting will link this participant to your group.</p>
+                                        <p className="text-sm text-amber-800">
+                                            {lookupMatch.reason === 'phone' 
+                                                ? 'A profile with this phone number exists. Submitting will link them to your list.'
+                                                : `A registration for "${lookupMatch.data.first_name} ${lookupMatch.data.last_name}" was found in ${lookupMatch.data.place || 'the system'}.`}
+                                        </p>
+                                        {lookupMatch.reason === 'name' && (
+                                            <p className="text-[10px] text-amber-600 font-bold mt-2 uppercase tracking-wide">
+                                                Use this existing record to prevent duplication?
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )}
