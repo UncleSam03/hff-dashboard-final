@@ -57,32 +57,32 @@ const Dashboard = ({ analytics }) => {
             <div className="grid grid-cols-1 2xl:grid-cols-4 gap-12">
                 <div className="2xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
                     <StatsCard
-                        title="Registered"
+                        title="Total Impact"
                         value={analytics.totalRegistered}
                         icon={Users}
-                        description="Campaign total"
+                        description="All registrations"
                         color="purple"
                     />
                     <StatsCard
-                        title="Books"
-                        value={analytics.totalBooksGiven}
-                        icon={Check}
-                        description="Distributed"
-                        color="emerald"
-                    />
-                    <StatsCard
-                        title="Attendees"
-                        value={analytics.uniqueAttendees}
+                        title="Participants"
+                        value={analytics.uniqueParticipants}
                         icon={Users2}
-                        description="With profiles"
+                        description="Unique attendees"
                         color="blue"
                     />
                     <StatsCard
-                        title="Daily Avg"
-                        value={analytics.avgAttendance}
-                        icon={TrendingUp}
-                        description="Current cycle"
+                        title="Facilitators"
+                        value={analytics.uniqueFacilitators}
+                        icon={UserCheck}
+                        description="Active support"
                         color="amber"
+                    />
+                    <StatsCard
+                        title="Books Given"
+                        value={analytics.totalBooksGiven}
+                        icon={Check}
+                        description="Resources shared"
+                        color="emerald"
                     />
                 </div>
                 <div className="hidden 2xl:block">
@@ -106,6 +106,25 @@ const Dashboard = ({ analytics }) => {
                                 </h2>
                                 <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.25em]">Day-by-Day Participation & Retention Trends</p>
                             </div>
+                            
+                            {/* Selected Day Stats Highlight */}
+                            <div className="flex bg-white/50 backdrop-blur-md rounded-2xl border border-gray-100 p-1 px-4 items-center gap-6 shadow-sm">
+                                <div className="text-center py-2">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{selectedDay}</p>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-black text-[#71167F]">{analytics.dailyStats.find(d => d.date === selectedDay)?.participants || 0}</span>
+                                            <span className="text-[8px] font-bold text-gray-400 uppercase">Participants</span>
+                                        </div>
+                                        <div className="w-[1px] h-6 bg-gray-100" />
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-black text-[#F59E0B]">{analytics.dailyStats.find(d => d.date === selectedDay)?.facilitators || 0}</span>
+                                            <span className="text-[8px] font-bold text-gray-400 uppercase">Facilitators</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="flex items-center gap-2 p-1.5 bg-gray-50/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-inner">
                                 {['all', 'M', 'F'].map((filter) => (
                                     <button

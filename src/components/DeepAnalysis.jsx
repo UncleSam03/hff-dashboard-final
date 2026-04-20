@@ -16,7 +16,7 @@ const DeepAnalysis = ({ analytics }) => {
         );
     }
 
-    const { totalRegistered, uniqueAttendees, avgAttendance, dailyStats, demographics } = analytics;
+    const { totalRegistered, uniqueParticipants, uniqueFacilitators, avgAttendance, dailyStats, demographics } = analytics;
     const peakDay = dailyStats.reduce((prev, current) => (prev.count > current.count) ? prev : current, dailyStats[0] || {});
     const females = demographics.gender['F'] || 0;
     const femalePct = totalRegistered > 0 ? ((females / totalRegistered) * 100).toFixed(1) : 0;
@@ -26,12 +26,17 @@ const DeepAnalysis = ({ analytics }) => {
     const generateTextReport = () => {
         return `
 [EXECUTIVE SUMMARY: HFF IMPACT]
-The Healthy Families Foundation successfully registered ${totalRegistered} participants. 
-Engagement: ${uniqueAttendees} unique individuals (${((uniqueAttendees / totalRegistered) * 100).toFixed(1)}% conversion).
+The Healthy Families Foundation successfully registered ${totalRegistered} total stakeholders.
+
+ENGAGEMENT SPLIT:
+- Participants: ${uniqueParticipants} unique individuals
+- Facilitators: ${uniqueFacilitators} active support members
+- Conversion Rate: ${(((uniqueParticipants + uniqueFacilitators) / totalRegistered) * 100).toFixed(1)}%
 
 COMMUNITY TRENDS:
-Average daily density: ${avgAttendance} pax.
-Peak utilization observed on ${peakDay.date} with ${peakDay.count} interactions.
+Average daily density: ${avgAttendance} total pax.
+Peak utilization observed on ${peakDay.date} with ${peakDay.count} interactions 
+(${peakDay.participants} participants, ${peakDay.facilitators} facilitators).
 
 DEMOGRAPHIC INTELLIGENCE:
 Female participation stands at ${femalePct}%, indicating strong gender-inclusive outreach.

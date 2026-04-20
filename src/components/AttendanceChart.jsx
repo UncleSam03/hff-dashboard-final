@@ -18,12 +18,16 @@ const AttendanceChart = ({ data, compareWithRetention = false }) => {
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                     <defs>
-                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="colorParticipants" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#71167F" stopOpacity={0.1}/>
                             <stop offset="95%" stopColor="#71167F" stopOpacity={0}/>
                         </linearGradient>
+                        <linearGradient id="colorFacilitators" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                        </linearGradient>
                         <linearGradient id="colorRetention" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3EB049" stopOpacity={0.1}/>
+                            <stop offset="5%" stopColor="#3EB049" stopOpacity={0.05}/>
                             <stop offset="95%" stopColor="#3EB049" stopOpacity={0}/>
                         </linearGradient>
                     </defs>
@@ -56,16 +60,25 @@ const AttendanceChart = ({ data, compareWithRetention = false }) => {
                             fontWeight: 'bold',
                             padding: '12px'
                         }}
-                        cursor={{ stroke: '#71167F', strokeWidth: 1, strokeDasharray: '4 4' }}
+                        cursor={{ stroke: '#71167F', strokeOpacity: 0.2 }}
                     />
                     <Area
                         type="monotone"
-                        dataKey="count"
-                        name="Attendees"
+                        dataKey="participants"
+                        name="Participants"
                         stroke="#71167F"
                         strokeWidth={3}
                         fillOpacity={1}
-                        fill="url(#colorCount)"
+                        fill="url(#colorParticipants)"
+                    />
+                    <Area
+                        type="monotone"
+                        dataKey="facilitators"
+                        name="Facilitators"
+                        stroke="#F59E0B"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorFacilitators)"
                     />
                     {compareWithRetention && (
                         <Area
@@ -73,7 +86,8 @@ const AttendanceChart = ({ data, compareWithRetention = false }) => {
                             dataKey="retention"
                             name="Retention %"
                             stroke="#3EB049"
-                            strokeWidth={3}
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
                             fillOpacity={1}
                             fill="url(#colorRetention)"
                         />

@@ -46,12 +46,29 @@ export function processAnalytics(registrations) {
 
     // stats based on ALL active people (Facilitators + Participants)
     const dailyStats = days.map((day, i) => {
-        const count = activePeople.filter(p => p.attendance && isPresentOnDay(p.attendance, i)).length;
-        const retention = activePeople.length > 0 ? (count / activePeople.length) * 100 : 0;
-        return { date: day, count, retention: parseFloat(retention.toFixed(1)) };
+        const participantCount = participants.filter(p => p.attendance && isPresentOnDay(p.attendance, i)).length;
+        const facilitatorCount = facilitators.filter(f => f.attendance && isPresentOnDay(f.attendance, i)).length;
+        const totalCount = participantCount + facilitatorCount;
+        const retention = activePeople.length > 0 ? (totalCount / activePeople.length) * 100 : 0;
+        
+        return { 
+            date: day, 
+            count: totalCount, 
+            participants: participantCount, 
+            facilitators: facilitatorCount,
+            retention: parseFloat(retention.toFixed(1)) 
+        };
     });
 
-    const uniqueAttendees = activePeople.filter(p => {
+    const uniqueParticipants = participants.filter(p => {
+        if (!p.attendance) return false;
+        if (Array.isArray(p.attendance)) {
+            return p.attendance.some(v => v === true);
+        }
+        return Object.values(p.attendance).some(v => v === true);
+    }).length;
+
+    const uniqueFacilitators = facilitators.filter(p => {
         if (!p.attendance) return false;
         if (Array.isArray(p.attendance)) {
             return p.attendance.some(v => v === true);
@@ -118,7 +135,9 @@ export function processAnalytics(registrations) {
         totalRegistrations: participants.length,
         totalFacilitators: facilitators.length,
         totalRegistered: participants.length + facilitators.length,
-        uniqueAttendees,
+        uniqueParticipants,
+        uniqueFacilitators,
+        uniqueAttendees: uniqueParticipants + uniqueFacilitators,
         avgAttendance,
         totalBooksGiven,
         dailyStats,
