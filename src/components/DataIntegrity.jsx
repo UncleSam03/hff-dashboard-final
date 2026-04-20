@@ -112,37 +112,56 @@ const DataIntegrity = () => {
         try {
             // 1. Merge Strategy: Combine Attendance & Fill Gaps
             losers.forEach(loser => {
-                // Merge attendance
+                // Merge attendance (Logical OR across all days)
                 if (loser.attendance) {
-                    if (!winner.attendance) winner.attendance = {};
-                    Object.keys(loser.attendance).forEach(date => {
-                        if (loser.attendance[date]) winner.attendance[date] = true;
-                    });
+                    if (!winner.attendance) winner.attendance = [];
+                    // Ensure attendance is treated as an array of booleans (common in this app)
+                    const winnerAtt = Array.isArray(winner.attendance) ? winner.attendance : [];
+                    const loserAtt = Array.isArray(loser.attendance) ? loser.attendance : [];
+                    
+                    winner.attendance = winnerAtt.map((val, idx) => val || loserAtt[idx] || false);
                 }
                 
                 // Fill missing fields from losers
-                const fields = ['age', 'gender', 'contact', 'place', 'education', 'marital_status', 'affiliation', 'occupation', 'facilitator_uuid'];
+                const fields = ['age', 'gender', 'contact', 'place', 'education', 'marital_status', 'affiliation', 'occupation', 'facilitator_uuid', 'books_received'];
                 fields.forEach(f => {
-                    if (!winner[f] && loser[f]) {
+                    if ((winner[f] === null || winner[f] === undefined || winner[f] === '') && loser[f]) {
                         winner[f] = loser[f];
                     }
                 });
             });
 
-            // 2. Metadata updates
+            // 2. Metadata updates for Winner
             winner.updated_at = new Date().toISOString();
             winner.sync_status = 'pending';
 
-            // 3. Persist Winner, Purge Losers
+            // 3. Mark Losers for Deletion on Cloud
+            const deletedLosers = losers.map(l => ({
+                ...l,
+                is_deleted: true,
+                sync_status: 'pending',
+                updated_at: new Date().toISOString()
+            }));
+
+            // 4. Atomic Transaction: Local Update + Local Deletion Queue
             await db.transaction('rw', db.registrations, async () => {
                 // Update winner
-                await db.registrations.update(winner.id, winner);
-                // Delete losers
-                const loserIds = losers.map(l => l.id);
-                await db.registrations.bulkDelete(loserIds);
+                await db.registrations.put(winner);
+                
+                // Instead of bulkDelete (which is local only), we update them to 'pending deletion'
+                // The sync engine will then push 'is_deleted: true' to Supabase.
+                for (const loser of deletedLosers) {
+                    await db.registrations.put(loser);
+                }
             });
 
-            console.log(`Successfully merged ${group.length} records into ${winner.uuid}`);
+            console.log(`Successfully merged ${group.length} records into ${winner.uuid}. Sync pending...`);
+            
+            // Trigger a background sync if possible
+            if (typeof window !== 'undefined' && window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('hff-trigger-sync'));
+            }
+
         } catch (err) {
             console.error("Merge failed:", err);
             alert("Failed to merge records. See console for details.");
