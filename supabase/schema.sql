@@ -123,6 +123,11 @@ on public.registrations
 for update
 using (true);
 
+create policy "Enable delete for all users"
+on public.registrations
+for delete
+using (true);
+
 
 -- =========================
 -- 3. Testimonies

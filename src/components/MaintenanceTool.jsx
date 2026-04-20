@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/dexieDb';
 import { mergeDuplicateRegistrations } from '../lib/dataMaintenance';
+import { syncSubmissions } from '../lib/syncManager';
 import { Trash2, AlertTriangle, CheckCircle, Search, Layers, ArrowRight } from 'lucide-react';
 
 const MaintenanceTool = () => {
@@ -34,6 +35,11 @@ const MaintenanceTool = () => {
         try {
             const mergeResult = await mergeDuplicateRegistrations({ dryRun: false });
             setResult(mergeResult);
+            
+            // Trigger an immediate sync to push the updated master records
+            console.log("[MaintenanceTool] Triggering post-merge cloud sync...");
+            await syncSubmissions();
+            
             // Re-scan to update the list
             await scanForDuplicates();
         } catch (err) {

@@ -1,4 +1,6 @@
 import db from './dexieDb';
+import { supabase, isConfigured } from './supabase';
+import { checkConnectivity } from './syncManager';
 
 /**
  * Data Maintenance Utility
@@ -113,13 +115,38 @@ export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
         });
 
         if (!dryRun) {
+            const isOnline = await checkConnectivity();
+            
             await db.transaction('rw', db.registrations, async () => {
                 // Update master
                 await db.registrations.update(master.id, master);
-                // Delete others
+                // Delete others locally
                 const idsToDelete = others.map(o => o.id);
                 await db.registrations.bulkDelete(idsToDelete);
             });
+
+            // Synchronize deletions with Supabase if online
+            if (isOnline && isConfigured) {
+                const uuidsToDelete = others.map(o => o.uuid);
+                console.log(`[DataMaintenance] Deleting ${uuidsToDelete.length} records from Supabase...`);
+                
+                const { error: deleteError } = await supabase
+                    .from('registrations')
+                    .delete()
+                    .in('uuid', uuidsToDelete);
+                
+                if (deleteError) {
+                    console.error("[DataMaintenance] Error deleting from Supabase:", deleteError.message);
+                    // We don't throw here to avoid failing the local merge, 
+                    // but they might come back on next sync if not deleted.
+                } else {
+                    console.log("[DataMaintenance] Successfully deleted duplicates from Supabase.");
+                }
+            } else {
+                console.warn("[DataMaintenance] Offline or Supabase not configured. Duplicates were only deleted locally.");
+                // Note: In a more robust system, we would track these deletions for later sync.
+            }
+
             recordsDeletedCount += others.length;
             recordsUpdatedCount += 1;
         }
