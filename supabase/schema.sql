@@ -102,6 +102,7 @@ create table if not exists public.registrations (
   affiliation text,
   occupation text,
   books_received boolean default false,
+  is_deleted boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );

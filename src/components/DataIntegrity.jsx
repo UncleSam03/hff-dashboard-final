@@ -12,7 +12,10 @@ const DataIntegrity = () => {
     const [filterType, setFilterType] = useState('all'); // 'all', 'participant', 'facilitator'
     const [auditMode, setAuditMode] = useState('incomplete'); // 'incomplete' | 'duplicates'
 
-    const registrations = useLiveQuery(() => db.registrations.toArray()) || [];
+    const registrations = useLiveQuery(async () => {
+        const all = await db.registrations.toArray();
+        return all.filter(r => !r.is_deleted);
+    }) || [];
 
     // Helper to find missing fields
     const getMissingFields = (rec) => {
@@ -103,9 +106,13 @@ const DataIntegrity = () => {
         }
     };
 
-    const handleMerge = async (group) => {
+    const handleMerge = async (group, skipConfirm = false) => {
         if (!group || group.length < 2) return;
         
+        if (!skipConfirm && !window.confirm(`Merge ${group.length} duplicate records for ${group[0].first_name}? This will combine attendance and preserve all metadata.`)) {
+            return;
+        }
+
         const winner = { ...group[0] };
         const losers = group.slice(1);
         
@@ -114,12 +121,16 @@ const DataIntegrity = () => {
             losers.forEach(loser => {
                 // Merge attendance (Logical OR across all days)
                 if (loser.attendance) {
-                    if (!winner.attendance) winner.attendance = [];
-                    // Ensure attendance is treated as an array of booleans (common in this app)
-                    const winnerAtt = Array.isArray(winner.attendance) ? winner.attendance : [];
-                    const loserAtt = Array.isArray(loser.attendance) ? loser.attendance : [];
+                    if (!winner.attendance) winner.attendance = {};
                     
-                    winner.attendance = winnerAtt.map((val, idx) => val || loserAtt[idx] || false);
+                    const loserAtt = typeof loser.attendance === 'object' ? loser.attendance : {};
+                    const winnerAtt = typeof winner.attendance === 'object' ? winner.attendance : {};
+                    
+                    Object.entries(loserAtt).forEach(([date, present]) => {
+                        if (present) winnerAtt[date] = true;
+                    });
+                    
+                    winner.attendance = winnerAtt;
                 }
                 
                 // Fill missing fields from losers
@@ -134,8 +145,9 @@ const DataIntegrity = () => {
             // 2. Metadata updates for Winner
             winner.updated_at = new Date().toISOString();
             winner.sync_status = 'pending';
+            winner.is_deleted = false;
 
-            // 3. Mark Losers for Deletion on Cloud
+            // 3. Mark Losers for Deletion (Soft Delete)
             const deletedLosers = losers.map(l => ({
                 ...l,
                 is_deleted: true,
@@ -148,23 +160,52 @@ const DataIntegrity = () => {
                 // Update winner
                 await db.registrations.put(winner);
                 
-                // Instead of bulkDelete (which is local only), we update them to 'pending deletion'
-                // The sync engine will then push 'is_deleted: true' to Supabase.
+                // Mark losers as deleted
                 for (const loser of deletedLosers) {
                     await db.registrations.put(loser);
                 }
             });
 
-            console.log(`Successfully merged ${group.length} records into ${winner.uuid}. Sync pending...`);
-            
-            // Trigger a background sync if possible
-            if (typeof window !== 'undefined' && window.dispatchEvent) {
+            if (!skipConfirm) {
+                console.log(`Successfully merged ${group.length} records into ${winner.uuid}. Sync pending...`);
+                // Trigger a sync
                 window.dispatchEvent(new CustomEvent('hff-trigger-sync'));
             }
 
         } catch (err) {
             console.error("Merge failed:", err);
-            alert("Failed to merge records. See console for details.");
+            if (!skipConfirm) alert("Failed to merge records.");
+            throw err;
+        }
+    };
+
+    const [isBulkMerging, setIsBulkMerging] = useState(false);
+
+    const handleBulkMerge = async () => {
+        const groupsCount = duplicateGroups.length;
+        if (groupsCount === 0) return;
+
+        if (!window.confirm(`Are you sure you want to merge ALL ${groupsCount} duplicate groups at once? This will process thousands of records and sync with Supabase.`)) {
+            return;
+        }
+
+        setIsBulkMerging(true);
+        try {
+            // Process in sequence to avoid transaction collisions
+            for (const group of duplicateGroups) {
+                await handleMerge(group, true);
+            }
+            
+            console.log("[BulkMerge] All groups processed. Triggering global sync...");
+            if (typeof window !== 'undefined' && window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('hff-trigger-sync'));
+            }
+            alert(`Succesfully processed ${groupsCount} groups! Updates are being synced to all devices.`);
+        } catch (err) {
+            console.error("Bulk merge failed intermediate:", err);
+            alert("Bulk merge encountered errors. Some records may not have been processed.");
+        } finally {
+            setIsBulkMerging(false);
         }
     };
 
@@ -274,6 +315,15 @@ const DataIntegrity = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+                {auditMode === 'duplicates' && duplicateGroups.length > 0 && (
+                    <button
+                        onClick={handleBulkMerge}
+                        disabled={isBulkMerging}
+                        className="px-6 py-4 bg-[#71167F] text-white rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#71167F]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                    >
+                        {isBulkMerging ? 'Processing...' : `Bulk Merge All groups`}
+                    </button>
+                )}
                 <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-gray-100 shadow-sm">
                     {['all', 'participant', 'facilitator'].map((type) => (
                         <button
@@ -543,11 +593,7 @@ const DataIntegrity = () => {
                                         Data Integrity Verified
                                     </p>
                                     <button 
-                                        onClick={() => {
-                                            if(confirm(`Merge ${group.length} duplicate records for ${group[0].first_name}? This will combine attendance and preserve all metadata.`)) {
-                                                handleMerge(group);
-                                            }
-                                        }}
+                                        onClick={() => handleMerge(group)}
                                         className="px-6 py-2 bg-gray-900 text-white hover:bg-[#71167F] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95"
                                     >
                                         Smart Merge

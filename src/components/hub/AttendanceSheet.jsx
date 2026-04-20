@@ -36,10 +36,12 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
     const data = useLiveQuery(async () => {
         if (!selectedFacilitator) {
             // Fetch All Facilitators
-            let facilitators = await db.registrations.where('type').equals('facilitator').toArray();
+            const allFacilitators = await db.registrations.where('type').equals('facilitator').toArray();
+            let facilitators = allFacilitators.filter(f => !f.is_deleted);
 
             // Count participants for each facilitator (Direct + Group Link)
-            const participants = await db.registrations.where('type').equals('participant').toArray();
+            const allParticipants = await db.registrations.where('type').equals('participant').toArray();
+            const participants = allParticipants.filter(p => !p.is_deleted);
             const counts = {};
             
             // First compute aliases for each facilitator to correctly match all linked UUIDs
@@ -100,7 +102,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             // Fetch Participants for selected Facilitator
             let results = await db.registrations
                 .where('type').equals('participant')
-                .filter(p => aliasUuids.includes(p.facilitator_uuid))
+                .filter(p => aliasUuids.includes(p.facilitator_uuid) && !p.is_deleted)
                 .toArray();
 
             results.sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
@@ -110,7 +112,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
             if (freshFacilitator.linked_facilitators && freshFacilitator.linked_facilitators.length > 0) {
                 coFacilitators = await db.registrations
                     .where('type').equals('facilitator')
-                    .filter(f => freshFacilitator.linked_facilitators.includes(f.uuid))
+                    .filter(f => freshFacilitator.linked_facilitators.includes(f.uuid) && !f.is_deleted)
                     .toArray();
             }
 

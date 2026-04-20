@@ -191,6 +191,16 @@ async function pullStoreUpdates(storeName) {
         if (fetchedData.length > 0) {
             for (const remoteRecord of fetchedData) {
                 const existing = await db[storeName].where('uuid').equals(remoteRecord.uuid).first();
+                
+                // If record is marked as deleted on server, ensure it's deleted locally
+                if (remoteRecord.is_deleted) {
+                    if (existing) {
+                        console.log(`[SupabaseSync] Purging soft-deleted record ${remoteRecord.uuid} from ${storeName}`);
+                        await db[storeName].delete(existing.id);
+                    }
+                    continue;
+                }
+
                 if (existing) {
                     await db[storeName].update(existing.id, {
                         ...remoteRecord,
