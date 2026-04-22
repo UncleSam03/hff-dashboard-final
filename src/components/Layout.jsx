@@ -81,7 +81,8 @@ const Layout = ({ children, activeTab, onTabChange }) => {
               <h2 className="text-xl font-black text-gray-900 uppercase tracking-widest leading-none">
                 {activeTab === 'overview' ? 'Dashboard Overview' :
                   activeTab === 'collect' ? 'Offline Collect' :
-                    activeTab === 'hub' ? 'Campaign Hub' : 'Data Analysis'}
+                    activeTab === 'hub' ? 'Campaign Hub' : 
+                      activeTab === 'sat' ? 'SAT Analysis' : 'Data Analysis'}
               </h2>
               <p className="text-[10px] font-bold text-[#71167F] uppercase tracking-widest mt-1">
                 Real-Time Campaign Performance (SYNCED)

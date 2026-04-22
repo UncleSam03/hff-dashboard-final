@@ -10,6 +10,7 @@ import Hub from './components/Hub';
 import AnalysisHub from './components/AnalysisHub';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
 import FacilitatorOnboarding from './components/FacilitatorOnboarding';
+import UnderConstruction from './components/UnderConstruction';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
@@ -84,6 +85,8 @@ function AppContent() {
         <Hub onBack={handleBackToHome} />
       ) : mode === 'analysis' ? (
         <AnalysisHub analytics={analytics} onBack={handleBackToHome} />
+      ) : mode === 'sat' ? (
+        <UnderConstruction title="SAT Dashboard" onBack={handleBackToHome} />
       ) : (
         <Dashboard analytics={analytics} />
       )}

@@ -7,7 +7,8 @@ import {
   LineChart,
   Bell,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  FileCheck
 } from 'lucide-react';
 import { cn } from "../lib/utils";
 
@@ -25,6 +26,7 @@ const Sidebar = ({
     { id: 'collect', label: 'Offline Collect', icon: ClipboardList },
     { id: 'hub', label: 'Campaign Hub', icon: Users },
     { id: 'analysis', label: 'Deep Analysis', icon: LineChart },
+    { id: 'sat', label: 'SAT', icon: FileCheck },
   ];
 
   const initials = userProfile?.full_name
