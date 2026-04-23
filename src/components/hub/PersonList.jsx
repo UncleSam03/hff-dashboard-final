@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Download, Trash2, Plus, Pencil, X, BookOpen, ArrowLeft, CalendarCheck } from 'lucide-react';
+import { Search, User, Briefcase, Download, Trash2, Plus, Pencil, X, BookOpen, ArrowLeft, CalendarCheck, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
@@ -377,15 +377,24 @@ const PersonList = ({ onRecordEdited }) => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
-                    {people.map(person => (
-                        <div
-                            key={person.uuid}
-                            onClick={() => {
-                                if (person.type === 'facilitator') setSelectedFacilitator(person);
-                                else if (person.type === 'participant') setSelectedParticipant(person);
-                            }}
-                            className="group glass-card p-6 bg-white hover:bg-gray-50/50 border border-gray-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-200/50 flex flex-col justify-between cursor-pointer"
-                        >
+                    {people.map(person => {
+                        const isFacilitator = person.type === 'facilitator';
+                        const isProfileIncomplete = isFacilitator && (
+                            !person.first_name || !person.last_name || !person.age || !person.gender || 
+                            !person.contact || !person.place || !person.education || !person.marital_status ||
+                            person.participants_count === null || person.participants_count === undefined ||
+                            person.books_distributed === null || person.books_distributed === undefined
+                        );
+
+                        return (
+                            <div
+                                key={person.uuid}
+                                onClick={() => {
+                                    if (person.type === 'facilitator') setSelectedFacilitator(person);
+                                    else if (person.type === 'participant') setSelectedParticipant(person);
+                                }}
+                                className="group glass-card p-6 bg-white hover:bg-gray-50/50 border border-gray-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-gray-200/50 flex flex-col justify-between cursor-pointer"
+                            >
                             <div className="flex items-start justify-between mb-6">
                                 <div className="flex items-center gap-4">
                                     <div className={cn(
@@ -498,15 +507,26 @@ const PersonList = ({ onRecordEdited }) => {
                                 )}>
                                     {person.sync_status === 'synced' ? 'Synchronized' : 'Sync Pending'}
                                 </div>
-                                {person.processed && (
-                                    <div className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
-                                        Active
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-3">
+                                    {person.processed && (
+                                        <div className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
+                                            Active
+                                        </div>
+                                    )}
+                                    {isProfileIncomplete && (
+                                        <div 
+                                            className="text-red-500 animate-pulse flex items-center justify-center"
+                                            title="Incomplete Profile Information"
+                                        >
+                                            <AlertTriangle size={18} fill="currentColor" fillOpacity={0.1} />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
+                    );
+                })}
+            </div>
             )}
 
             {editorOpen && (
