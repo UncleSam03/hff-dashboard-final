@@ -14,9 +14,18 @@ const Hub = ({ onBack }) => {
     const [syncState, setSyncState] = useState('idle'); // 'idle' | 'syncing' | 'success' | 'error'
     const [pendingCount, setPendingCount] = useState(0);
     const [resetError, setResetError] = useState('');
+    const [selectedFacilitator, setSelectedFacilitator] = useState(null);
+    const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [initialAttendanceContext, setInitialAttendanceContext] = useState(null);
 
-    const handleRecordEdited = (record) => {
+    const handleRecordEdited = async (record) => {
+        if (record.type === 'participant' && record.facilitator_uuid) {
+            const fac = await db.registrations.where('uuid').equals(record.facilitator_uuid).first();
+            if (fac) {
+                setSelectedFacilitator(fac);
+                setSelectedParticipant(null);
+            }
+        }
         setInitialAttendanceContext(record);
         setActiveTab('attendance');
     };
@@ -130,7 +139,15 @@ const Hub = ({ onBack }) => {
     const renderContent = () => {
         switch (activeTab) {
             case 'people':
-                return <PersonList onRecordEdited={handleRecordEdited} />;
+                return (
+                    <PersonList 
+                        onRecordEdited={handleRecordEdited}
+                        selectedFacilitator={selectedFacilitator}
+                        setSelectedFacilitator={setSelectedFacilitator}
+                        selectedParticipant={selectedParticipant}
+                        setSelectedParticipant={setSelectedParticipant}
+                    />
+                );
             case 'attendance':
                 return (
                     <AttendanceSheet 

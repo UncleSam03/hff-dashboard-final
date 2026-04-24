@@ -6,12 +6,16 @@ import { cn } from '../../lib/utils';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
 
-const PersonList = ({ onRecordEdited }) => {
+const PersonList = ({ 
+    onRecordEdited, 
+    selectedFacilitator, 
+    setSelectedFacilitator, 
+    selectedParticipant, 
+    setSelectedParticipant 
+}) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
     const [selectedAffiliation, setSelectedAffiliation] = useState('Self');
-    const [selectedFacilitator, setSelectedFacilitator] = useState(null);
-    const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editorMode, setEditorMode] = useState('create');
     const [editingPerson, setEditingPerson] = useState(null);
