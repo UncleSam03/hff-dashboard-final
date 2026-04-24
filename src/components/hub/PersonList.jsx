@@ -128,6 +128,17 @@ const PersonList = ({ onRecordEdited }) => {
         }
     };
 
+    const handleNavigateToAttendance = async (record) => {
+        if (record.type === 'participant' && record.facilitator_uuid) {
+            const fac = await db.registrations.where('uuid').equals(record.facilitator_uuid).first();
+            if (fac) {
+                setSelectedFacilitator(fac);
+                setSelectedParticipant(null);
+            }
+        }
+        if (onRecordEdited) onRecordEdited(record);
+    };
+
     const performDelete = async (person, deleteParticipants = false) => {
         setDeleteModal(prev => ({ ...prev, loading: true }));
         try {
@@ -313,7 +324,7 @@ const PersonList = ({ onRecordEdited }) => {
             <FacilitatorDetail
                 facilitator={selectedFacilitator}
                 onBack={() => setSelectedFacilitator(null)}
-                onNavigateToAttendance={onRecordEdited}
+                onNavigateToAttendance={handleNavigateToAttendance}
                 onDelete={() => handleDeleteClick(selectedFacilitator)}
             />
         );
@@ -324,7 +335,7 @@ const PersonList = ({ onRecordEdited }) => {
             <ParticipantDetail
                 participant={selectedParticipant}
                 onBack={() => setSelectedParticipant(null)}
-                onNavigateToAttendance={onRecordEdited}
+                onNavigateToAttendance={handleNavigateToAttendance}
             />
         );
     }
@@ -523,7 +534,7 @@ const PersonList = ({ onRecordEdited }) => {
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (onRecordEdited) onRecordEdited(person);
+                                        if (handleNavigateToAttendance) handleNavigateToAttendance(person);
                                     }}
                                     className="p-2.5 text-gray-300 hover:text-[#71167F] hover:bg-[#71167F]/10 rounded-xl transition-all"
                                     title="Quick Mark Attendance"
