@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Briefcase as OccupationIcon } from 'lucide-react';
+import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Trash2, Briefcase as OccupationIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ParticipantDetail from './ParticipantDetail';
 import RegistrationForm from '../RegistrationForm';
 
-const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
+const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDelete }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [isAddingParticipant, setIsAddingParticipant] = useState(false);
@@ -342,10 +342,17 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance }) => {
                                 </h2>
                                 <button
                                     onClick={() => setIsEditing(true)}
-                                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#71167F] hover:bg-[#71167F]/5 transition-all"
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#71167F] hover:bg-[#71167F]/10 transition-all"
                                     title="Edit Profile"
                                 >
                                     <Pencil size={16} />
+                                </button>
+                                <button
+                                    onClick={onDelete}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                                    title="Delete Facilitator"
+                                >
+                                    <Trash2 size={16} />
                                 </button>
                             </div>
                             <p className="text-[11px] font-black text-[#71167F] uppercase tracking-widest mt-1">

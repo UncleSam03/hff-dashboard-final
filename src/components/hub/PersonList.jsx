@@ -19,6 +19,7 @@ const PersonList = ({ onRecordEdited }) => {
     const [editorSubmitting, setEditorSubmitting] = useState(false);
     const [facSearchTerm, setFacSearchTerm] = useState('');
     const [facDropdownOpen, setFacDropdownOpen] = useState(false);
+    const [deleteModal, setDeleteModal] = useState({ open: false, person: null, loading: false });
     const [formData, setFormData] = useState({
         type: 'participant',
         first_name: '',
@@ -117,16 +118,54 @@ const PersonList = ({ onRecordEdited }) => {
         return Array.from(set).sort((a, b) => a.toLowerCase() === 'self' ? -1 : b.toLowerCase() === 'self' ? 1 : a.localeCompare(b));
     }, []);
 
-    const handleDelete = async (person) => {
-        if (!window.confirm(`Permanently remove ${person.first_name}?`)) return;
+    const handleDeleteClick = (person) => {
+        if (person.type === 'facilitator') {
+            setDeleteModal({ open: true, person, loading: false });
+        } else {
+            if (window.confirm(`Permanently remove ${person.first_name}?`)) {
+                performDelete(person);
+            }
+        }
+    };
+
+    const performDelete = async (person, deleteParticipants = false) => {
+        setDeleteModal(prev => ({ ...prev, loading: true }));
         try {
-            await db.registrations.update(person.id, {
+            const now = new Date().toISOString();
+            const updates = {
                 is_deleted: true,
                 sync_status: 'pending',
-                updated_at: new Date().toISOString()
+                updated_at: now
+            };
+
+            await db.transaction('rw', db.registrations, async () => {
+                // Delete the target person
+                await db.registrations.update(person.id, updates);
+
+                if (deleteParticipants && person.type === 'facilitator') {
+                    // Find and delete all associated participants
+                    const participants = await db.registrations
+                        .where('facilitator_uuid')
+                        .equals(person.uuid)
+                        .toArray();
+                    
+                    for (const p of participants) {
+                        await db.registrations.update(p.id, updates);
+                    }
+                }
             });
+
+            setDeleteModal({ open: false, person: null, loading: false });
+            if (selectedFacilitator?.id === person.id) {
+                setSelectedFacilitator(null);
+            }
+            if (selectedParticipant?.id === person.id) {
+                setSelectedParticipant(null);
+            }
         } catch (err) {
             console.error('Delete failed:', err);
+            alert('Failed to delete records.');
+            setDeleteModal(prev => ({ ...prev, loading: false }));
         }
     };
 
@@ -275,6 +314,7 @@ const PersonList = ({ onRecordEdited }) => {
                 facilitator={selectedFacilitator}
                 onBack={() => setSelectedFacilitator(null)}
                 onNavigateToAttendance={onRecordEdited}
+                onDelete={() => handleDeleteClick(selectedFacilitator)}
             />
         );
     }
@@ -435,7 +475,7 @@ const PersonList = ({ onRecordEdited }) => {
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDelete(person);
+                                        handleDeleteClick(person);
                                     }}
                                     className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                                 >
@@ -823,6 +863,46 @@ const PersonList = ({ onRecordEdited }) => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* Delete Confirmation Modal for Facilitators */}
+            {deleteModal.open && (
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-8 text-center">
+                            <div className="h-20 w-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                <AlertTriangle size={40} />
+                            </div>
+                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Delete Facilitator</h3>
+                            <p className="text-sm text-gray-500 font-medium mb-8">
+                                You are about to delete <span className="font-bold text-gray-900">{deleteModal.person?.first_name} {deleteModal.person?.last_name}</span>. How would you like to proceed?
+                            </p>
+
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => performDelete(deleteModal.person, false)}
+                                    disabled={deleteModal.loading}
+                                    className="w-full py-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    Delete Facilitator Only
+                                </button>
+                                <button
+                                    onClick={() => performDelete(deleteModal.person, true)}
+                                    disabled={deleteModal.loading}
+                                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    Delete Facilitator & All Participants
+                                </button>
+                                <button
+                                    onClick={() => setDeleteModal({ open: false, person: null, loading: false })}
+                                    disabled={deleteModal.loading}
+                                    className="w-full py-4 text-gray-400 hover:text-gray-600 text-[10px] font-black uppercase tracking-widest transition-all"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
