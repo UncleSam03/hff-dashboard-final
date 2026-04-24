@@ -426,6 +426,12 @@ const PersonList = ({ onRecordEdited }) => {
                             person.books_distributed === null || person.books_distributed === undefined
                         );
 
+                        const isDataQualityWarning = isFacilitator && (
+                            isProfileIncomplete || 
+                            (person.first_name && person.first_name.trim().length === 1) || 
+                            (person.last_name && person.last_name.trim().length === 1)
+                        );
+
                         return (
                             <div
                                 key={person.uuid}
@@ -557,6 +563,14 @@ const PersonList = ({ onRecordEdited }) => {
                                         <div 
                                             className="text-red-500 animate-pulse flex items-center justify-center"
                                             title="Incomplete Profile Information"
+                                        >
+                                            <AlertTriangle size={18} fill="currentColor" fillOpacity={0.1} />
+                                        </div>
+                                    )}
+                                    {isDataQualityWarning && (
+                                        <div 
+                                            className="text-orange-500 animate-pulse flex items-center justify-center"
+                                            title="Data Quality Warning: Missing fields or name too short"
                                         >
                                             <AlertTriangle size={18} fill="currentColor" fillOpacity={0.1} />
                                         </div>

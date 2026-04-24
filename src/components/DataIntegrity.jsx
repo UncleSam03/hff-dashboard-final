@@ -39,7 +39,10 @@ const DataIntegrity = () => {
         return registrations
             .filter(rec => {
                 const missing = getMissingFields(rec);
-                if (missing.length === 0) return false;
+                const hasShortName = (rec.first_name && rec.first_name.trim().length === 1) || 
+                                     (rec.last_name && rec.last_name.trim().length === 1);
+                
+                if (missing.length === 0 && !hasShortName) return false;
 
                 if (filterType !== 'all' && rec.type !== filterType) return false;
 
@@ -50,10 +53,15 @@ const DataIntegrity = () => {
 
                 return true;
             })
-            .map(rec => ({
-                ...rec,
-                missingFields: getMissingFields(rec)
-            }));
+            .map(rec => {
+                const missing = getMissingFields(rec);
+                if ((rec.first_name && rec.first_name.trim().length === 1)) missing.push('first name too short');
+                if ((rec.last_name && rec.last_name.trim().length === 1)) missing.push('last name too short');
+                return {
+                    ...rec,
+                    missingFields: missing
+                };
+            });
     }, [registrations, searchTerm, filterType]);
 
     // Logic to identify duplicate groups
