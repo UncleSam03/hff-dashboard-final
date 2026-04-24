@@ -132,13 +132,23 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
         }
     }, [searchTerm, selectedFacilitator]);
 
-    const handleToggleAttendance = async (participant, dayIndex) => {
+    const [isMouseDown, setIsMouseDown] = useState(false);
+    const [paintMode, setPaintMode] = useState(null); // true = marking present, false = marking absent
+
+    React.useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            setIsMouseDown(false);
+            setPaintMode(null);
+        };
+        window.addEventListener('mouseup', handleGlobalMouseUp);
+        return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+    }, []);
+
+    const handleToggleAttendance = async (participant, dayIndex, forceValue = null) => {
         try {
-            // Ensure we have a 12-day array. If it's the legacy object or null/empty, create a new array.
             let currentAttendance = participant.attendance;
             if (!Array.isArray(currentAttendance)) {
                 currentAttendance = Array(12).fill(false);
-                // Migrating old object format to array if it existed
                 if (participant.attendance && typeof participant.attendance === 'object') {
                     for (let i = 0; i < 12; i++) {
                         if (participant.attendance[`D${i + 1}`]) currentAttendance[i] = true;
@@ -146,8 +156,13 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
                 }
             }
 
+            const newValue = forceValue !== null ? forceValue : !currentAttendance[dayIndex];
+            
+            // Only update if value actually changes
+            if (currentAttendance[dayIndex] === newValue) return;
+
             const updatedAttendance = [...currentAttendance];
-            updatedAttendance[dayIndex] = !updatedAttendance[dayIndex];
+            updatedAttendance[dayIndex] = newValue;
 
             await db.registrations.update(participant.id, {
                 attendance: updatedAttendance,
@@ -156,6 +171,21 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             });
         } catch (err) {
             console.error("Attendance update failed:", err);
+        }
+    };
+
+    const handlePaintAttendance = (participant, dayIndex, initial = false) => {
+        if (initial) {
+            const isCurrentlyPresent = Array.isArray(participant.attendance) 
+                ? participant.attendance[dayIndex] 
+                : (participant.attendance && participant.attendance[`D${dayIndex + 1}`]);
+            
+            const mode = !isCurrentlyPresent;
+            setPaintMode(mode);
+            setIsMouseDown(true);
+            handleToggleAttendance(participant, dayIndex, mode);
+        } else if (isMouseDown && paintMode !== null) {
+            handleToggleAttendance(participant, dayIndex, paintMode);
         }
     };
 
@@ -314,9 +344,10 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
                                                 return (
                                                     <div
                                                         key={`${p.uuid}-${day}`}
-                                                        onClick={() => handleToggleAttendance(p, idx)}
+                                                        onMouseDown={() => handlePaintAttendance(p, idx, true)}
+                                                        onMouseEnter={() => handlePaintAttendance(p, idx)}
                                                         className={cn(
-                                                            "p-5 border-b border-r border-gray-50 flex items-center justify-center cursor-pointer transition-all hover:bg-gray-50/50 group",
+                                                            "p-5 border-b border-r border-gray-50 flex items-center justify-center cursor-pointer transition-all hover:bg-gray-50/50 group select-none",
                                                             isPresent ? "bg-[#3EB049]/5" : "bg-white"
                                                         )}
                                                     >
