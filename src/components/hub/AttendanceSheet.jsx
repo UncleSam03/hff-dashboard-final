@@ -4,14 +4,16 @@ import { db } from '../../lib/dexieDb';
 import { Check, Search, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
+const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFacilitator, setSelectedFacilitator] = useState(null);
     const [highlightedParticipantUuid, setHighlightedParticipantUuid] = useState(null);
+    const [isContextual, setIsContextual] = useState(false);
     const days = Array.from({ length: 12 }, (_, i) => `D${i + 1}`);
 
     React.useEffect(() => {
         if (initialContext) {
+            setIsContextual(true);
             const applyContext = async () => {
                 let targetFacilitator = null;
                 if (initialContext.type === 'facilitator') {
@@ -173,11 +175,15 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
                     {selectedFacilitator && (
                         <button
                             onClick={() => {
-                                setSelectedFacilitator(null);
-                                setSearchTerm('');
+                                if (isContextual && onBack) {
+                                    onBack();
+                                } else {
+                                    setSelectedFacilitator(null);
+                                    setSearchTerm('');
+                                }
                             }}
                             className="p-3 bg-white border border-gray-100 rounded-2xl text-gray-400 hover:text-[#71167F] hover:shadow-lg transition-all active:scale-95 shadow-sm"
-                            title="Back to Facilitators"
+                            title={isContextual ? "Back to Previous View" : "Back to Facilitators"}
                         >
                             <ArrowLeft size={20} />
                         </button>
@@ -199,7 +205,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
                         }}
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#71167F] shadow-sm hover:shadow-md transition-all active:scale-95"
                     >
-                        <ArrowLeft size={14} /> Change Facilitator
+                        <Search size={14} /> Change Facilitator
                     </button>
                 )}
             </div>

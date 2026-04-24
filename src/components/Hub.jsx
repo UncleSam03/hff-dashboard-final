@@ -136,6 +136,7 @@ const Hub = ({ onBack }) => {
                     <AttendanceSheet 
                         initialContext={initialAttendanceContext} 
                         onContextConsumed={() => setInitialAttendanceContext(null)} 
+                        onBack={() => setActiveTab('people')}
                     />
                 );
             case 'notice':
