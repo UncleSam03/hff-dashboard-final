@@ -5,7 +5,7 @@ import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, Book
 import RegistrationForm from '../RegistrationForm';
 import { cn } from '../../lib/utils';
 
-const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigateToAttendance }) => {
+const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigateToAttendance, onNavigateToFacilitator }) => {
     const [isEditing, setIsEditing] = React.useState(false);
     const liveParticipant = useLiveQuery(
         () => db.registrations.get(initialParticipant.id),
@@ -62,12 +62,25 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
             {/* Header Area */}
             <div className="flex flex-col md:flex-row gap-6 justify-between md:items-end">
                 <div className="space-y-6">
-                    <button
-                        onClick={onBack}
-                        className="flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#71167F] transition-colors bg-white/50 px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm"
-                    >
-                        <ArrowLeft size={14} /> Back
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={onBack}
+                            className="flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#71167F] transition-colors bg-white/50 px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm"
+                        >
+                            <ArrowLeft size={14} /> Back to List
+                        </button>
+                        {participant.facilitator_uuid && onNavigateToFacilitator && (
+                            <button
+                                onClick={async () => {
+                                    const fac = await db.registrations.where('uuid').equals(participant.facilitator_uuid).first();
+                                    if (fac) onNavigateToFacilitator(fac);
+                                }}
+                                className="flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-purple-50 text-[#71167F] hover:bg-[#71167F] hover:text-white transition-colors px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm"
+                            >
+                                <Briefcase size={14} /> Back to Facilitator
+                            </button>
+                        )}
+                    </div>
                     {onNavigateToAttendance && (
                         <button
                             onClick={() => onNavigateToAttendance(participant)}
@@ -104,7 +117,18 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
                 </div>
 
                 {participant.facilitatorName && (
-                    <div className="bg-white p-4 rounded-2xl border border-[#71167F]/10 shadow-sm flex items-center gap-4">
+                    <div 
+                        onClick={async () => {
+                            if (onNavigateToFacilitator && participant.facilitator_uuid) {
+                                const fac = await db.registrations.where('uuid').equals(participant.facilitator_uuid).first();
+                                if (fac) onNavigateToFacilitator(fac);
+                            }
+                        }}
+                        className={cn(
+                            "bg-white p-4 rounded-2xl border border-[#71167F]/10 shadow-sm flex items-center gap-4 transition-all",
+                            onNavigateToFacilitator ? "cursor-pointer hover:border-[#71167F]/40 hover:shadow-md active:scale-95" : ""
+                        )}
+                    >
                         <div className="h-10 w-10 rounded-xl bg-[#71167F]/10 text-[#71167F] flex items-center justify-center shrink-0">
                             <Briefcase size={20} />
                         </div>

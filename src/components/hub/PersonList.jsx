@@ -340,6 +340,10 @@ const PersonList = ({
                 participant={selectedParticipant}
                 onBack={() => setSelectedParticipant(null)}
                 onNavigateToAttendance={handleNavigateToAttendance}
+                onNavigateToFacilitator={(fac) => {
+                    setSelectedFacilitator(fac);
+                    setSelectedParticipant(null);
+                }}
             />
         );
     }
