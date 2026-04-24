@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Check, Search } from 'lucide-react';
+import { Check, Search, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
@@ -169,13 +169,27 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
         <div className="space-y-8 animate-in fade-in duration-700">
             {/* Header / Breadcrumb */}
             <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
-                        {selectedFacilitator ? `Attendance: ${selectedFacilitator.first_name} ${selectedFacilitator.last_name}` : 'Mark Attendance'}
-                    </h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                        {selectedFacilitator ? `Logging attendance for ${list.length} participants` : 'Selection Protocol: Step 1 • Pick Facilitator'}
-                    </p>
+                <div className="flex items-center gap-4">
+                    {selectedFacilitator && (
+                        <button
+                            onClick={() => {
+                                setSelectedFacilitator(null);
+                                setSearchTerm('');
+                            }}
+                            className="p-3 bg-white border border-gray-100 rounded-2xl text-gray-400 hover:text-[#71167F] hover:shadow-lg transition-all active:scale-95 shadow-sm"
+                            title="Back to Facilitators"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                    )}
+                    <div>
+                        <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                            {selectedFacilitator ? `Attendance: ${selectedFacilitator.first_name} ${selectedFacilitator.last_name}` : 'Mark Attendance'}
+                        </h3>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                            {selectedFacilitator ? `Logging attendance for ${list.length} participants` : 'Selection Protocol: Step 1 • Pick Facilitator'}
+                        </p>
+                    </div>
                 </div>
                 {selectedFacilitator && (
                     <button
@@ -185,7 +199,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed }) => {
                         }}
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#71167F] shadow-sm hover:shadow-md transition-all active:scale-95"
                     >
-                        <Search size={14} /> Change Facilitator
+                        <ArrowLeft size={14} /> Change Facilitator
                     </button>
                 )}
             </div>
