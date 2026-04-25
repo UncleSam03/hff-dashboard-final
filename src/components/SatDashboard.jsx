@@ -73,11 +73,11 @@ const SatDashboard = ({ analytics, onBack }) => {
             const fontSize = 42;
             const textWidth = font.widthOfTextAtSize(name, fontSize);
             
-            // Assuming name belongs near the middle of the page
-            // Adjusted slightly down to align with typical blank lines
+            // Position name on the line above "Is recognized for completing the..."
+            // In PDF coordinates, 0,0 is bottom-left, so increasing Y moves it up.
             firstPage.drawText(name, {
                 x: (width / 2) - (textWidth / 2),
-                y: (height / 2) - 20, 
+                y: (height / 2) + 105, 
                 size: fontSize,
                 font: font,
                 color: rgb(0.2, 0.2, 0.2),
