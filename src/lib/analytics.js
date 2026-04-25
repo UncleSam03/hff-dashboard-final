@@ -84,8 +84,11 @@ export function processAnalytics(registrations) {
         return Object.values(attendance).filter(v => v === true).length;
     };
 
-    const qualifyingParticipants = participants.filter(p => getDaysAttended(p.attendance) >= 8).length;
-    const qualifyingFacilitators = facilitators.filter(f => getDaysAttended(f.attendance) >= 8).length;
+    const qualifyingParticipantsList = participants.filter(p => getDaysAttended(p.attendance) >= 8);
+    const qualifyingFacilitatorsList = facilitators.filter(f => getDaysAttended(f.attendance) >= 8);
+    
+    const qualifyingParticipants = qualifyingParticipantsList.length;
+    const qualifyingFacilitators = qualifyingFacilitatorsList.length;
     const totalQualifyingCertificates = qualifyingParticipants + qualifyingFacilitators;
 
     const activeDays = dailyStats.filter(d => d.count > 0);
@@ -150,6 +153,8 @@ export function processAnalytics(registrations) {
         uniqueParticipants,
         uniqueFacilitators,
         uniqueAttendees: uniqueParticipants + uniqueFacilitators,
+        qualifyingParticipantsList,
+        qualifyingFacilitatorsList,
         qualifyingParticipants,
         qualifyingFacilitators,
         totalQualifyingCertificates,

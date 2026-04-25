@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays } from 'lucide-react';
+import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User } from 'lucide-react';
 import StatsCard from './StatsCard';
 import { cn } from '../lib/utils';
 
 const SatDashboard = ({ analytics, onBack }) => {
-    const [view, setView] = useState('main'); // 'main', 'certificates', 'attendance', 'attendance_facilitators', 'attendance_participants'
+    const [view, setView] = useState('main'); // 'main', 'certificates', 'certificates_facilitators', 'certificates_participants', 'attendance', 'attendance_facilitators', 'attendance_participants'
 
     const handleBack = () => {
         if (view.startsWith('attendance_')) {
             setView('attendance');
+        } else if (view.startsWith('certificates_')) {
+            setView('certificates');
         } else {
             setView('main');
         }
@@ -16,6 +18,8 @@ const SatDashboard = ({ analytics, onBack }) => {
 
     const getTitle = () => {
         if (view === 'certificates') return 'Certificates';
+        if (view === 'certificates_facilitators') return 'Qualifying Facilitators';
+        if (view === 'certificates_participants') return 'Qualifying Participants';
         if (view === 'attendance') return 'Attendance Overview';
         if (view === 'attendance_facilitators') return 'Facilitator Attendance';
         if (view === 'attendance_participants') return 'Participant Attendance';
@@ -24,10 +28,28 @@ const SatDashboard = ({ analytics, onBack }) => {
 
     const getDescription = () => {
         if (view === 'certificates') return 'Select certificate category to manage records';
+        if (view === 'certificates_facilitators') return 'Facilitators who attended at least 8 days';
+        if (view === 'certificates_participants') return 'Participants who attended at least 8 days';
         if (view === 'attendance') return 'Select category to view daily attendance logs';
         if (view === 'attendance_facilitators') return 'Daily attendance breakdown for facilitators';
         if (view === 'attendance_participants') return 'Daily attendance breakdown for participants';
         return 'Strategic Action Team Performance & Certification';
+    };
+
+    const exportToTxt = (type) => {
+        const list = type === 'facilitators' ? analytics?.qualifyingFacilitatorsList : analytics?.qualifyingParticipantsList;
+        if (!list || list.length === 0) return;
+
+        const content = list.map((p, index) => `${index + 1}. ${p.first_name || ''} ${p.last_name || ''}`.trim()).join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Qualifying_${type.charAt(0).toUpperCase() + type.slice(1)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     // Safe fallback for dailyStats
@@ -60,6 +82,53 @@ const SatDashboard = ({ analytics, onBack }) => {
                         </div>
                     </div>
                 ))}
+            </div>
+        );
+    };
+
+    const renderCertificateList = (type) => {
+        const list = type === 'facilitators' ? analytics?.qualifyingFacilitatorsList : analytics?.qualifyingParticipantsList;
+        const safeList = list || [];
+
+        return (
+            <div className="max-w-4xl mx-auto w-full space-y-8">
+                <div className="flex justify-end">
+                    <button 
+                        onClick={() => exportToTxt(type)}
+                        disabled={safeList.length === 0}
+                        className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#71167F] hover:shadow-xl hover:shadow-[#71167F]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Download size={14} />
+                        Export to TXT
+                    </button>
+                </div>
+
+                <div className="glass-card p-8 bg-white/50">
+                    {safeList.length === 0 ? (
+                        <div className="text-center py-12">
+                            <FileText size={48} className="mx-auto text-gray-300 mb-4" />
+                            <p className="text-gray-500 font-medium">No qualifying {type} found yet.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {safeList.map((person, index) => (
+                                <div key={person.id || index} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-[#71167F]/5 flex items-center justify-center text-[#71167F]">
+                                        <User size={18} />
+                                    </div>
+                                    <div className="truncate">
+                                        <h4 className="text-sm font-black text-gray-900 truncate">
+                                            {person.first_name} {person.last_name}
+                                        </h4>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 truncate">
+                                            {person.school || person.organization || 'No Affiliation'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         );
     };
@@ -129,21 +198,31 @@ const SatDashboard = ({ analytics, onBack }) => {
                     </div>
                 ) : view === 'certificates' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <StatsCard
-                            title="Facilitators"
-                            value={analytics?.qualifyingFacilitators || 0}
-                            icon={UserCheck}
-                            description="Qualifying facilitator certificates"
-                            color="blue"
-                        />
-                        <StatsCard
-                            title="Participants"
-                            value={analytics?.qualifyingParticipants || 0}
-                            icon={Users}
-                            description="Qualifying participant certificates"
-                            color="green"
-                        />
+                        <div onClick={() => setView('certificates_facilitators')} className="cursor-pointer">
+                            <StatsCard
+                                title="Facilitators"
+                                value={analytics?.qualifyingFacilitators || 0}
+                                icon={UserCheck}
+                                description="Qualifying facilitator certificates"
+                                color="blue"
+                                className="hover:ring-2 hover:ring-blue-500/20 transition-all"
+                            />
+                        </div>
+                        <div onClick={() => setView('certificates_participants')} className="cursor-pointer">
+                            <StatsCard
+                                title="Participants"
+                                value={analytics?.qualifyingParticipants || 0}
+                                icon={Users}
+                                description="Qualifying participant certificates"
+                                color="green"
+                                className="hover:ring-2 hover:ring-green-500/20 transition-all"
+                            />
+                        </div>
                     </div>
+                ) : view === 'certificates_facilitators' ? (
+                    renderCertificateList('facilitators')
+                ) : view === 'certificates_participants' ? (
+                    renderCertificateList('participants')
                 ) : view === 'attendance' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         <div onClick={() => setView('attendance_facilitators')} className="cursor-pointer">
