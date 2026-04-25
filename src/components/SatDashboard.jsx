@@ -1,22 +1,46 @@
-import React from 'react';
-import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, Briefcase } from 'lucide-react';
+import React, { useState } from 'react';
+import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft } from 'lucide-react';
 import StatsCard from './StatsCard';
 import { cn } from '../lib/utils';
 
 const SatDashboard = ({ onBack }) => {
+    const [view, setView] = useState('main'); // 'main' or 'certificates'
+
+    const handleCertificatesClick = () => {
+        setView('certificates');
+    };
+
+    const handleBackToMain = () => {
+        setView('main');
+    };
+
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 max-w-[1600px] mx-auto pb-24">
             
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-4">
-                        <span className="p-3 hff-gradient-bg rounded-2xl text-white shadow-2xl shadow-[#71167F]/20 rotate-3">
-                            <ShieldCheck size={32} />
-                        </span>
-                        SAT Dashboard
-                    </h1>
-                    <p className="text-gray-400 font-bold mt-3 uppercase text-[10px] tracking-[0.3em]">Strategic Action Team Performance & Certification</p>
+                    <div className="flex items-center gap-4">
+                        {view === 'certificates' && (
+                            <button 
+                                onClick={handleBackToMain}
+                                className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-[#71167F]"
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+                        )}
+                        <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-4">
+                            <span className="p-3 hff-gradient-bg rounded-2xl text-white shadow-2xl shadow-[#71167F]/20 rotate-3">
+                                <ShieldCheck size={32} />
+                            </span>
+                            {view === 'main' ? 'SAT Dashboard' : 'Certificates'}
+                        </h1>
+                    </div>
+                    <p className="text-gray-400 font-bold mt-3 uppercase text-[10px] tracking-[0.3em]">
+                        {view === 'main' 
+                            ? 'Strategic Action Team Performance & Certification' 
+                            : 'Select certificate category to manage records'}
+                    </p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -30,39 +54,42 @@ const SatDashboard = ({ onBack }) => {
                 </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <StatsCard
-                    title="Certificates"
-                    value={0}
-                    icon={Award}
-                    description="Total certificates issued"
-                    color="purple"
-                />
-                <StatsCard
-                    title="SAT Members"
-                    value={0}
-                    icon={Users}
-                    description="Active team members"
-                    color="blue"
-                />
-                <StatsCard
-                    title="Tasks Completed"
-                    value={0}
-                    icon={CheckCircle}
-                    description="Strategic milestones"
-                    color="green"
-                />
-                <StatsCard
-                    title="Active Projects"
-                    value={0}
-                    icon={Briefcase}
-                    description="Current focus areas"
-                    color="amber"
-                />
+            {/* Content Section */}
+            <div className="animate-in fade-in zoom-in duration-500">
+                {view === 'main' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div onClick={handleCertificatesClick} className="cursor-pointer">
+                            <StatsCard
+                                title="Certificates"
+                                value={0}
+                                icon={Award}
+                                description="Total certificates issued"
+                                color="purple"
+                                className="hover:ring-2 hover:ring-[#71167F]/20 transition-all"
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <StatsCard
+                            title="Facilitators"
+                            value={0}
+                            icon={UserCheck}
+                            description="Qualifying facilitator certificates"
+                            color="blue"
+                        />
+                        <StatsCard
+                            title="Participants"
+                            value={0}
+                            icon={Users}
+                            description="Qualifying participant certificates"
+                            color="green"
+                        />
+                    </div>
+                )}
             </div>
 
-            {/* Certificate Management Section */}
+            {/* Certificate Management Section (Only visible when viewing certificates or as a global tool) */}
             <div className="glass-card p-10 relative overflow-hidden group">
                 {/* Background Decor */}
                 <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
@@ -73,7 +100,7 @@ const SatDashboard = ({ onBack }) => {
                     <div>
                         <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                             <span className="p-2 bg-purple-100 text-purple-600 rounded-xl shadow-sm"><Award size={20} /></span>
-                            Certificate Management
+                            {view === 'certificates' ? 'Category Management' : 'Certificate Management'}
                         </h2>
                         <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.25em]">Issue and track participant certifications</p>
                     </div>
@@ -94,7 +121,7 @@ const SatDashboard = ({ onBack }) => {
                         </div>
                         <div>
                             <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">No Certificates Issued Yet</h3>
-                            <p className="text-gray-400 font-medium text-sm mt-2">Start certifying your SAT members and participants to see them listed here.</p>
+                            <p className="text-gray-400 font-medium text-sm mt-2">Start certifying your members and participants to see them listed here.</p>
                         </div>
                         <button className="px-8 py-3 hff-gradient-bg text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:shadow-xl hover:shadow-[#71167F]/30 transition-all active:scale-95">
                             Issue New Certificate
