@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User } from 'lucide-react';
+import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User, Archive } from 'lucide-react';
 import StatsCard from './StatsCard';
 import { cn } from '../lib/utils';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import JSZip from 'jszip';
 
 const SatDashboard = ({ analytics, onBack }) => {
     const [view, setView] = useState('main'); // 'main', 'certificates', 'certificates_facilitators', 'certificates_participants', 'attendance', 'attendance_facilitators', 'attendance_participants'
@@ -51,6 +52,64 @@ const SatDashboard = ({ analytics, onBack }) => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    };
+
+    const [isExportingZip, setIsExportingZip] = useState(false);
+
+    const exportAllAsZip = async (type) => {
+        const list = type === 'facilitators' ? analytics?.qualifyingFacilitatorsList : analytics?.qualifyingParticipantsList;
+        if (!list || list.length === 0) return;
+
+        try {
+            setIsExportingZip(true);
+            const zip = new JSZip();
+            const url = '/certificate_blank.pdf';
+            const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+
+            for (const person of list) {
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+                
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+                const { width, height } = firstPage.getSize();
+                
+                const name = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+                if (!name) continue;
+
+                pdfDoc.setTitle(`${name} Certificate`);
+                
+                const fontSize = 42;
+                const textWidth = font.widthOfTextAtSize(name, fontSize);
+                
+                firstPage.drawText(name, {
+                    x: (width / 2) - (textWidth / 2),
+                    y: (height / 2) + 112, 
+                    size: fontSize,
+                    font: font,
+                    color: rgb(0.2, 0.2, 0.2),
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                zip.file(`${name.replace(/[^a-z0-9]/gi, '_')}_Certificate.pdf`, pdfBytes);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const blobUrl = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `Qualifying_${type.charAt(0).toUpperCase() + type.slice(1)}_Certificates.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+            
+        } catch (error) {
+            console.error("Error generating zip:", error);
+            alert("Could not generate ZIP file.");
+        } finally {
+            setIsExportingZip(false);
+        }
     };
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -140,7 +199,7 @@ const SatDashboard = ({ analytics, onBack }) => {
 
         return (
             <div className="max-w-4xl mx-auto w-full space-y-8">
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-3">
                     <button 
                         onClick={() => exportToTxt(type)}
                         disabled={safeList.length === 0}
@@ -148,6 +207,14 @@ const SatDashboard = ({ analytics, onBack }) => {
                     >
                         <Download size={14} />
                         Export to TXT
+                    </button>
+                    <button 
+                        onClick={() => exportAllAsZip(type)}
+                        disabled={safeList.length === 0 || isExportingZip}
+                        className="px-6 py-3 bg-[#71167F] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#5C0F66] hover:shadow-xl hover:shadow-[#71167F]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Archive size={14} />
+                        {isExportingZip ? 'Generating ZIP...' : 'Export PDFs (ZIP)'}
                     </button>
                 </div>
 

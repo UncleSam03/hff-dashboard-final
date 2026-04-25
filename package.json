@@ -26,6 +26,7 @@
     "html5sortable": "^0.14.0",
     "jquery": "^4.0.0",
     "jquery-touchswipe": "^1.6.19",
+    "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "leaflet.gridlayer.googlemutant": "^0.16.0",
