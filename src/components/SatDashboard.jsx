@@ -109,9 +109,9 @@ const SatDashboard = ({ analytics, onBack }) => {
                         <div onClick={() => setView('certificates')} className="cursor-pointer">
                             <StatsCard
                                 title="Certificates"
-                                value={analytics?.uniqueAttendees || 0}
+                                value={analytics?.totalQualifyingCertificates || 0}
                                 icon={Award}
-                                description="Total certificates issued"
+                                description="Total certificates to be issued"
                                 color="purple"
                                 className="hover:ring-2 hover:ring-[#71167F]/20 transition-all"
                             />
@@ -131,14 +131,14 @@ const SatDashboard = ({ analytics, onBack }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         <StatsCard
                             title="Facilitators"
-                            value={analytics?.uniqueFacilitators || 0}
+                            value={analytics?.qualifyingFacilitators || 0}
                             icon={UserCheck}
                             description="Qualifying facilitator certificates"
                             color="blue"
                         />
                         <StatsCard
                             title="Participants"
-                            value={analytics?.uniqueParticipants || 0}
+                            value={analytics?.qualifyingParticipants || 0}
                             icon={Users}
                             description="Qualifying participant certificates"
                             color="green"
