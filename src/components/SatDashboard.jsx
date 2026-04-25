@@ -70,6 +70,10 @@ const SatDashboard = ({ analytics, onBack }) => {
             const { width, height } = firstPage.getSize();
             
             const name = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+            
+            // Set the PDF metadata title so the browser tab shows the name instead of a UUID
+            pdfDoc.setTitle(`${name} Certificate`);
+
             const fontSize = 42;
             const textWidth = font.widthOfTextAtSize(name, fontSize);
             
