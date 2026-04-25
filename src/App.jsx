@@ -87,7 +87,7 @@ function AppContent() {
       ) : mode === 'analysis' ? (
         <AnalysisHub analytics={analytics} onBack={handleBackToHome} />
       ) : mode === 'sat' ? (
-        <SatDashboard onBack={handleBackToHome} />
+        <SatDashboard analytics={analytics} onBack={handleBackToHome} />
       ) : (
         <Dashboard analytics={analytics} />
       )}
