@@ -5,6 +5,15 @@ import { cn } from '../lib/utils';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
 
+const formatNameTitleCase = (name) => {
+    if (!name) return '';
+    return name
+        .split(' ')
+        .filter(part => part.trim().length > 0)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+};
+
 const SatDashboard = ({ analytics, onBack }) => {
     const [view, setView] = useState('main'); // 'main', 'certificates', 'certificates_facilitators', 'certificates_participants', 'attendance', 'attendance_facilitators', 'attendance_participants'
 
@@ -74,7 +83,8 @@ const SatDashboard = ({ analytics, onBack }) => {
                 const firstPage = pages[0];
                 const { width, height } = firstPage.getSize();
                 
-                const name = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+                const rawName = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+                const name = formatNameTitleCase(rawName);
                 if (!name) continue;
 
                 pdfDoc.setTitle(`${name} Certificate`);
@@ -128,7 +138,8 @@ const SatDashboard = ({ analytics, onBack }) => {
             const firstPage = pages[0];
             const { width, height } = firstPage.getSize();
             
-            const name = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+            const rawName = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+            const name = formatNameTitleCase(rawName);
             
             // Set the PDF metadata title so the browser tab shows the name instead of a UUID
             pdfDoc.setTitle(`${name} Certificate`);
