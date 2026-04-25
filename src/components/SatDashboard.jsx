@@ -77,7 +77,7 @@ const SatDashboard = ({ analytics, onBack }) => {
             // In PDF coordinates, 0,0 is bottom-left, so increasing Y moves it up.
             firstPage.drawText(name, {
                 x: (width / 2) - (textWidth / 2),
-                y: (height / 2) + 105, 
+                y: (height / 2) + 112, 
                 size: fontSize,
                 font: font,
                 color: rgb(0.2, 0.2, 0.2),
