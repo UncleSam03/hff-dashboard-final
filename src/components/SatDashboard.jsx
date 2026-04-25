@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User } from 'lucide-react';
 import StatsCard from './StatsCard';
 import { cn } from '../lib/utils';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 const SatDashboard = ({ analytics, onBack }) => {
     const [view, setView] = useState('main'); // 'main', 'certificates', 'certificates_facilitators', 'certificates_participants', 'attendance', 'attendance_facilitators', 'attendance_participants'
@@ -50,6 +51,49 @@ const SatDashboard = ({ analytics, onBack }) => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    };
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const generateAndShowCertificate = async (person) => {
+        if (!person) return;
+        try {
+            setIsGenerating(true);
+            const url = '/certificate_blank.pdf';
+            const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+
+            const pdfDoc = await PDFDocument.load(existingPdfBytes);
+            const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+            
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            const { width, height } = firstPage.getSize();
+            
+            const name = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+            const fontSize = 42;
+            const textWidth = font.widthOfTextAtSize(name, fontSize);
+            
+            // Assuming name belongs near the middle of the page
+            // Adjusted slightly down to align with typical blank lines
+            firstPage.drawText(name, {
+                x: (width / 2) - (textWidth / 2),
+                y: (height / 2) - 20, 
+                size: fontSize,
+                font: font,
+                color: rgb(0.2, 0.2, 0.2),
+            });
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            window.open(blobUrl, '_blank');
+        } catch (error) {
+            console.error("Error generating certificate:", error);
+            alert("Could not generate certificate. Please ensure the blank PDF is available.");
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     // Safe fallback for dailyStats
@@ -112,12 +156,17 @@ const SatDashboard = ({ analytics, onBack }) => {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {safeList.map((person, index) => (
-                                <div key={person.id || index} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                                <div 
+                                    key={person.id || index} 
+                                    onClick={() => generateAndShowCertificate(person)}
+                                    className={`p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-[#71167F]/30 hover:shadow-md transition-all ${isGenerating ? 'opacity-50 pointer-events-none' : ''}`}
+                                    title="Click to view certificate"
+                                >
                                     <div className="w-10 h-10 rounded-xl bg-[#71167F]/5 flex items-center justify-center text-[#71167F]">
                                         <User size={18} />
                                     </div>
                                     <div className="truncate">
-                                        <h4 className="text-sm font-black text-gray-900 truncate">
+                                        <h4 className="text-sm font-black text-gray-900 truncate group-hover:text-[#71167F] transition-colors">
                                             {person.first_name} {person.last_name}
                                         </h4>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 truncate">
