@@ -40,7 +40,7 @@ const SatDashboard = ({ analytics, onBack }) => {
     const getDescription = () => {
         if (view === 'certificates') return 'Select certificate category to manage records';
         if (view === 'certificates_facilitators') return 'Facilitators who attended at least 8 days';
-        if (view === 'certificates_participants') return 'Participants who attended at least 8 days';
+        if (view === 'certificates_participants') return 'Participants who attended at least 6 days';
         if (view === 'attendance') return 'Select category to view daily attendance logs';
         if (view === 'attendance_facilitators') return 'Daily attendance breakdown for facilitators';
         if (view === 'attendance_participants') return 'Daily attendance breakdown for participants';

@@ -84,7 +84,7 @@ export function processAnalytics(registrations) {
         return Object.values(attendance).filter(v => v === true).length;
     };
 
-    const qualifyingParticipantsList = participants.filter(p => getDaysAttended(p.attendance) >= 8);
+    const qualifyingParticipantsList = participants.filter(p => getDaysAttended(p.attendance) >= 6);
     const qualifyingFacilitatorsList = facilitators.filter(f => getDaysAttended(f.attendance) >= 8);
     
     const qualifyingParticipants = qualifyingParticipantsList.length;
