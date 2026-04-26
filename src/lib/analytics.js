@@ -84,8 +84,24 @@ export function processAnalytics(registrations) {
         return Object.values(attendance).filter(v => v === true).length;
     };
 
-    const qualifyingParticipantsList = participants.filter(p => getDaysAttended(p.attendance) >= 6);
-    const qualifyingFacilitatorsList = facilitators.filter(f => getDaysAttended(f.attendance) >= 8);
+    const sortByName = (list) => {
+        return [...list].sort((a, b) => {
+            const lastA = (a.last_name || '').toLowerCase().trim();
+            const lastB = (b.last_name || '').toLowerCase().trim();
+            if (lastA < lastB) return -1;
+            if (lastA > lastB) return 1;
+            
+            const firstA = (a.first_name || '').toLowerCase().trim();
+            const firstB = (b.first_name || '').toLowerCase().trim();
+            if (firstA < firstB) return -1;
+            if (firstA > firstB) return 1;
+            
+            return 0;
+        });
+    };
+
+    const qualifyingParticipantsList = sortByName(participants.filter(p => getDaysAttended(p.attendance) >= 6));
+    const qualifyingFacilitatorsList = sortByName(facilitators.filter(f => getDaysAttended(f.attendance) >= 8));
     
     const qualifyingParticipants = qualifyingParticipantsList.length;
     const qualifyingFacilitators = qualifyingFacilitatorsList.length;
