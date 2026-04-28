@@ -45,6 +45,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             const allParticipants = await db.registrations.where('type').equals('participant').toArray();
             const participants = allParticipants.filter(p => !p.is_deleted);
             const counts = {};
+            const qualifyingCounts = {};
             
             // First compute aliases for each facilitator to correctly match all linked UUIDs
             const aliasesMap = {};
@@ -62,10 +63,22 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
 
             participants.forEach(p => {
                 if (p.facilitator_uuid) {
+                    const attendance = p.attendance;
+                    let days = 0;
+                    if (Array.isArray(attendance)) {
+                        days = attendance.filter(Boolean).length;
+                    } else if (attendance && typeof attendance === 'object') {
+                        days = Object.values(attendance).filter(Boolean).length;
+                    }
+                    const isQualifying = days >= 6;
+
                     // Award this participant to any facilitator where their UUID is an alias
                     facilitators.forEach(f => {
                         if (aliasesMap[f.uuid] && aliasesMap[f.uuid].includes(p.facilitator_uuid)) {
                             counts[f.uuid] = (counts[f.uuid] || 0) + 1;
+                            if (isQualifying) {
+                                qualifyingCounts[f.uuid] = (qualifyingCounts[f.uuid] || 0) + 1;
+                            }
                         }
                     });
                 }
@@ -73,7 +86,8 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
 
             let results = facilitators.map(f => ({
                 ...f,
-                participantCount: counts[f.uuid] || 0
+                participantCount: counts[f.uuid] || 0,
+                qualifyingCount: qualifyingCounts[f.uuid] || 0
             }));
 
             if (searchTerm) {
@@ -287,9 +301,15 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
                                     </div>
                                 </div>
                                 <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Assigned Participants</span>
-                                        <span className="text-base font-black text-gray-900">{f.participantCount || 0}</span>
+                                    <div className="flex gap-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Assigned</span>
+                                            <span className="text-base font-black text-gray-900">{f.participantCount || 0}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Qualifying</span>
+                                            <span className="text-base font-black text-amber-600">{f.qualifyingCount || 0}</span>
+                                        </div>
                                     </div>
                                     <div className="h-10 w-10 rounded-xl bg-gray-50 text-gray-300 flex items-center justify-center group-hover:bg-[#71167F] group-hover:text-white transition-all shadow-inner">
                                         <Search size={18} />

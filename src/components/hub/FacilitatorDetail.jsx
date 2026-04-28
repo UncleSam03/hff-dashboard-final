@@ -116,14 +116,28 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
         }
 
         // Compute facilitator back-ref just in case
-        results = results.map(p => ({
-            ...p,
-            facilitatorName: `${facilitator.first_name} ${facilitator.last_name}`
-        }));
+        results = results.map(p => {
+            const attendance = p.attendance;
+            let days = 0;
+            if (Array.isArray(attendance)) {
+                days = attendance.filter(Boolean).length;
+            } else if (attendance && typeof attendance === 'object') {
+                days = Object.values(attendance).filter(Boolean).length;
+            }
+
+            return {
+                ...p,
+                facilitatorName: `${facilitator.first_name} ${facilitator.last_name}`,
+                qualifying: days >= 6
+            };
+        });
+
+        const qualifyingCount = results.filter(p => p.qualifying).length;
 
         return {
             participants: results.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)),
-            coFacilitators
+            coFacilitators,
+            qualifyingCount
         };
     }, [facilitator.id, searchTerm]);
 
@@ -368,6 +382,10 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Participants</p>
                         <p className="text-xl font-black text-gray-900">{participants ? participants.length : 0}</p>
                     </div>
+                    <div className="text-center px-4 border-r border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Qualifying</p>
+                        <p className="text-xl font-black text-amber-600">{dashboardQuery?.qualifyingCount || 0}</p>
+                    </div>
                     <div className="text-center px-4">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
                         <div className={cn(
@@ -478,8 +496,11 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                                     <div className="font-black text-gray-900 text-base truncate pr-2">
                                         {person.first_name} {person.last_name}
                                     </div>
-                                    <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1 truncate">
+                                    <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1 truncate flex items-center gap-2">
                                         {person.gender === 'M' ? 'Male' : 'Female'} • {person.age} Yrs
+                                        {person.qualifying && (
+                                            <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[8px]">Cert Qualifying</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>

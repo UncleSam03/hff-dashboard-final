@@ -73,9 +73,45 @@ const PersonList = ({
             return acc;
         }, {});
 
+        // Calculate qualifying participants (>= 6 days) for each facilitator
+        const allParticipants = await db.registrations.where('type').equals('participant').toArray();
+        
+        // Group participants by facilitator_uuid and count qualifying ones
+        const qualifyingCountsByUuid = {};
+        allParticipants.forEach(p => {
+            if (p.is_deleted || !p.facilitator_uuid) return;
+            
+            const attendance = p.attendance;
+            let days = 0;
+            if (Array.isArray(attendance)) {
+                days = attendance.filter(Boolean).length;
+            } else if (attendance && typeof attendance === 'object') {
+                days = Object.values(attendance).filter(Boolean).length;
+            }
+            
+            if (days >= 6) {
+                qualifyingCountsByUuid[p.facilitator_uuid] = (qualifyingCountsByUuid[p.facilitator_uuid] || 0) + 1;
+            }
+        });
+
+        // Compute aliases for facilitators to correctly sum qualifying counts across aliases
+        const facQualifyingCount = {};
+        for (const f of facilitators) {
+            let totalQualifying = 0;
+            // Find all aliases for this facilitator (same contact phone)
+            const aliases = facilitators.filter(alt => alt.contact && f.contact && alt.contact === f.contact);
+            const aliasUuids = Array.from(new Set([f.uuid, ...aliases.map(a => a.uuid)]));
+            
+            aliasUuids.forEach(uuid => {
+                totalQualifying += (qualifyingCountsByUuid[uuid] || 0);
+            });
+            facQualifyingCount[f.uuid] = totalQualifying;
+        }
+
         results = results.map(p => ({
             ...p,
-            facilitatorName: p.facilitator_uuid ? facMap[p.facilitator_uuid] : null
+            facilitatorName: p.facilitator_uuid ? facMap[p.facilitator_uuid] : null,
+            qualifyingCount: p.type === 'facilitator' ? (facQualifyingCount[p.uuid] || 0) : null
         }));
 
         // Secondary filter by Affiliation if active
@@ -482,8 +518,14 @@ const PersonList = ({
                                             } • {person.age || person.Age || '??'} Yrs
                                         </div>
                                         {person.type === 'facilitator' && (
-                                            <div className="text-[9px] font-black text-[#71167F] uppercase tracking-widest mt-2 flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-all">
-                                                View Participants <ArrowLeft size={10} className="rotate-180" />
+                                            <div className="flex flex-col gap-1.5 mt-2">
+                                                <div className="text-[9px] font-black text-[#71167F] uppercase tracking-widest flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-all">
+                                                    View Participants <ArrowLeft size={10} className="rotate-180" />
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md w-fit">
+                                                    <CalendarCheck size={10} />
+                                                    {person.qualifyingCount || 0} Qualifying for Certificates
+                                                </div>
                                             </div>
                                         )}
                                         {person.type === 'participant' && (
