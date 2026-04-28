@@ -519,12 +519,12 @@ const PersonList = ({
                                         </div>
                                         {person.type === 'facilitator' && (
                                             <div className="flex flex-col gap-1.5 mt-2">
-                                                <div className="text-[9px] font-black text-[#71167F] uppercase tracking-widest flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-all">
-                                                    View Participants <ArrowLeft size={10} className="rotate-180" />
+                                                <div className="text-[9px] font-black text-[#71167F] uppercase tracking-widest flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-all">
+                                                    VIEW TEAM <ArrowLeft size={10} className="rotate-180" />
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md w-fit">
+                                                <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-600">
                                                     <CalendarCheck size={10} />
-                                                    {person.qualifyingCount || 0} Qualifying for Certificates
+                                                    {person.qualifyingCount || 0} Certificates Qualifying
                                                 </div>
                                             </div>
                                         )}
