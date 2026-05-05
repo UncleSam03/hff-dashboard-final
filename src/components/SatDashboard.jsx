@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User, Archive } from 'lucide-react';
+import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User, Archive, Search } from 'lucide-react';
 import StatsCard from './StatsCard';
 import { cn } from '../lib/utils';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -16,8 +16,10 @@ const formatNameTitleCase = (name) => {
 
 const SatDashboard = ({ analytics, onBack }) => {
     const [view, setView] = useState('main'); // 'main', 'certificates', 'certificates_facilitators', 'certificates_participants', 'attendance', 'attendance_facilitators', 'attendance_participants'
+    const [searchQuery, setSearchQuery] = useState('');
 
     const handleBack = () => {
+        setSearchQuery('');
         if (view.startsWith('attendance_')) {
             setView('attendance');
         } else if (view.startsWith('certificates_')) {
@@ -206,12 +208,35 @@ const SatDashboard = ({ analytics, onBack }) => {
 
     const renderCertificateList = (type) => {
         const list = type === 'facilitators' ? analytics?.qualifyingFacilitatorsList : analytics?.qualifyingParticipantsList;
-        const safeList = list || [];
+        
+        const sortedList = (list || []).slice().sort((a, b) => {
+            const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+            const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        const safeList = sortedList.filter(person => {
+            const name = `${person.first_name || ''} ${person.last_name || ''}`.trim().toLowerCase();
+            return name.includes(searchQuery.toLowerCase());
+        });
 
         return (
             <div className="max-w-4xl mx-auto w-full space-y-8">
-                <div className="flex justify-end gap-3">
-                    <button 
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                    <div className="relative flex-1 max-w-md">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search names..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-3 border border-gray-100 rounded-2xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-medium"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                        <button 
                         onClick={() => exportToTxt(type)}
                         disabled={safeList.length === 0}
                         className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#71167F] hover:shadow-xl hover:shadow-[#71167F]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -306,7 +331,7 @@ const SatDashboard = ({ analytics, onBack }) => {
             <div className="animate-in fade-in zoom-in duration-500">
                 {view === 'main' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <div onClick={() => setView('certificates')} className="cursor-pointer">
+                        <div onClick={() => { setView('certificates'); setSearchQuery(''); }} className="cursor-pointer">
                             <StatsCard
                                 title="Certificates"
                                 value={analytics?.totalQualifyingCertificates || 0}
@@ -329,7 +354,7 @@ const SatDashboard = ({ analytics, onBack }) => {
                     </div>
                 ) : view === 'certificates' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <div onClick={() => setView('certificates_facilitators')} className="cursor-pointer">
+                        <div onClick={() => { setView('certificates_facilitators'); setSearchQuery(''); }} className="cursor-pointer">
                             <StatsCard
                                 title="Facilitators"
                                 value={analytics?.qualifyingFacilitators || 0}
@@ -339,7 +364,7 @@ const SatDashboard = ({ analytics, onBack }) => {
                                 className="hover:ring-2 hover:ring-blue-500/20 transition-all"
                             />
                         </div>
-                        <div onClick={() => setView('certificates_participants')} className="cursor-pointer">
+                        <div onClick={() => { setView('certificates_participants'); setSearchQuery(''); }} className="cursor-pointer">
                             <StatsCard
                                 title="Participants"
                                 value={analytics?.qualifyingParticipants || 0}
