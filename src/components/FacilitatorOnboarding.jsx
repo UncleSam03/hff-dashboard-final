@@ -3,7 +3,7 @@ import { supabase, isConfigured } from "../lib/supabase";
 import { useAuth } from "../auth/AuthContext";
 import { db } from "../lib/dexieDb";
 import {
-    Sparkles, User, Users, GraduationCap, Heart, MapPin,
+    Briefcase, User, Users, GraduationCap, Heart, MapPin,
     Calendar, Loader2, ArrowRight, Check
 } from "lucide-react";
 
@@ -170,7 +170,7 @@ export default function FacilitatorOnboarding({ onComplete }) {
 
                     <div className="text-center mb-10">
                         <div className="inline-flex items-center justify-center p-3 bg-hff-primary text-white rounded-2xl shadow-lg shadow-hff-primary/20 mb-6">
-                            <Sparkles className="h-6 w-6" />
+                            <GraduationCap className="h-6 w-6" />
                         </div>
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2 uppercase">Complete Your Profile</h1>
                         <p className="text-gray-500 font-medium">Just a few more details to get you started as a Facilitator.</p>
@@ -266,7 +266,7 @@ export default function FacilitatorOnboarding({ onComplete }) {
                             {/* Occupation */}
                             <div className="space-y-2">
                                 <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-                                    <Sparkles className="h-3 w-3" /> Occupation
+                                    <Briefcase className="h-3 w-3" /> Occupation
                                 </label>
                                 <input
                                     type="text"

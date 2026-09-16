@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Sparkles, Share2 } from 'lucide-react';
+import { FileText, Share2 } from 'lucide-react';
 
 const AIReport = ({ analytics }) => {
     if (!analytics) return null;
@@ -105,8 +105,8 @@ This data reflects sustained community interest and validates the need for conti
         <Card className="col-span-full shadow-sm border-gray-100 mb-8 overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <CardTitle className="text-gray-900 flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-hff-secondary fill-hff-secondary/20" />
-                    AI Generated Insights
+                    <FileText className="h-5 w-5 text-hff-secondary" />
+                    Campaign Analytics Report
                 </CardTitle>
                 <button
                     id="download-btn"

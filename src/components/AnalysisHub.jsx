@@ -30,16 +30,16 @@ const AnalysisHub = ({ analytics, onBack }) => {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 p-1.5 bg-gray-50/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-inner">
+                <div className="flex items-center gap-1.5 p-1.5 liquid-glass-pill border border-white/70 shadow-sm">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                                "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300",
                                 activeTab === tab.id
-                                    ? "bg-white text-[#71167F] shadow-md shadow-gray-200 border border-gray-100 scale-105"
-                                    : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
+                                    ? "liquid-glass-active shadow-sm font-extrabold scale-105"
+                                    : "text-gray-500 hover:text-gray-800 hover:bg-white/40"
                             )}
                         >
                             <tab.icon size={14} />

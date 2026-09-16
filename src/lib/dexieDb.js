@@ -58,4 +58,20 @@ db.version(12).stores({
     notices: '++id, uuid, title, type, priority, created_at'
 });
 
+// v13: Added campaigns store and campaign_id index on registrations
+db.version(13).stores({
+    participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation, campaign_id',
+    notices: '++id, uuid, title, type, priority, created_at',
+    campaigns: '++id, uuid, name, village, year, status, created_at, updated_at'
+});
+
+// v14: Added form_number, group_form_number, teaching_group indexes on registrations
+db.version(14).stores({
+    participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation, campaign_id, form_number, group_form_number, teaching_group',
+    notices: '++id, uuid, title, type, priority, created_at',
+    campaigns: '++id, uuid, name, village, year, status, created_at, updated_at'
+});
+
 export default db;

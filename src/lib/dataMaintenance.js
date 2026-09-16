@@ -1,6 +1,4 @@
 import db from './dexieDb';
-import { supabase, isConfigured } from './supabase';
-import { checkConnectivity } from './syncManager';
 
 /**
  * Data Maintenance Utility
@@ -56,7 +54,7 @@ export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
 
     const results = [];
 
-    for (const { key, members } of duplicatesFound) {
+    for (const { members } of duplicatesFound) {
         // Sort by updated_at descending, then created_at descending
         const sorted = [...members].sort((a, b) => {
             const dateA = new Date(a.updated_at || a.created_at || 0);
@@ -138,6 +136,7 @@ export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
         message: dryRun ? "Dry run complete. Check logs." : "Merge complete.",
         duplicatesMerged: duplicatesFound.length,
         recordsDeleted: dryRun ? othersCount(duplicatesFound) : recordsDeletedCount,
+        recordsUpdated: recordsUpdatedCount,
         results
     };
 }

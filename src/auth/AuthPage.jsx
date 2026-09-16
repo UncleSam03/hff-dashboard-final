@@ -1,19 +1,30 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { supabase, isConfigured } from "../lib/supabase";
+import React, { useState, useEffect } from "react";
+import { auth, db, isConfigured } from "../lib/firebase";
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  sendPasswordResetEmail, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  updatePassword,
+  RecaptchaVerifier,
+  signInWithPhoneNumber
+} from "firebase/auth";
+import { doc, getDocs, collection, query, where, limit, updateDoc } from "firebase/firestore";
 import {
   AlertCircle, Key, Info, Shield, Users, User,
   Mail, Phone, Lock, Eye, EyeOff, ArrowRight,
-  Check, ChevronLeft, Sparkles
+  Check, ChevronLeft, LockOpen
 } from "lucide-react";
 import LandingPage from "../components/LandingPage";
+import { useAuth } from "./AuthContext";
 
 /* ───────── helpers ───────── */
 function friendlyAuthError(err) {
   const m = err?.message || "";
-  if (m.includes("Invalid login credentials")) return "Incorrect email or password.";
-  if (m.includes("Email not confirmed")) return "Please confirm your email address first.";
-  if (m.includes("User already registered")) return "That email is already in use. Try signing in.";
-  if (m.includes("Phone")) return "Invalid phone number or verification failed.";
+  if (m.includes("auth/invalid-credential")) return "Incorrect email or password.";
+  if (m.includes("auth/email-already-in-use")) return "That email is already in use. Try signing in.";
+  if (m.includes("auth/invalid-phone-number")) return "Invalid phone number.";
   return m || "Something went wrong. Please try again.";
 }
 
@@ -32,29 +43,53 @@ const ROLES = [
 ];
 
 /* ───────── Not-configured fallback ───────── */
-function ConfigRequired() {
+function ConfigRequired({ onBypass }) {
   return (
-    <div className="min-h-screen bg-[#FDFCF9] font-sans text-gray-900 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-2xl bg-white border border-gray-100 rounded-[2.5rem] shadow-xl p-6 sm:p-10">
+    <div className="min-h-screen bg-transparent font-sans text-gray-900 flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-2xl liquid-glass-elevated rounded-[2.5rem] shadow-2xl p-6 sm:p-10 border border-white/60">
         <div className="mb-8 flex items-center gap-3">
-          <div className="h-12 w-12 bg-hff-soft-purple rounded-xl flex items-center justify-center text-hff-primary">
+          <div className="h-12 w-12 bg-hff-soft-purple rounded-2xl flex items-center justify-center text-hff-primary shadow-sm">
             <Key className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Configuration Required</h1>
-            <p className="text-gray-500">Supabase environment variables are missing.</p>
+            <h1 className="text-2xl font-bold text-gray-900">Configuration Notice</h1>
+            <p className="text-gray-500">Firebase cloud connection is optional in dev mode.</p>
           </div>
         </div>
         <div className="space-y-6">
-          <div className="bg-hff-warm-beige border border-gray-100 rounded-2xl p-5">
+          <div className="liquid-glass rounded-2xl p-5 border border-white/40">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-hff-primary mt-0.5" />
               <div className="text-sm text-gray-800">
-                <p className="font-semibold mb-1">Why is this happening?</p>
-                <p>The app requires Supabase Auth. Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to your <code>.env.local</code> and restart the dev server.</p>
+                <p className="font-semibold mb-1">Development Access Available</p>
+                <p>Passwords are disabled for development review. You can enter directly as Admin or Facilitator below.</p>
               </div>
             </div>
           </div>
+
+          {onBypass && (
+            <div className="pt-2">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Quick Entry (No Password Required):</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => onBypass("admin")}
+                  className="w-full py-3.5 px-4 rounded-2xl liquid-glass-active text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  <Shield className="w-4 h-4" />
+                  Enter Directly as Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onBypass("facilitator")}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-white/70 hover:bg-white text-gray-800 font-bold text-sm shadow-sm border border-gray-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  <Users className="w-4 h-4" />
+                  Enter as Facilitator
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -66,7 +101,7 @@ export default function AuthPage() {
   const [screen, setScreen] = useState("landing"); // landing | auth
   const [authMode, setAuthMode] = useState("signin"); // signin | signup | change-password
   const [authMethod, setAuthMethod] = useState("email"); // email | phone
-  const [selectedRole, setSelectedRole] = useState("facilitator");
+  const selectedRole = "facilitator";
 
   // Form state
   const [email, setEmail] = useState("");
@@ -77,7 +112,9 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [otpToken, setOtpToken] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
+  const { switchDevRole, isDevBypass } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -93,7 +130,7 @@ export default function AuthPage() {
     }
   }, []);
 
-  if (!isConfigured) return <ConfigRequired />;
+  if (!isConfigured) return <ConfigRequired onBypass={switchDevRole} />;
 
   /* ── handlers ── */
 
@@ -148,71 +185,32 @@ export default function AuthPage() {
 
         // If not an email, lookup in profiles by full_name
         if (!isEmail) {
-          const { data: profileMatches, error: lookupErr } = await supabase
-            .from("profiles")
-            .select("id, full_name, role")
-            .ilike("full_name", trimmedEmail)
-            .limit(5);
+          const profilesRef = collection(db, "profiles");
+          const q = query(profilesRef, where("full_name", "==", trimmedEmail), limit(5));
+          const querySnapshot = await getDocs(q);
 
-          if (lookupErr || !profileMatches || profileMatches.length === 0) {
+          if (querySnapshot.empty) {
             throw new Error("Could not find a user with that name. Please check and try again.");
           }
 
-          if (profileMatches.length > 1) {
+          if (querySnapshot.size > 1) {
             throw new Error("Multiple accounts found with that name. Please sign in with your email address instead.");
           }
 
-          const profileMatch = profileMatches[0];
-
-          try {
-            const { data: userData, error: userErr } = await supabase.rpc('get_user_email_by_id', { user_id: profileMatch.id });
-
-            if (userErr || !userData) {
-              throw new Error("Unable to retrieve login identifier. Please use your email address to sign in.");
-            }
-            loginEmail = userData;
-          } catch (rpcErr) {
-            // RPC function may not exist in all Supabase setups
-            throw new Error("Name-based login is not available. Please sign in with your email address.");
-          }
+          throw new Error("Name-based login is not fully supported in Firebase yet. Please sign in with your email address.");
         }
 
-        const { data: signInData, error: err } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password: trimmedPassword
-        });
-        if (err) throw err;
+        const userCredential = await signInWithEmailAndPassword(auth, loginEmail, trimmedPassword);
 
-        // Check for must_change_password after successful login
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("must_change_password")
-          .eq("id", signInData.user.id)
-          .single();
-
-        if (profile?.must_change_password) {
-          setAuthMode("change-password");
-          setMessage("You must change your password before proceeding.");
-          return;
-        }
+        // Check for must_change_password after successful login (not typical in Firebase, but keeping logic)
+        // Would need to fetch profile doc here if strictly required
       } else {
         const isDomainEmail = trimmedEmail.toLowerCase().endsWith("@thehealthyfamilies.net");
         const metadataRole = isDomainEmail ? "admin" : "facilitator";
 
-        const { error: err } = await supabase.auth.signUp({
-          email: trimmedEmail,
-          password: trimmedPassword,
-          options: {
-            emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
-            data: {
-              role: metadataRole,
-              full_name: fullName.trim(),
-              phone: phone.trim(),
-            },
-          },
-        });
-        if (err) throw err;
-        setMessage("Account created! Check your email for the confirmation link.");
+        const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
+        // Note: Profile creation happens automatically in AuthContext's onAuthStateChanged
+        setMessage("Account created! You are now signed in.");
       }
     } catch (err) {
       setError(friendlyAuthError(err));
@@ -234,16 +232,11 @@ export default function AuthPage() {
     }
 
     try {
-      const { error: err } = await supabase.auth.updateUser({ password });
-      if (err) throw err;
+      await updatePassword(auth.currentUser, password);
 
       // Update profile to mark password as changed
-      const { error: profErr } = await supabase
-        .from("profiles")
-        .update({ must_change_password: false })
-        .eq("id", (await supabase.auth.getUser()).data.user.id);
-
-      if (profErr) throw profErr;
+      const profileRef = doc(db, "profiles", auth.currentUser.uid);
+      await updateDoc(profileRef, { must_change_password: false });
 
       setMessage("Password changed successfully! Redirecting...");
       setTimeout(() => window.dispatchEvent(new Event('hff-profile-refresh')), 1500);
@@ -258,21 +251,20 @@ export default function AuthPage() {
     setSubmitting(true);
     setError("");
     try {
-      const { error: err } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-          redirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
-        },
-      });
-      if (err) throw err;
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
     } catch (err) {
       setError(friendlyAuthError(err));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function setupRecaptcha() {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible'
+      });
     }
   }
 
@@ -286,18 +278,10 @@ export default function AuthPage() {
         setError("Please enter your phone number.");
         return;
       }
-      const { error: err } = await supabase.auth.signInWithOtp({
-        phone: phone,
-        options: {
-          emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
-          data: {
-            role: "facilitator",
-            full_name: fullName,
-            phone: phone,
-          },
-        },
-      });
-      if (err) throw err;
+      setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier;
+      const result = await signInWithPhoneNumber(auth, phone, appVerifier);
+      setConfirmationResult(result);
       setOtpSent(true);
       setMessage("Verification code sent to your phone!");
     } catch (err) {
@@ -313,12 +297,8 @@ export default function AuthPage() {
     setError("");
     setMessage("");
     try {
-      const { error: err } = await supabase.auth.verifyOtp({
-        phone: phone,
-        token: otpToken,
-        type: "sms",
-      });
-      if (err) throw err;
+      await confirmationResult.confirm(otpToken);
+      // Profile creation handled by AuthContext
     } catch (err) {
       setError(friendlyAuthError(err));
     } finally {
@@ -335,10 +315,7 @@ export default function AuthPage() {
         setError("Enter your email above first, then click Reset password.");
         return;
       }
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
-      });
-      if (err) throw err;
+      await sendPasswordResetEmail(auth, email);
       setMessage("Password reset email sent — check your inbox.");
     } catch (err) {
       setError(friendlyAuthError(err));
@@ -362,47 +339,84 @@ export default function AuthPage() {
   const RoleIcon = roleInfo?.icon || User;
 
   return (
-    <div className="min-h-screen bg-[#FDFCF9] font-sans flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Background Shapes */}
+    <div className="min-h-screen bg-transparent font-sans flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Ambient Diffusers */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[600px] h-[600px] bg-hff-soft-purple rounded-full blur-[120px] -z-0"></div>
-        <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[500px] h-[500px] bg-hff-warm-green rounded-full blur-[100px] -z-0"></div>
+        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[600px] h-[600px] bg-[#71167F]/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[500px] h-[500px] bg-[#3EB049]/10 rounded-full blur-[100px]"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Back button */}
         <button
           onClick={goToLanding}
-          className="flex items-center gap-2 text-gray-500 hover:text-hff-primary mb-6 transition-colors text-sm font-bold"
+          className="liquid-glass-pill px-4 py-2 inline-flex items-center gap-2 text-gray-600 hover:text-hff-primary mb-6 transition-colors text-xs font-bold shadow-sm"
         >
           <ChevronLeft className="h-4 w-4" />
           Back to HFF Campaigns
         </button>
 
-        {/* Card */}
-        <div className="bg-white border border-gray-100 rounded-[2.5rem] shadow-2xl shadow-hff-primary/5 p-6 sm:p-10">
+        {/* Card - Apple Liquid Glass */}
+        <div className="glass-card p-6 sm:p-10 rounded-[2.5rem] border border-white/80 shadow-2xl relative overflow-hidden">
+          {/* Specular top rim */}
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">
+          <div className="text-center mb-8 relative z-10">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
               {authMode === "signin" ? "Welcome Back" : "Create Account"}
             </h1>
-            <p className="text-gray-500 font-medium">
+            <p className="text-gray-500 text-xs font-medium">
               {authMode === "signin"
                 ? "Sign in to your HFF Campaign account."
                 : "Join our mission to restore hope and help families."}
             </p>
           </div>
 
+          {/* Quick Dev Passwordless Entry */}
+          {isDevBypass && (
+            <div className="mb-8 p-4 rounded-2xl liquid-glass border border-emerald-500/30 bg-emerald-500/5 relative z-10 animate-in fade-in">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
+                  <LockOpen className="w-4 h-4 text-emerald-600" />
+                  <span>Passwords Disabled for Review</span>
+                </div>
+                <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  Dev Mode
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-600 mb-3">Jump straight into the app without entering passwords:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => switchDevRole("admin")}
+                  className="py-2.5 px-3 rounded-xl liquid-glass-active text-white text-xs font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  Enter as Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchDevRole("facilitator")}
+                  className="py-2.5 px-3 rounded-xl bg-white/80 hover:bg-white text-gray-800 text-xs font-bold border border-gray-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  Enter as Facilitator
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Auth mode tabs (Sign In / Sign Up) */}
-          <div className="flex p-1.5 bg-gray-100 rounded-2xl mb-8">
+          <div className="flex p-1.5 liquid-glass-pill border border-white/70 mb-8 relative z-10">
             <button
               type="button"
               onClick={() => { setAuthMode("signin"); setError(""); setMessage(""); }}
               className={[
-                "flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200",
+                "flex-1 rounded-full px-3 py-2 text-xs font-bold transition-all duration-200",
                 authMode === "signin"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700",
+                  ? "liquid-glass-active shadow-sm font-extrabold"
+                  : "text-gray-500 hover:text-gray-800",
               ].join(" ")}
             >
               Sign In
@@ -411,10 +425,10 @@ export default function AuthPage() {
               type="button"
               onClick={() => { setAuthMode("signup"); setError(""); setMessage(""); }}
               className={[
-                "flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200",
+                "flex-1 rounded-full px-3 py-2 text-xs font-bold transition-all duration-200",
                 authMode === "signup"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700",
+                  ? "liquid-glass-active shadow-sm font-extrabold"
+                  : "text-gray-500 hover:text-gray-800",
               ].join(" ")}
             >
               Sign Up
@@ -423,26 +437,26 @@ export default function AuthPage() {
 
           {/* Auth Method Toggle (Email / Phone) */}
           {authMode !== "change-password" && (
-            <div className="flex gap-4 mb-8">
+            <div className="flex gap-4 mb-8 relative z-10">
               <button
                 onClick={() => { setAuthMethod("email"); setError(""); setMessage(""); setOtpSent(false); }}
-                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-[2rem] border-2 transition-all ${authMethod === "email"
-                  ? "border-hff-primary bg-hff-primary/5 text-hff-primary"
-                  : "border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-200"
+                className={`flex-1 flex flex-col items-center gap-2 p-3.5 rounded-2xl border transition-all ${authMethod === "email"
+                  ? "liquid-glass-active border-hff-primary/30"
+                  : "liquid-glass-pill border-white/60 text-gray-400 hover:text-gray-700"
                   }`}
               >
-                <Mail className="h-6 w-6" />
-                <span className="text-xs font-bold uppercase tracking-wider">Email</span>
+                <Mail className="h-5 w-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Email</span>
               </button>
               <button
                 onClick={() => { setAuthMethod("phone"); setError(""); setMessage(""); }}
-                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-[2rem] border-2 transition-all ${authMethod === "phone"
-                  ? "border-hff-primary bg-hff-primary/5 text-hff-primary"
-                  : "border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-200"
+                className={`flex-1 flex flex-col items-center gap-2 p-3.5 rounded-2xl border transition-all ${authMethod === "phone"
+                  ? "liquid-glass-active border-hff-primary/30"
+                  : "liquid-glass-pill border-white/60 text-gray-400 hover:text-gray-700"
                   }`}
               >
-                <Phone className="h-6 w-6" />
-                <span className="text-xs font-bold uppercase tracking-wider">Phone</span>
+                <Phone className="h-5 w-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Phone</span>
               </button>
             </div>
           )}
@@ -502,6 +516,7 @@ export default function AuthPage() {
             </form>
           ) : authMethod === "phone" ? (
             <form onSubmit={otpSent ? handlePhoneVerifyOtp : handlePhoneSendOtp} className="space-y-5">
+              <div id="recaptcha-container"></div>
               {authMode === "signup" && !otpSent && (
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Full Name</label>

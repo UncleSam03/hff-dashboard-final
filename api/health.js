@@ -3,7 +3,7 @@ import { supabase } from '../src/lib/supabase.js';
 export default async function handler(req, res) {
     try {
         // Simple health check to verify Supabase connectivity
-        const { data, error } = await supabase.from('notes').select('count', { count: 'exact', head: true });
+        const { error } = await supabase.from('notes').select('count', { count: 'exact', head: true });
 
         if (error) throw error;
 

@@ -1,20 +1,34 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, ReferenceLine } from 'recharts';
+import { CalendarCheck } from 'lucide-react';
 
-const AttendanceChart = ({ data, compareWithRetention = false }) => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
+const AttendanceChart = ({ data, compareWithRetention = false, selectedDay, onSelectDay }) => {
+    const hasAttendance = Array.isArray(data) && data.some(d => (d.participants || 0) > 0 || (d.facilitators || 0) > 0);
+
+    if (!data || !Array.isArray(data) || data.length === 0 || !hasAttendance) {
         return (
-            <div className="h-full w-full flex items-center justify-center">
-                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No analytic data available</p>
+            <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center liquid-glass rounded-3xl border border-white/70 shadow-inner relative overflow-hidden backdrop-blur-xl">
+                <div className="w-14 h-14 rounded-2xl liquid-glass-pill border border-white/80 shadow-md flex items-center justify-center text-[#71167F] mb-4">
+                    <CalendarCheck size={26} />
+                </div>
+                <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest">No attendance records logged yet</h4>
+                <p className="text-gray-400 text-xs mt-1.5 max-w-sm leading-relaxed font-medium">Daily trend lines and retention curves will emerge automatically as facilitators check in attendees.</p>
             </div>
         );
     }
 
+    const handleClick = (e) => {
+        if (e && e.activeLabel && onSelectDay) {
+            onSelectDay(e.activeLabel);
+        }
+    };
+
     return (
-        <div className="w-full h-full">
+        <div className="w-full h-full cursor-pointer" title="Click any day to inspect details">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                     data={data}
+                    onClick={handleClick}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                     <defs>
@@ -53,9 +67,12 @@ const AttendanceChart = ({ data, compareWithRetention = false }) => {
                     />
                     <Tooltip
                         contentStyle={{ 
-                            borderRadius: '16px', 
-                            border: '1px solid #F3F4F6', 
-                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            borderRadius: '1rem', 
+                            background: 'rgba(255, 255, 255, 0.88)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.85)', 
+                            boxShadow: '0 16px 36px -4px rgba(113, 22, 127, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.9)',
                             fontSize: '12px',
                             fontWeight: 'bold',
                             padding: '12px'
@@ -90,6 +107,21 @@ const AttendanceChart = ({ data, compareWithRetention = false }) => {
                             strokeDasharray="5 5"
                             fillOpacity={1}
                             fill="url(#colorRetention)"
+                        />
+                    )}
+                    {selectedDay && (
+                        <ReferenceLine 
+                            x={selectedDay} 
+                            stroke="#71167F" 
+                            strokeDasharray="4 4" 
+                            strokeWidth={2}
+                            label={{ 
+                                value: selectedDay.replace('Day ', 'D'), 
+                                position: 'top', 
+                                fill: '#71167F', 
+                                fontSize: 10, 
+                                fontWeight: 'bold' 
+                            }} 
                         />
                     )}
                 </AreaChart>

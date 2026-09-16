@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User, Archive, Search } from 'lucide-react';
 import StatsCard from './StatsCard';
-import { cn } from '../lib/utils';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
 
@@ -183,9 +182,11 @@ const SatDashboard = ({ analytics, onBack }) => {
         return (
             <div className="flex flex-col gap-4 max-w-2xl mx-auto w-full">
                 {dailyStats.map((stat, index) => (
-                    <div key={index} className="glass-card p-6 flex items-center justify-between group hover:border-[#71167F]/30 transition-all">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#71167F]/10 group-hover:text-[#71167F] transition-colors">
+                    <div key={index} className="liquid-glass-elevated p-6 flex items-center justify-between group border border-white/70 hover:border-[#71167F]/40 transition-all relative overflow-hidden">
+                        {/* Specular top rim */}
+                        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div className="w-12 h-12 rounded-2xl bg-white/70 border border-white/60 flex items-center justify-center text-gray-500 group-hover:bg-[#71167F]/10 group-hover:text-[#71167F] transition-colors shadow-sm">
                                 <CalendarDays size={20} />
                             </div>
                             <div>
@@ -224,41 +225,60 @@ const SatDashboard = ({ analytics, onBack }) => {
             <div className="max-w-4xl mx-auto w-full space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <div className="relative flex-1 max-w-md">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-5 w-5 text-gray-400" />
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-gray-400" />
                         </div>
                         <input
                             type="text"
                             placeholder="Search names..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="block w-full pl-10 pr-3 py-3 border border-gray-100 rounded-2xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-medium"
+                            className="block w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-full text-xs font-medium focus:border-[#71167F] outline-none"
                         />
                     </div>
                     <div className="flex justify-end gap-3">
                         <button 
-                        onClick={() => exportToTxt(type)}
-                        disabled={safeList.length === 0}
-                        className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#71167F] hover:shadow-xl hover:shadow-[#71167F]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <Download size={14} />
-                        Export to TXT
-                    </button>
-                    <button 
-                        onClick={() => exportAllAsZip(type)}
-                        disabled={safeList.length === 0 || isExportingZip}
-                        className="px-6 py-3 bg-[#71167F] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#5C0F66] hover:shadow-xl hover:shadow-[#71167F]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <Archive size={14} />
-                        {isExportingZip ? 'Generating ZIP...' : 'Export PDFs (ZIP)'}
-                    </button>
+                            onClick={() => exportToTxt(type)}
+                            disabled={safeList.length === 0}
+                            className="px-5 py-2.5 liquid-glass-pill text-gray-700 font-bold text-[10px] uppercase tracking-wider hover:text-[#71167F] hover:border-[#71167F]/30 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Download size={13} />
+                            Export to TXT
+                        </button>
+                        <button 
+                            onClick={() => exportAllAsZip(type)}
+                            disabled={safeList.length === 0 || isExportingZip}
+                            className="px-5 py-2.5 hff-gradient-bg text-white rounded-full font-bold text-[10px] uppercase tracking-wider hover:opacity-95 shadow-md shadow-[#71167F]/25 transition-all flex items-center gap-2 border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Archive size={13} />
+                            {isExportingZip ? 'Generating ZIP...' : 'Export PDFs (ZIP)'}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="glass-card p-8 bg-white/50">
                     {safeList.length === 0 ? (
-                        <div className="text-center py-12">
-                            <FileText size={48} className="mx-auto text-gray-300 mb-4" />
-                            <p className="text-gray-500 font-medium">No qualifying {type} found yet.</p>
+                        <div className="text-center py-14">
+                            <FileText size={44} className="mx-auto text-gray-300 mb-3" />
+                            {searchQuery ? (
+                                <>
+                                    <p className="text-gray-800 font-bold mb-1">No matching records</p>
+                                    <p className="text-gray-400 text-xs mb-3">No qualifying {type} match "{searchQuery}".</p>
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="text-xs font-bold text-[#71167F] hover:underline"
+                                    >
+                                        Clear Search
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-gray-800 font-bold mb-1">No qualifying {type} yet</p>
+                                    <p className="text-gray-400 text-xs">
+                                        Certificates require at least {type === 'facilitators' ? '8' : '6'} days of recorded attendance.
+                                    </p>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -319,7 +339,7 @@ const SatDashboard = ({ analytics, onBack }) => {
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={onBack}
-                        className="px-6 py-3 bg-white border border-gray-100 text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:text-[#71167F] hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm"
+                        className="px-5 py-2.5 liquid-glass-pill text-gray-600 font-bold text-[10px] uppercase tracking-wider hover:text-[#71167F] hover:border-[#71167F]/30 transition-all flex items-center gap-2 shadow-sm"
                     >
                         <LayoutPanelTop size={14} />
                         Back to Home

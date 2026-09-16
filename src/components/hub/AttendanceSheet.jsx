@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Check, Search, ArrowLeft } from 'lucide-react';
+import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../../lib/campaignManager';
+import { Check, Search, ArrowLeft, Users, UserX, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { matchesPerson } from '../../lib/searchUtils';
 
 const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -35,15 +37,31 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
         }
     }, [initialContext, onContextConsumed]);
 
+    const activeCampId = getActiveCampaignId();
+
     const data = useLiveQuery(async () => {
         if (!selectedFacilitator) {
             // Fetch All Facilitators
             const allFacilitators = await db.registrations.where('type').equals('facilitator').toArray();
-            let facilitators = allFacilitators.filter(f => !f.is_deleted);
+            let facilitators = allFacilitators.filter(f => {
+                if (f.is_deleted) return false;
+                if (activeCampId) {
+                    if (f.campaign_id) return f.campaign_id === activeCampId;
+                    return activeCampId === DEFAULT_CAMPAIGN.uuid;
+                }
+                return true;
+            });
 
             // Count participants for each facilitator (Direct + Group Link)
             const allParticipants = await db.registrations.where('type').equals('participant').toArray();
-            const participants = allParticipants.filter(p => !p.is_deleted);
+            const participants = allParticipants.filter(p => {
+                if (p.is_deleted) return false;
+                if (activeCampId) {
+                    if (p.campaign_id) return p.campaign_id === activeCampId;
+                    return activeCampId === DEFAULT_CAMPAIGN.uuid;
+                }
+                return true;
+            });
             const counts = {};
             const qualifyingCounts = {};
             
@@ -91,11 +109,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             }));
 
             if (searchTerm) {
-                const lowerFilter = searchTerm.toLowerCase();
-                results = results.filter(f =>
-                    (f.first_name + ' ' + f.last_name).toLowerCase().includes(lowerFilter) ||
-                    (f.place && f.place.toLowerCase().includes(lowerFilter))
-                );
+                results = results.filter(f => matchesPerson(f, searchTerm, 'all'));
             }
             return { type: 'facilitators', list: results };
         } else {
@@ -136,11 +150,14 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             results.unshift(...coFacilitators);
             results.unshift(freshFacilitator);
 
+            results = results.map(p => ({
+                ...p,
+                assignedFacilitator: freshFacilitator,
+                facilitatorName: `${freshFacilitator.first_name || ''} ${freshFacilitator.last_name || ''}`.trim()
+            }));
+
             if (searchTerm) {
-                const lowerFilter = searchTerm.toLowerCase();
-                results = results.filter(p =>
-                    (p.first_name + ' ' + p.last_name).toLowerCase().includes(lowerFilter)
-                );
+                results = results.filter(p => matchesPerson(p, searchTerm, 'all'));
             }
             return { type: 'participants', list: results };
         }
@@ -256,15 +273,28 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
 
             {/* Control Bar */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/50 backdrop-blur-xl p-5 rounded-[2rem] border border-white shadow-xl shadow-gray-200/40">
-                <div className="relative w-full max-w-md">
+                <div className="relative w-full max-w-lg">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder={type === 'facilitators' ? "Search for a facilitator..." : "Search by participant name..."}
+                        placeholder={
+                            type === 'facilitators'
+                                ? "Search facilitators by name, meeting place, form #, phone, time..."
+                                : "Search participants by name, meeting place, form #, phone, date, time..."
+                        }
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-6 py-3.5 rounded-2xl bg-white border border-gray-100 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-bold text-gray-900 shadow-sm"
+                        className="w-full pl-12 pr-10 py-3.5 rounded-2xl bg-white border border-gray-100 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-bold text-gray-900 shadow-sm"
                     />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                            title="Clear search"
+                        >
+                            <X size={15} />
+                        </button>
+                    )}
                 </div>
                 <div className="px-6 py-2 rounded-xl bg-[#71167F]/5 border border-[#71167F]/10 text-[10px] font-black text-[#71167F] uppercase tracking-widest">
                     {type === 'facilitators' ? `${list.length} Facilitators` : `${list.length} Participants Active`}
@@ -275,8 +305,26 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
                 /* Facilitator Selection Grid */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {list.length === 0 ? (
-                        <div className="col-span-full py-20 text-center bg-white/50 rounded-[2.5rem] border-2 border-dashed border-gray-100 italic text-gray-400 uppercase font-black text-xs tracking-widest">
-                            No human assets detected in this query
+                        <div className="col-span-full py-20 text-center bg-white/60 rounded-[2.5rem] border-2 border-dashed border-gray-200/80 p-8">
+                            <div className="bg-[#71167F]/5 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#71167F]">
+                                <Users className="h-8 w-8 opacity-60" />
+                            </div>
+                            <h4 className="text-base font-black text-gray-900 uppercase tracking-tight mb-1">
+                                {searchTerm ? "No Matching Facilitators" : "No Facilitators Registered"}
+                            </h4>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider max-w-sm mx-auto mb-4">
+                                {searchTerm 
+                                    ? `No facilitators found matching "${searchTerm}".`
+                                    : "Add facilitator records in the Directory to organize attendance sheets by team."}
+                            </p>
+                            {searchTerm && (
+                                <button
+                                    onClick={() => setSearchTerm('')}
+                                    className="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest transition-all"
+                                >
+                                    Clear Search
+                                </button>
+                            )}
                         </div>
                     ) : (
                         list.map(f => (
@@ -336,8 +384,26 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
 
                                 {/* Data Rows */}
                                 {list.length === 0 ? (
-                                    <div className="col-span-full p-12 text-center text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                                        This facilitator has no participants assigned
+                                    <div className="col-span-full py-16 text-center bg-white/50">
+                                        <div className="bg-gray-100/50 h-14 w-14 rounded-2xl flex items-center justify-center mx-auto mb-3 text-gray-400">
+                                            <Users className="h-7 w-7 opacity-60" />
+                                        </div>
+                                        <p className="text-sm font-black text-gray-900 uppercase tracking-tight mb-1">
+                                            {searchTerm ? "No Participants Found" : "No Participants Assigned"}
+                                        </p>
+                                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider max-w-sm mx-auto">
+                                            {searchTerm 
+                                                ? `No participant matching "${searchTerm}" found on this roster.`
+                                                : "This facilitator does not have any participants assigned to their group yet."}
+                                        </p>
+                                        {searchTerm && (
+                                            <button
+                                                onClick={() => setSearchTerm('')}
+                                                className="mt-3 px-4 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                Clear Filter
+                                            </button>
+                                        )}
                                     </div>
                                 ) : (
                                     list.map(p => (

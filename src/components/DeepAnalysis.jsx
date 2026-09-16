@@ -1,27 +1,27 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Sparkles, Share2, DollarSign, TrendingUp, Target, ShieldCheck } from 'lucide-react';
-import { cn } from "../lib/utils";
+import { Activity, Share2, DollarSign, TrendingUp, Target, ShieldCheck } from 'lucide-react';
 
 const DeepAnalysis = ({ analytics }) => {
 
 
-    if (!analytics || analytics.totalRegistered === undefined) {
+    if (!analytics || !analytics.totalRegistered || analytics.totalRegistered === 0) {
         return (
-            <div className="flex flex-col items-center justify-center p-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-200">
-                <ShieldCheck size={48} className="text-gray-300 mb-4" />
-                <h3 className="text-lg font-black text-gray-400 uppercase tracking-widest">Awaiting Data Streams</h3>
-                <p className="text-sm text-gray-400 mt-2">Activate a campaign to generate deep intelligence.</p>
+            <div className="flex flex-col items-center justify-center p-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-200 text-center">
+                <div className="p-4 rounded-3xl bg-[#71167F]/10 text-[#71167F] mb-4">
+                    <ShieldCheck size={44} />
+                </div>
+                <h3 className="text-lg font-black text-gray-800 uppercase tracking-widest">Awaiting Campaign Data</h3>
+                <p className="text-sm text-gray-500 mt-2 max-w-md">No registration or attendance records have been registered yet. Once facilitators log data or campaign registers are uploaded, deep intelligence reports will generate automatically.</p>
             </div>
         );
     }
 
     const { totalRegistered, uniqueParticipants, uniqueFacilitators, avgAttendance, dailyStats, demographics } = analytics;
-    const peakDay = dailyStats.reduce((prev, current) => (prev.count > current.count) ? prev : current, dailyStats[0] || {});
-    const females = demographics.gender['F'] || 0;
+    const peakDay = (dailyStats || []).reduce((prev, current) => (prev.count > current.count) ? prev : current, dailyStats?.[0] || {});
+    const females = demographics?.gender?.['F'] || 0;
     const femalePct = totalRegistered > 0 ? ((females / totalRegistered) * 100).toFixed(1) : 0;
-
-
+    const conversionRate = totalRegistered > 0 ? (((uniqueParticipants + uniqueFacilitators) / totalRegistered) * 100).toFixed(1) : '0';
 
     const generateTextReport = () => {
         return `
@@ -31,12 +31,12 @@ The Healthy Families Foundation successfully registered ${totalRegistered} total
 ENGAGEMENT SPLIT:
 - Participants: ${uniqueParticipants} unique individuals
 - Facilitators: ${uniqueFacilitators} active support members
-- Conversion Rate: ${(((uniqueParticipants + uniqueFacilitators) / totalRegistered) * 100).toFixed(1)}%
+- Conversion Rate: ${conversionRate}%
 
 COMMUNITY TRENDS:
 Average daily density: ${avgAttendance} total pax.
-Peak utilization observed on ${peakDay.date} with ${peakDay.count} interactions 
-(${peakDay.participants} participants, ${peakDay.facilitators} facilitators).
+Peak utilization observed on ${peakDay?.date || 'N/A'} with ${peakDay?.count || 0} interactions 
+(${peakDay?.participants || 0} participants, ${peakDay?.facilitators || 0} facilitators).
 
 DEMOGRAPHIC INTELLIGENCE:
 Female participation stands at ${femalePct}%, indicating strong gender-inclusive outreach.
@@ -55,7 +55,6 @@ Current operational metrics validate regional expansion. Resource allocation is 
 
         try {
             const { jsPDF } = window.jspdf;
-            const html2canvas = window.html2canvas;
 
             const doc = new jsPDF('p', 'mm', 'a4');
             const pageWidth = doc.internal.pageSize.getWidth();
@@ -103,7 +102,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
                     <div className="flex items-center justify-between mb-10 relative z-10">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-[#71167F] text-white rounded-2xl shadow-lg shadow-[#71167F]/20 animate-pulse">
-                                <Sparkles size={24} />
+                                <Activity size={24} />
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-[#71167F] uppercase tracking-widest mb-0.5">Neural Insights</p>

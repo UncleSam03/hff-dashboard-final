@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { DollarSign, PieChart } from 'lucide-react';
 
@@ -54,7 +54,11 @@ const FinancialImpact = ({ uniqueAttendees }) => {
                         ></div>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
-                        {spend > budget ? "Over Budget!" : `${(budget - spend).toLocaleString()} BWP Remaining`}
+                        {spend === 0 
+                            ? (budget > 0 ? `No expenditures logged • ${budget.toLocaleString()} BWP Allocated` : 'Set budget and spend above')
+                            : spend > budget 
+                                ? "Over Budget!" 
+                                : `${(budget - spend).toLocaleString()} BWP Remaining`}
                     </p>
                 </div>
 
@@ -63,7 +67,9 @@ const FinancialImpact = ({ uniqueAttendees }) => {
                     <p className="text-sm text-gray-500 font-medium">Cost per Participant</p>
                     <p className="text-3xl font-bold text-hff-primary mt-1">BWP {costPerParticipant}</p>
                     <p className="text-xs text-gray-400 mt-2 text-center">
-                        Based on {uniqueAttendees} unique attendees
+                        {uniqueAttendees > 0 
+                            ? `Based on ${uniqueAttendees} unique attendees`
+                            : "Awaiting attendance records to calculate efficiency"}
                     </p>
                 </div>
 

@@ -4,13 +4,19 @@ import PersonList from './hub/PersonList';
 import AttendanceSheet from './hub/AttendanceSheet';
 import NoticeBoard from './hub/NoticeBoard';
 import MaintenanceTool from './MaintenanceTool';
-import { pushPendingToSupabase, resetLocalFromSupabase } from '../lib/supabaseSync';
-import { isConfigured } from '../lib/supabase';
+import { pushPendingToFirebase, resetLocalFromFirebase } from '../lib/firebaseSync';
+import { isConfigured } from '../lib/firebase';
 import db from '../lib/dexieDb';
 import './hub/Hub.css';
 
-const Hub = ({ onBack }) => {
-    const [activeTab, setActiveTab] = useState('people'); // 'people', 'attendance', 'notice'
+const Hub = ({ onBack, initialTab = 'people' }) => {
+    const [activeTab, setActiveTab] = useState(initialTab); // 'people', 'attendance', 'notice'
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
     const [syncState, setSyncState] = useState('idle'); // 'idle' | 'syncing' | 'success' | 'error'
     const [pendingCount, setPendingCount] = useState(0);
     const [resetError, setResetError] = useState('');
@@ -50,12 +56,12 @@ const Hub = ({ onBack }) => {
             refreshPendingCount();
         };
 
-        window.addEventListener('hff-supabase-sync-complete', handleSyncComplete);
-        window.addEventListener('hff-supabase-data-updated', handleSyncComplete);
+        window.addEventListener('hff-firebase-sync-complete', handleSyncComplete);
+        window.addEventListener('hff-firebase-data-updated', handleSyncComplete);
 
         return () => {
-            window.removeEventListener('hff-supabase-sync-complete', handleSyncComplete);
-            window.removeEventListener('hff-supabase-data-updated', handleSyncComplete);
+            window.removeEventListener('hff-firebase-sync-complete', handleSyncComplete);
+            window.removeEventListener('hff-firebase-data-updated', handleSyncComplete);
         };
     }, [refreshPendingCount]);
 
@@ -64,7 +70,7 @@ const Hub = ({ onBack }) => {
 
         setSyncState('syncing');
         try {
-            await pushPendingToSupabase();
+            await pushPendingToFirebase();
             await refreshPendingCount();
             const remaining = await db.registrations
                 .where('sync_status')
@@ -82,12 +88,12 @@ const Hub = ({ onBack }) => {
 
     const handleResetFromCloud = async () => {
         if (syncState === 'syncing') return;
-        if (!window.confirm("This will overwrite this device's local data with what's currently in Supabase. Continue?")) return;
+        if (!window.confirm("This will overwrite this device's local data with what's currently in Firebase. Continue?")) return;
 
         setSyncState('syncing');
         setResetError('');
         try {
-            await resetLocalFromSupabase();
+            await resetLocalFromFirebase();
             await refreshPendingCount();
             setSyncState('success');
             setResetError('');
@@ -170,6 +176,15 @@ const Hub = ({ onBack }) => {
             {/* Header / Sub-Nav */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
                 <div className="flex items-center gap-4">
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="p-2.5 rounded-2xl bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center"
+                            title="Back to Overview"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                    )}
                     <div className="p-3 hff-gradient-bg rounded-2xl text-white shadow-lg shadow-[#71167F]/20">
                         <Users size={24} />
                     </div>
@@ -194,7 +209,7 @@ const Hub = ({ onBack }) => {
                             onClick={handleResetFromCloud}
                             disabled={syncState === 'syncing'}
                             className="px-4 py-2.5 rounded-2xl bg-white border border-gray-100 text-gray-700 hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
-                            title="Overwrite local device cache from Supabase"
+                            title="Overwrite local device cache from Firebase"
                         >
                             Refresh from Cloud
                         </button>

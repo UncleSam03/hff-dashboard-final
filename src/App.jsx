@@ -1,33 +1,49 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
-import Home from './components/Home';
 import AuthGate from "./auth/AuthGate";
 import { useAuth } from "./auth/AuthContext";
 
-import OfflineCollect from './components/OfflineCollect';
 import Hub from './components/Hub';
 import AnalysisHub from './components/AnalysisHub';
 import FacilitatorDashboard from './components/FacilitatorDashboard';
 import FacilitatorOnboarding from './components/FacilitatorOnboarding';
 import SatDashboard from './components/SatDashboard';
 import UnderConstruction from './components/UnderConstruction';
+import CampaignSelector from './components/campaign/CampaignSelector';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
 import { reconcileWithCloud } from './lib/syncManager';
+import { DEFAULT_CAMPAIGN, getActiveCampaignId, setActiveCampaignId, getAllCampaigns } from './lib/campaignManager';
 
 function AppContent() {
   const { role, profile, signOut, loading } = useAuth();
-  const [mode, setMode] = useState('overview'); // 'overview', 'collect', 'hub', 'analysis'
-  const [initialSyncing, setInitialSyncing] = useState(false);
+  const [mode, setMode] = useState('overview'); // 'overview', 'hub', 'analysis', 'sat'
+  const [hubInitialTab, setHubInitialTab] = useState('people');
+  const [_initialSyncing, setInitialSyncing] = useState(false);
+  const [activeCampaign, setActiveCampaign] = useState(null);
 
   console.log("[AppContent] Status:", { role, onboarding_completed: profile?.onboarding_completed, loading });
 
-  const registrations = useLiveQuery(() => db.registrations.toArray()) || [];
+  const rawRegistrations = useLiveQuery(() => db.registrations.toArray());
+  const allRegistrations = useMemo(() => rawRegistrations || [], [rawRegistrations]);
+
+  // Filter registrations by currently active campaign
+  const registrations = useMemo(() => {
+    if (!activeCampaign) return [];
+    return allRegistrations.filter(r => {
+      if (r.is_deleted) return false;
+      if (r.campaign_id) return r.campaign_id === activeCampaign.uuid;
+      // If record has no campaign_id, associate with default campaign
+      return activeCampaign.uuid === DEFAULT_CAMPAIGN.uuid;
+    });
+  }, [allRegistrations, activeCampaign]);
+
   const analytics = useMemo(() => processAnalytics(registrations), [registrations]);
 
   console.log("[App] Analytics Update:", { 
+    campaign: activeCampaign?.name,
     regCount: registrations.length, 
     totalRegistered: analytics.totalRegistered,
     mode 
@@ -39,7 +55,7 @@ function AppContent() {
     if (role === 'admin' && navigator.onLine) {
       setInitialSyncing(true);
       reconcileWithCloud()
-        .catch(err => console.warn('[App] Initial Supabase reconciliation failed:', err))
+        .catch(err => console.warn('[App] Initial Firebase reconciliation failed:', err))
         .finally(() => setInitialSyncing(false));
     }
   }, [role]);
@@ -52,11 +68,27 @@ function AppContent() {
     );
   }
 
-  const handleSelectMode = (newMode) => {
+  const handleSelectMode = (newMode, subTab) => {
     setMode(newMode);
+    if (subTab) {
+      setHubInitialTab(subTab);
+    } else if (newMode === 'hub') {
+      setHubInitialTab('people');
+    }
   };
 
   const handleBackToHome = () => {
+    setMode('overview');
+  };
+
+  const handleSelectCampaign = (campaign) => {
+    setActiveCampaign(campaign);
+    setActiveCampaignId(campaign?.uuid || null);
+  };
+
+  const handleSwitchCampaign = () => {
+    setActiveCampaign(null);
+    setActiveCampaignId(null);
     setMode('overview');
   };
 
@@ -75,21 +107,33 @@ function AppContent() {
     );
   }
 
-  // Admin role — full dashboard access using Sidebar
+  // Admin role — if no campaign is selected, present the Campaign Selector window
+  if (!activeCampaign) {
+    return (
+      <CampaignSelector 
+        onSelectCampaign={handleSelectCampaign}
+      />
+    );
+  }
+
+  // Admin role — full dashboard access for selected campaign
   return (
-    <Layout activeTab={mode} onTabChange={handleSelectMode}>
+    <Layout 
+      activeTab={mode} 
+      onTabChange={handleSelectMode}
+      activeCampaign={activeCampaign}
+      onSwitchCampaign={handleSwitchCampaign}
+    >
       {mode === 'overview' ? (
-        <Dashboard analytics={analytics} />
-      ) : mode === 'collect' ? (
-        <OfflineCollect onBack={handleBackToHome} />
+        <Dashboard analytics={analytics} onNavigate={handleSelectMode} />
       ) : mode === 'hub' ? (
-        <Hub onBack={handleBackToHome} />
+        <Hub onBack={handleBackToHome} initialTab={hubInitialTab} />
       ) : mode === 'analysis' ? (
         <AnalysisHub analytics={analytics} onBack={handleBackToHome} />
       ) : mode === 'sat' ? (
         <SatDashboard analytics={analytics} onBack={handleBackToHome} />
       ) : (
-        <Dashboard analytics={analytics} />
+        <Dashboard analytics={analytics} onNavigate={handleSelectMode} />
       )}
     </Layout>
   );
@@ -104,3 +148,4 @@ function App() {
 }
 
 export default App;
+

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/dexieDb';
 
-import { Save, Search, User, Check, AlertCircle } from 'lucide-react';
+import { Save, Search, User, Check, AlertCircle, FileText, Hash, Clock, Users, MapPin, Phone, X } from 'lucide-react';
+import { matchesPerson } from '../lib/searchUtils';
 
 const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator, initialData }) => {
     // Form State
@@ -18,7 +19,11 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
         occupation: initialData?.occupation || '',
         participantsCount: initialData?.participants_count || 1,
         booksDistributed: initialData?.books_distributed || 0,
-        booksReceived: initialData?.books_received || false
+        booksReceived: initialData?.books_received || false,
+        formNumber: initialData?.form_number || '',
+        teachingGroup: initialData?.teaching_group !== undefined ? initialData.teaching_group : (type === 'facilitator'),
+        groupFormNumber: initialData?.group_form_number || '',
+        meetingTime: initialData?.meeting_time || '',
     });
 
     const [selectedFacilitator, setSelectedFacilitator] = useState(predefinedFacilitator || null);
@@ -27,7 +32,6 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState(null);
     const [duplicateFound, setDuplicateFound] = useState(null);
-    const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
     // Search for Facilitators (local Dexie search)
     useEffect(() => {
@@ -38,13 +42,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             }
 
             try {
-                const results = await db.registrations
-                    .where('type').equals('facilitator')
-                    .filter(rec => {
-                        const fullName = `${rec.first_name} ${rec.last_name}`.toLowerCase();
-                        return fullName.includes(searchTerm.toLowerCase());
-                    })
-                    .toArray();
+                const allFacs = await db.registrations.where('type').equals('facilitator').toArray();
+                const results = allFacs.filter(rec => !rec.is_deleted && matchesPerson(rec, searchTerm, 'all'));
                 setFacilitatorResults(results);
             } catch (err) {
                 console.error("Search error:", err);
@@ -69,14 +68,12 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 return;
             }
 
-            setIsCheckingDuplicate(true);
             try {
                 // Search by phone if available
                 if (ct.length >= 7) {
                     const match = await db.registrations.where('contact').equals(ct).first();
                     if (match) {
                         setDuplicateFound(match);
-                        setIsCheckingDuplicate(false);
                         return;
                     }
                 }
@@ -91,8 +88,6 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 setDuplicateFound(nameMatch || null);
             } catch (err) {
                 console.warn("Duplicate check error:", err);
-            } finally {
-                setIsCheckingDuplicate(false);
             }
         };
 
@@ -106,6 +101,23 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             ...prev,
             [name]: value
         }));
+    };
+
+    const handleGroupFormNumberChange = async (val) => {
+        setFormData(prev => ({ ...prev, groupFormNumber: val }));
+        const trimmed = val.trim();
+        if (trimmed.length > 0) {
+            try {
+                const matched = await db.registrations
+                    .where('form_number').equals(trimmed)
+                    .first();
+                if (matched) {
+                    setSelectedFacilitator(matched);
+                }
+            } catch (err) {
+                console.error("Error finding facilitator by form number:", err);
+            }
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -144,6 +156,12 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 facilitator_uuid: (type === 'participant' && inGroup && selectedFacilitator) ? selectedFacilitator.uuid : (initialData?.facilitator_uuid || null),
                 books_received: type === 'participant' ? formData.booksReceived : null,
 
+                // Form Tracking & Group Teaching
+                form_number: formData.formNumber?.trim() || null,
+                teaching_group: Boolean(formData.teachingGroup),
+                group_form_number: (type === 'participant' || !formData.teachingGroup) ? (formData.groupFormNumber?.trim() || null) : null,
+                meeting_time: (type === 'facilitator' || formData.teachingGroup) ? (formData.meetingTime?.trim() || null) : null,
+
                 // Metadata
                 sync_status: 'pending',
                 updated_at: now,
@@ -181,7 +199,11 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                     occupation: '',
                     participantsCount: 1,
                     booksDistributed: 0,
-                    booksReceived: false
+                    booksReceived: false,
+                    formNumber: '',
+                    teachingGroup: type === 'facilitator',
+                    groupFormNumber: '',
+                    meetingTime: '',
                 });
                 setSelectedFacilitator(null);
                 setSearchTerm('');
@@ -258,12 +280,29 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* --- Facilitator Search (Only for Participants in Group) --- */}
-                {type === 'participant' && inGroup && (
-                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                        <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Link to Facilitator {!predefinedFacilitator && <span className="text-purple-600 font-normal text-xs ml-1">(Optional if Affiliation is provided)</span>}
+                {/* --- Facilitator Search (For Participants) --- */}
+                {type === 'participant' && (
+                    <div className="bg-purple-50/70 p-4 rounded-xl border border-purple-100 space-y-3">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-purple-900">
+                            Link to Group Teacher / Facilitator {!predefinedFacilitator && <span className="text-purple-600 font-normal normal-case text-xs ml-1">(Optional if Affiliation is provided)</span>}
                         </label>
+
+                        {/* Direct Teacher Form # Lookup */}
+                        <div>
+                            <label className="block text-[11px] font-semibold text-purple-800 mb-1">
+                                Teacher's Form Number (Auto-Links Facilitator)
+                            </label>
+                            <div className="relative">
+                                <Hash className="absolute left-3 top-2.5 h-4 w-4 text-purple-400" />
+                                <input
+                                    type="text"
+                                    value={formData.groupFormNumber}
+                                    onChange={(e) => handleGroupFormNumberChange(e.target.value)}
+                                    placeholder="e.g. HFF-2026-012"
+                                    className="w-full pl-9 pr-3 py-2 text-sm bg-white rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none font-mono"
+                                />
+                            </div>
+                        </div>
 
                         {predefinedFacilitator ? (
                             <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-purple-200">
@@ -279,14 +318,29 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                             </div>
                         ) : !selectedFacilitator ? (
                             <div className="relative">
-                                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Search facilitator by name..."
-                                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                                <label className="block text-[11px] font-semibold text-purple-800 mb-1">
+                                    Search Facilitator by Name, Form #, Phone, Meeting Place, or Time
+                                </label>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search facilitator by name, form #, phone, meeting place/time..."
+                                        className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-purple-200 bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                    {searchTerm && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearchTerm('')}
+                                            className="absolute right-2.5 top-2.5 p-0.5 rounded-full text-gray-400 hover:text-gray-700 transition-colors"
+                                            title="Clear search"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
                                 {facilitatorResults.length > 0 && (
                                     <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 max-h-60 overflow-y-auto">
                                         {facilitatorResults.map(fac => (
@@ -296,16 +350,45 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                                                 onClick={() => {
                                                     setSelectedFacilitator(fac);
                                                     setSearchTerm('');
+                                                    if (fac.form_number) {
+                                                        setFormData(prev => ({ ...prev, groupFormNumber: fac.form_number }));
+                                                    }
                                                 }}
-                                                className="w-full text-left px-4 py-3 hover:bg-purple-50 flex items-center gap-3 transition-colors"
+                                                className="w-full text-left px-4 py-3 hover:bg-purple-50 flex items-center justify-between transition-colors border-b border-gray-50 last:border-b-0"
                                             >
-                                                <div className="bg-purple-100 p-2 rounded-full">
-                                                    <User className="h-4 w-4 text-purple-700" />
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-purple-100 p-2 rounded-full shrink-0">
+                                                        <User className="h-4 w-4 text-purple-700" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-gray-900 text-sm">{fac.first_name} {fac.last_name}</div>
+                                                        <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2 mt-0.5">
+                                                            {(fac.affiliation || fac.place) && (
+                                                                <span className="flex items-center gap-1 text-purple-800 font-medium">
+                                                                    <MapPin size={10} />
+                                                                    {fac.affiliation || fac.place}
+                                                                </span>
+                                                            )}
+                                                            {fac.contact && (
+                                                                <span className="flex items-center gap-1 text-emerald-700 font-medium">
+                                                                    <Phone size={10} />
+                                                                    {fac.contact}
+                                                                </span>
+                                                            )}
+                                                            {fac.meeting_time && (
+                                                                <span className="flex items-center gap-1 text-gray-600 font-medium">
+                                                                    <Clock size={10} />
+                                                                    {fac.meeting_time}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="font-semibold text-gray-900">{fac.first_name} {fac.last_name}</div>
-                                                    <div className="text-xs text-gray-500">{fac.place || 'No location'}</div>
-                                                </div>
+                                                {fac.form_number && (
+                                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold border border-purple-200 shrink-0 ml-2">
+                                                        Form #{fac.form_number}
+                                                    </span>
+                                                )}
                                             </button>
                                         ))}
                                     </div>
@@ -318,14 +401,21 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                                         <Check className="h-4 w-4 text-green-700" />
                                     </div>
                                     <div>
-                                        <div className="font-semibold text-gray-900">{selectedFacilitator.first_name} {selectedFacilitator.last_name}</div>
-                                        <div className="text-xs text-gray-500">Selected Facilitator</div>
+                                        <div className="font-semibold text-gray-900 flex items-center gap-2">
+                                            {selectedFacilitator.first_name} {selectedFacilitator.last_name}
+                                            {selectedFacilitator.form_number && (
+                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-green-100 text-green-800 font-bold">
+                                                    Form #{selectedFacilitator.form_number}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-xs text-gray-500">Selected Facilitator {selectedFacilitator.place ? `• ${selectedFacilitator.place}` : ''}</div>
                                     </div>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setSelectedFacilitator(null)}
-                                    className="text-sm text-red-600 hover:text-red-700 font-medium"
+                                    className="text-xs text-red-600 hover:text-red-700 font-bold uppercase tracking-wider"
                                 >
                                     Change
                                 </button>
@@ -333,6 +423,57 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                         )}
                     </div>
                 )}
+
+                {/* --- Form Tracking & Group Teaching Role --- */}
+                <div className="p-4 bg-purple-50/70 rounded-xl border border-purple-100/80 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-purple-100">
+                        <FileText className="w-4 h-4 text-purple-700" />
+                        <h3 className="text-xs font-black uppercase tracking-wider text-purple-900">Form Tracking & Group Role</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-purple-900 mb-1">
+                                Form Number (Physical ID)
+                            </label>
+                            <div className="relative">
+                                <Hash className="absolute left-3 top-2.5 h-4 w-4 text-purple-400" />
+                                <input
+                                    type="text"
+                                    name="formNumber"
+                                    value={formData.formNumber}
+                                    onChange={handleChange}
+                                    placeholder="e.g. HFF-2026-042"
+                                    className="w-full pl-9 pr-3 py-2 text-sm bg-white rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none font-mono"
+                                />
+                            </div>
+                            <p className="text-[11px] text-purple-600 mt-1">Unique tracking number from the printed questionnaire</p>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-purple-900 mb-1">
+                                Will this person teach a group?
+                            </label>
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, teachingGroup: true }))}
+                                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${formData.teachingGroup ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-purple-200 hover:bg-purple-100/50'}`}
+                                >
+                                    <Check className={`w-3.5 h-3.5 ${formData.teachingGroup ? 'opacity-100' : 'opacity-0'}`} />
+                                    Yes (Teaching)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, teachingGroup: false }))}
+                                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${!formData.teachingGroup ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-purple-200 hover:bg-purple-100/50'}`}
+                                >
+                                    <Check className={`w-3.5 h-3.5 ${!formData.teachingGroup ? 'opacity-100' : 'opacity-0'}`} />
+                                    No (Participant)
+                                </button>
+                            </div>
+                            <p className="text-[11px] text-purple-600 mt-1">Designates if this person leads their own study group</p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* --- Common Fields --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -445,14 +586,14 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                         </div>
                     ) : (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Managed Groups (Comma Separated)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Place</label>
                             <input
                                 type="text"
                                 name="affiliation"
                                 value={formData.affiliation}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
-                                placeholder="e.g. St Jude, Comm Center"
+                                placeholder="e.g. St Jude Hall, Community Center"
                             />
                         </div>
                     )}
@@ -494,10 +635,10 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                     </div>
                 </div>
 
-                {/* --- Facilitator Specific Fields --- */}
-                {type === 'facilitator' && (
+                {/* --- Facilitator Leadership & Outreach --- */}
+                {(type === 'facilitator' || formData.teachingGroup) && (
                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
-                        <h3 className="font-semibold text-gray-900 border-b border-gray-200 pb-2">Facilitator Logistics</h3>
+                        <h3 className="font-semibold text-gray-900 border-b border-gray-200 pb-2">Facilitator Leadership & Outreach</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">No. of Participants</label>
@@ -521,6 +662,21 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                                     className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
                                 />
                             </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Time / Schedule</label>
+                            <div className="relative">
+                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    name="meetingTime"
+                                    value={formData.meetingTime}
+                                    onChange={handleChange}
+                                    placeholder="e.g. Tuesdays at 6:00 PM, Sundays after service"
+                                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all text-sm"
+                                />
+                            </div>
+                            <p className="text-[11px] text-gray-500 mt-1">Designated weekly meeting time for the group they teach</p>
                         </div>
                     </div>
                 )}

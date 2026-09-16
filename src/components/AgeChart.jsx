@@ -1,11 +1,18 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Users } from 'lucide-react';
 
 const AgeChart = ({ data }) => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    const hasData = Array.isArray(data) && data.some(d => (d.count || 0) > 0);
+
+    if (!data || !Array.isArray(data) || data.length === 0 || !hasData) {
         return (
-            <div className="h-full w-full flex items-center justify-center">
-                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No demographic data</p>
+            <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center liquid-glass rounded-3xl border border-white/70 shadow-inner backdrop-blur-xl">
+                <div className="w-12 h-12 rounded-2xl liquid-glass-pill border border-white/80 shadow-sm flex items-center justify-center text-[#71167F] mb-3">
+                    <Users size={22} />
+                </div>
+                <p className="text-gray-700 text-xs font-black uppercase tracking-widest">No age demographic data yet</p>
+                <p className="text-gray-400 text-[10px] font-medium mt-1">Metrics update automatically as participants register</p>
             </div>
         );
     }
@@ -37,11 +44,14 @@ const AgeChart = ({ data }) => {
                     />
                     <Tooltip
                         contentStyle={{ 
-                            borderRadius: '16px', 
-                            border: '1px solid #F3F4F6', 
-                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            borderRadius: '1rem', 
+                            background: 'rgba(255, 255, 255, 0.88)', 
+                            backdropFilter: 'blur(20px)', 
+                            WebkitBackdropFilter: 'blur(20px)', 
+                            border: '1px solid rgba(255, 255, 255, 0.85)', 
+                            boxShadow: '0 16px 36px -4px rgba(113, 22, 127, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.9)', 
+                            fontWeight: 'bold', 
                             fontSize: '12px',
-                            fontWeight: 'bold',
                             padding: '12px'
                         }}
                         cursor={{ fill: '#71167F', opacity: 0.05 }}

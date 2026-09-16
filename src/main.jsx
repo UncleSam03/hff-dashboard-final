@@ -5,7 +5,7 @@ import App from './App.jsx'
 import { AuthProvider } from "./auth/AuthContext.jsx"
 import { startAutoSync } from './lib/syncManager'
 import { registerSW } from 'virtual:pwa-register'
-import { supabase, isConfigured } from './lib/supabase'
+import { auth, isConfigured } from './lib/firebase'
 
 // Removed agent log
 
@@ -25,15 +25,15 @@ const updateSW = registerSW({
 // This prevents sync errors from firing before the user is logged in.
 let syncStarted = false;
 if (isConfigured) {
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (session && !syncStarted) {
+  auth.onAuthStateChanged((user) => {
+    if (user && isConfigured) {
       syncStarted = true;
       console.log('[main] Auth session ready — starting auto-sync');
       startAutoSync();
     }
   });
 } else {
-  // No Supabase configured — start sync immediately (dev/offline mode)
+  // No Firebase configured — start sync immediately (dev/offline mode)
   startAutoSync();
 }
 

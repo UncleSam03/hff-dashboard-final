@@ -1,5 +1,5 @@
 import React from 'react';
-import { Construction, Sparkles, Hammer, Rocket, Database, LayoutPanelTop } from 'lucide-react';
+import { Construction, Hammer, Rocket, Database, LayoutPanelTop } from 'lucide-react';
 
 const UnderConstruction = ({ title = "Advanced Analytics Engine", onBack }) => {
     return (
@@ -17,7 +17,7 @@ const UnderConstruction = ({ title = "Advanced Analytics Engine", onBack }) => {
                             <Construction size={40} className="animate-pulse" />
                         </div>
                         <div className="absolute -top-3 -right-3 h-10 w-10 bg-white rounded-2xl shadow-lg border border-gray-50 flex items-center justify-center text-amber-500 animate-bounce delay-150">
-                            <Sparkles size={20} />
+                            <Hammer size={20} />
                         </div>
                         <div className="absolute -bottom-2 -left-4 h-12 w-12 bg-white rounded-2xl shadow-lg border border-gray-50 flex items-center justify-center text-blue-500 animate-bounce">
                             <Database size={24} />

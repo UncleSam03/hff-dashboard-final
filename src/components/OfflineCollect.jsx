@@ -4,6 +4,20 @@ import { db } from '../lib/dexieDb';
 import { Database, ArrowLeft, UserPlus, Users, Briefcase, HelpCircle, ChevronRight, User } from 'lucide-react';
 import RegistrationForm from './RegistrationForm';
 
+// Reusable Card Component
+const OptionCard = ({ icon: Icon, title, desc, onClick, colorClass = "text-hff-primary" }) => (
+    <button
+        onClick={onClick}
+        className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 group h-full w-full text-center"
+    >
+        <div className={`p-4 rounded-full bg-gray-50 mb-4 group-hover:bg-hff-primary/10 transition-colors ${colorClass}`}>
+            <Icon className="h-8 w-8" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
+        {desc && <p className="text-sm text-gray-500 px-2">{desc}</p>}
+    </button>
+);
+
 const OfflineCollect = ({ onBack }) => {
     // State for navigation flow
     // view: 'menu' | 'pre-reg' | 'participant-check' | 'form'
@@ -16,12 +30,6 @@ const OfflineCollect = ({ onBack }) => {
         inGroup: false // boolean
     });
 
-    useEffect(() => {
-        updatePendingCount();
-        window.addEventListener('hff-supabase-sync-complete', updatePendingCount);
-        return () => window.removeEventListener('hff-supabase-sync-complete', updatePendingCount);
-    }, []);
-
     const updatePendingCount = async () => {
         try {
             const count = await db.registrations
@@ -33,6 +41,12 @@ const OfflineCollect = ({ onBack }) => {
             console.error("Error counting pending:", err);
         }
     };
+
+    useEffect(() => {
+        updatePendingCount();
+        window.addEventListener('hff-supabase-sync-complete', updatePendingCount);
+        return () => window.removeEventListener('hff-supabase-sync-complete', updatePendingCount);
+    }, []);
 
     // Navigation Handlers
     const handlePreRegClick = () => setView('pre-reg');
@@ -68,30 +82,26 @@ const OfflineCollect = ({ onBack }) => {
             else setView('menu');
         } else if (view === 'pre-reg' || view === 'participant-check') {
             setView('menu');
-        } else {
+        } else if (onBack) {
             onBack(); // Exit offline mode
         }
     };
 
-    // Reusable Card Component
-    const OptionCard = ({ icon: Icon, title, desc, onClick, colorClass = "text-hff-primary" }) => (
-        <button
-            onClick={onClick}
-            className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 group h-full w-full text-center"
-        >
-            <div className={`p-4 rounded-full bg-gray-50 mb-4 group-hover:bg-hff-primary/10 transition-colors ${colorClass}`}>
-                <Icon className="h-8 w-8" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
-            {desc && <p className="text-sm text-gray-500 px-2">{desc}</p>}
-        </button>
-    );
+
 
     return (
         <div className="max-w-5xl mx-auto p-4 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
             <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-100/50 min-h-[650px] flex flex-col relative">
                 <div className="absolute top-0 left-0 right-0 h-2 hff-gradient-bg" />
-                <div className="p-10 pb-0 text-center shrink-0">
+                <div className="p-10 pb-0 text-center shrink-0 relative">
+                    <button
+                        onClick={goBack}
+                        className="absolute left-8 top-10 p-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all shadow-sm flex items-center gap-1.5 text-sm font-medium"
+                        title="Back"
+                    >
+                        <ArrowLeft size={18} />
+                        <span className="hidden sm:inline">Back</span>
+                    </button>
                     <div className="inline-flex items-center gap-2 bg-[#71167F]/5 text-[#71167F] px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-[#71167F]/10 mb-6">
                         <Database size={14} />
                         {pendingCount} Pending Sync

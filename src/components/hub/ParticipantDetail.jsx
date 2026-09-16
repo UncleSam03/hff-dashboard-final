@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil } from 'lucide-react';
+import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil, Hash, FileText } from 'lucide-react';
 import RegistrationForm from '../RegistrationForm';
 import { cn } from '../../lib/utils';
 
@@ -109,9 +109,26 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
                                     <Pencil size={18} />
                                 </button>
                             </h2>
-                            <p className="text-xs font-black text-[#3EB049] uppercase tracking-widest mt-2 flex items-center gap-2">
-                                Participant Profile • Registered {safeFormatTime(participant.created_at).split(',')[0]}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                <span className="text-xs font-black text-[#3EB049] uppercase tracking-widest">
+                                    Participant Profile • Registered {safeFormatTime(participant.created_at).split(',')[0]}
+                                </span>
+                                {participant.form_number && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-purple-50 text-[#71167F] text-[10px] font-black tracking-wide border border-purple-200/60">
+                                        Form #{participant.form_number}
+                                    </span>
+                                )}
+                                {participant.group_form_number && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black tracking-wide border border-blue-200/60">
+                                        Group #{participant.group_form_number}
+                                    </span>
+                                )}
+                                {participant.teaching_group && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black tracking-wide border border-emerald-200/60">
+                                        Teaching Group
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

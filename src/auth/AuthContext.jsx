@@ -1,23 +1,73 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { supabase, isConfigured } from "../lib/supabase";
+import { auth, db, isConfigured } from "../lib/firebase";
+import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const AuthContext = createContext(null);
-console.log("[AuthContext] Script loaded - v1.0.3");
+console.log("[AuthContext] Script loaded - Firebase Migration");
+
+export const DEV_BYPASS_PASSWORDS = true;
+
+const DEV_MOCK_USERS = {
+  admin: {
+    user: {
+      uid: "dev-admin-id",
+      email: "admin@thehealthyfamilies.net",
+    },
+    profile: {
+      id: "dev-admin-id",
+      role: "admin",
+      full_name: "HFF Administrator",
+      phone: "+267 71234567",
+      onboarding_completed: true
+    }
+  },
+  facilitator: {
+    user: {
+      uid: "dev-facilitator-id",
+      email: "facilitator@thehealthyfamilies.net",
+    },
+    profile: {
+      id: "dev-facilitator-id",
+      role: "facilitator",
+      full_name: "Lead Facilitator",
+      phone: "+267 72345678",
+      onboarding_completed: true
+    }
+  }
+};
+
+function getInitialBypassRole() {
+  if (typeof window === "undefined") return "admin";
+  const stored = localStorage.getItem("hff_bypass_role");
+  return stored !== null ? stored : "admin";
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null); // { role, full_name, phone }
-  const [loading, setLoading] = useState(true);
+  const initialRole = getInitialBypassRole();
+  const initialMock = initialRole !== "none" ? DEV_MOCK_USERS[initialRole] || DEV_MOCK_USERS.admin : null;
 
-  // #region agent log
-  function hffDebugLog(payload) {
-      // Removed agent log
-  }
-  // #endregion agent log
+  const [user, setUser] = useState(initialMock ? initialMock.user : null);
+  const [profile, setProfile] = useState(initialMock ? initialMock.profile : null);
+  const [loading, setLoading] = useState(false);
+
+  // Switch role dynamically without password
+  const switchDevRole = (newRole) => {
+    if (newRole === "none") {
+      localStorage.setItem("hff_bypass_role", "none");
+      setUser(null);
+      setProfile(null);
+    } else {
+      const mock = DEV_MOCK_USERS[newRole] || DEV_MOCK_USERS.admin;
+      localStorage.setItem("hff_bypass_role", newRole);
+      setUser(mock.user);
+      setProfile(mock.profile);
+    }
+  };
 
   // Fetch or create the profile row for the given user
   async function fetchProfile(authUser) {
-    console.log("[AuthContext] fetchProfile called for:", authUser?.id);
+    console.log("[AuthContext] fetchProfile called for:", authUser?.uid);
     if (!authUser || !isConfigured) {
       setProfile(null);
       return null;
@@ -25,16 +75,6 @@ export function AuthProvider({ children }) {
 
     const email = authUser.email?.toLowerCase() || "";
     const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
-    const t0 = Date.now();
-
-    // #region agent log
-    hffDebugLog({
-      hypothesisId: 'B',
-      location: 'src/auth/AuthContext.jsx:fetchProfile:entry',
-      message: 'fetchProfile entry',
-      data: { hasUser: !!authUser, userIdPrefix: String(authUser?.id || '').slice(0, 8), isConfigured: !!isConfigured, isAdminEmail }
-    });
-    // #endregion agent log
 
     // Set a timeout of 10 seconds for the profile fetch
     const timeoutPromise = new Promise((_, reject) => {
@@ -44,75 +84,37 @@ export function AuthProvider({ children }) {
     try {
       const fetchPromise = (async () => {
         // Try to get existing profile
-        const { data: existingProfile, error: fetchErr } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", authUser.id)
-          .maybeSingle();
+        const profileRef = doc(db, "profiles", authUser.uid);
+        const profileSnap = await getDoc(profileRef);
 
-        // #region agent log
-        hffDebugLog({
-          hypothesisId: 'B',
-          location: 'src/auth/AuthContext.jsx:fetchProfile:profiles_select',
-          message: 'profiles select result',
-          data: {
-            ms: Date.now() - t0,
-            hasData: !!existingProfile,
-            error: fetchErr ? { message: fetchErr.message, code: fetchErr.code, status: fetchErr.status, name: fetchErr.name } : null
-          }
-        });
-        // #endregion agent log
+        let currentProfile;
 
-        let currentProfile = existingProfile;
-
-        if (fetchErr && (fetchErr.code === "PGRST116" || fetchErr.status === 406)) {
-          // No profile row (PGRST116 or 406) — legacy user or trigger didn't fire
-          const role = isAdminEmail ? "admin" : (authUser.user_metadata?.role || "facilitator");
+        if (!profileSnap.exists()) {
+          // No profile row — legacy user or just signed up
+          const role = isAdminEmail ? "admin" : "facilitator";
 
           const newProfile = {
-            id: authUser.id,
+            id: authUser.uid,
             role: role,
-            full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.user_metadata?.username || "",
-            phone: authUser.user_metadata?.phone || authUser.phone || "",
+            full_name: authUser.displayName || "",
+            phone: authUser.phoneNumber || "",
             must_change_password: false,
           };
 
-          const { data: inserted, error: insertErr } = await supabase
-            .from("profiles")
-            .upsert(newProfile, { onConflict: 'id' })
-            .select()
-            .single();
-
-          // #region agent log
-          hffDebugLog({
-            hypothesisId: 'B',
-            location: 'src/auth/AuthContext.jsx:fetchProfile:profiles_upsert',
-            message: 'profiles upsert result',
-            data: {
-              ms: Date.now() - t0,
-              inserted: !!inserted,
-              error: insertErr ? { message: insertErr.message, code: insertErr.code, status: insertErr.status, name: insertErr.name } : null
-            }
-          });
-          // #endregion agent log
-
-          if (insertErr) {
+          try {
+            await setDoc(profileRef, newProfile);
+            currentProfile = newProfile;
+          } catch (insertErr) {
             console.error("[AuthContext] Failed to create profile:", insertErr);
-            const fallback = { id: authUser.id, role, full_name: newProfile.full_name, phone: newProfile.phone };
+            const fallback = { id: authUser.uid, role, full_name: newProfile.full_name, phone: newProfile.phone };
             setProfile(fallback);
             return fallback;
           }
-          currentProfile = inserted;
-        } else if (fetchErr) {
-          console.error("[AuthContext] Error fetching profile:", fetchErr);
-          const fallback = { id: authUser.id, role: isAdminEmail ? "admin" : "facilitator", full_name: "", phone: "" };
-          setProfile(fallback);
-          return fallback;
+        } else {
+          currentProfile = { id: profileSnap.id, ...profileSnap.data() };
         }
 
         // STRICT DOMAIN ENFORCEMENT
-        // Any account with @thehealthyfamilies.net is ALWAYS an admin.
-        // Any other account is ALWAYS a facilitator.
         const expectedRole = isAdminEmail ? "admin" : "facilitator";
 
         if (currentProfile.role !== expectedRole) {
@@ -120,9 +122,11 @@ export function AuthProvider({ children }) {
           currentProfile = { ...currentProfile, role: expectedRole };
 
           // Sync to database
-          supabase.from("profiles").update({ role: expectedRole }).eq("id", authUser.id).then(({ error }) => {
-            if (error) console.error("[AuthContext] Failed to sync role update:", error);
-          });
+          try {
+            await updateDoc(profileRef, { role: expectedRole });
+          } catch (error) {
+            console.error("[AuthContext] Failed to sync role update:", error);
+          }
         }
 
         setProfile(currentProfile);
@@ -132,15 +136,7 @@ export function AuthProvider({ children }) {
       return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
       console.error("[AuthContext] Profile fetch error:", err);
-      // #region agent log
-      hffDebugLog({
-        hypothesisId: 'C',
-        location: 'src/auth/AuthContext.jsx:fetchProfile:catch',
-        message: 'fetchProfile threw/caught',
-        data: { ms: Date.now() - t0, error: err ? { message: err.message, name: err.name } : null }
-      });
-      // #endregion agent log
-      const fallback = { id: authUser.id, role: isAdminEmail ? "admin" : "facilitator", full_name: "", phone: "" };
+      const fallback = { id: authUser.uid, role: isAdminEmail ? "admin" : "facilitator", full_name: "", phone: "" };
       setProfile(fallback);
       return fallback;
     }
@@ -149,7 +145,7 @@ export function AuthProvider({ children }) {
   // Allows components to trigger a profile re-fetch (e.g. after onboarding)
   async function refreshProfile() {
     if (user) {
-      console.log("[AuthContext] refreshProfile triggered for user:", user.id);
+      console.log("[AuthContext] refreshProfile triggered for user:", user.uid);
       await fetchProfile(user);
       console.log("[AuthContext] refreshProfile complete");
     } else {
@@ -158,42 +154,18 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    if (!isConfigured) {
+    if (!isConfigured || !auth) {
       setLoading(false);
       return;
     }
 
-    // Get initial session
-    console.log("[AuthContext] Getting initial session...");
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      try {
-        const authUser = session?.user ?? null;
-        console.log("[AuthContext] Session found:", authUser ? authUser.email : "none");
-        setUser(authUser);
-        if (authUser) {
-          console.log("[AuthContext] Fetching profile for:", authUser.id);
-          const p = await fetchProfile(authUser);
-          console.log("[AuthContext] Profile result:", p ? p.role : "none");
-        }
-      } catch (err) {
-        console.error("[AuthContext] Auth initialization error:", err);
-      } finally {
-        console.log("[AuthContext] Loading set to false");
-        setLoading(false);
-      }
-    });
-
+    setLoading(true);
+    
     // Listen for auth changes
-    // Only show loading for meaningful auth events, not routine token refreshes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[AuthContext] Auth state change:", event);
-
-      // Skip loading state for routine token refreshes — these should be invisible
-      const isSignificantEvent = ['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event);
-      if (isSignificantEvent) setLoading(true);
-
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      console.log("[AuthContext] Auth state change:", authUser ? authUser.email : "none");
+      
       try {
-        const authUser = session?.user ?? null;
         setUser(authUser);
         if (authUser) {
           await fetchProfile(authUser);
@@ -203,7 +175,7 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error("[AuthContext] Auth change error:", err);
       } finally {
-        if (isSignificantEvent) setLoading(false);
+        setLoading(false);
       }
     });
 
@@ -212,15 +184,20 @@ export function AuthProvider({ children }) {
     window.addEventListener('hff-profile-refresh', handleProfileRefresh);
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe();
       window.removeEventListener('hff-profile-refresh', handleProfileRefresh);
     };
   }, []);
 
   async function signOut() {
-    if (isConfigured) {
-      await supabase.auth.signOut();
+    if (isConfigured && auth) {
+      try {
+        await firebaseSignOut(auth);
+      } catch (e) {
+        console.warn("[AuthContext] signOut failed:", e);
+      }
     }
+    localStorage.setItem("hff_bypass_role", "none");
     setUser(null);
     setProfile(null);
   }
@@ -228,7 +205,7 @@ export function AuthProvider({ children }) {
   const role = profile?.role || null;
 
   const value = useMemo(
-    () => ({ user, profile, role, loading, signOut, refreshProfile }),
+    () => ({ user, profile, role, loading, signOut, refreshProfile, switchDevRole, isDevBypass: DEV_BYPASS_PASSWORDS }),
     [user, profile, role, loading]
   );
 

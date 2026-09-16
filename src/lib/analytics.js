@@ -10,9 +10,18 @@ export function processAnalytics(registrations) {
             totalRegistrations: 0,
             totalFacilitators: 0,
             totalRegistered: 0,
+            uniqueParticipants: 0,
+            uniqueFacilitators: 0,
             uniqueAttendees: 0,
+            qualifyingParticipantsList: [],
+            qualifyingFacilitatorsList: [],
+            qualifyingParticipants: 0,
+            qualifyingFacilitators: 0,
+            totalQualifyingCertificates: 0,
             avgAttendance: 0,
+            totalBooksGiven: 0,
             dailyStats: [],
+            dailyStatsByGender: { all: [], M: [], F: [] },
             ageDistribution: [],
             demographics: {
                 gender: { 'M': 0, 'F': 0, 'OTHER': 0, 'UNKNOWN': 0 },
@@ -44,21 +53,44 @@ export function processAnalytics(registrations) {
 
     const days = Array.from({ length: TOTAL_CAMPAIGN_DAYS }, (_, i) => `Day ${i + 1}`);
 
+    const normalizeGender = (p) => {
+        const raw = (p.gender || p.Gender || p.GENDER || '').toString().toUpperCase().trim();
+        if (raw.startsWith('M') || raw === 'MALE') return 'M';
+        if (raw.startsWith('F') || raw === 'FEMALE') return 'F';
+        if (raw === 'OTHER') return 'OTHER';
+        return 'UNKNOWN';
+    };
+
+    const computeCohortDailyStats = (cohortPeople) => {
+        const cohortFacilitators = cohortPeople.filter(r => (r.type || '').toLowerCase() === 'facilitator');
+        const cohortParticipants = cohortPeople.filter(r => (r.type || '').toLowerCase() !== 'facilitator');
+
+        return days.map((day, i) => {
+            const participantCount = cohortParticipants.filter(p => p.attendance && isPresentOnDay(p.attendance, i)).length;
+            const facilitatorCount = cohortFacilitators.filter(f => f.attendance && isPresentOnDay(f.attendance, i)).length;
+            const totalCount = participantCount + facilitatorCount;
+            const retention = cohortPeople.length > 0 ? (totalCount / cohortPeople.length) * 100 : 0;
+            
+            return { 
+                date: day, 
+                count: totalCount, 
+                participants: participantCount, 
+                facilitators: facilitatorCount,
+                retention: parseFloat(retention.toFixed(1)) 
+            };
+        });
+    };
+
     // stats based on ALL active people (Facilitators + Participants)
-    const dailyStats = days.map((day, i) => {
-        const participantCount = participants.filter(p => p.attendance && isPresentOnDay(p.attendance, i)).length;
-        const facilitatorCount = facilitators.filter(f => f.attendance && isPresentOnDay(f.attendance, i)).length;
-        const totalCount = participantCount + facilitatorCount;
-        const retention = activePeople.length > 0 ? (totalCount / activePeople.length) * 100 : 0;
-        
-        return { 
-            date: day, 
-            count: totalCount, 
-            participants: participantCount, 
-            facilitators: facilitatorCount,
-            retention: parseFloat(retention.toFixed(1)) 
-        };
-    });
+    const dailyStats = computeCohortDailyStats(activePeople);
+    const dailyStatsMale = computeCohortDailyStats(activePeople.filter(p => normalizeGender(p) === 'M'));
+    const dailyStatsFemale = computeCohortDailyStats(activePeople.filter(p => normalizeGender(p) === 'F'));
+
+    const dailyStatsByGender = {
+        all: dailyStats,
+        M: dailyStatsMale,
+        F: dailyStatsFemale
+    };
 
     const uniqueParticipants = participants.filter(p => {
         if (!p.attendance) return false;
@@ -177,6 +209,7 @@ export function processAnalytics(registrations) {
         avgAttendance,
         totalBooksGiven,
         dailyStats,
+        dailyStatsByGender,
         ageDistribution: ageBuckets,
         demographics: { gender, education, maritalStatus },
     };

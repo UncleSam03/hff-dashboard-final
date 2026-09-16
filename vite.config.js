@@ -22,6 +22,12 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
+            src: 'hff-logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
             src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
@@ -44,6 +50,9 @@ export default defineConfig({
       devOptions: {
         enabled: true,
         type: 'module'
+      },
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       }
     })
   ],
@@ -68,6 +77,7 @@ export default defineConfig({
       },
     },
   },
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   build: {
     chunkSizeWarningLimit: 1600,
   },

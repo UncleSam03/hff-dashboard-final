@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Trash2, Briefcase as OccupationIcon } from 'lucide-react';
+import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Trash2, Briefcase as OccupationIcon, Clock, FileText, Hash, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { matchesPerson } from '../../lib/searchUtils';
 import ParticipantDetail from './ParticipantDetail';
 import RegistrationForm from '../RegistrationForm';
 
@@ -28,7 +29,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                 const filtered = results.filter(f => 
                     !f.is_deleted && 
                     f.id !== facilitator.id && 
-                    (f.first_name + ' ' + f.last_name).toLowerCase().includes(coFacSearchTerm.toLowerCase())
+                    matchesPerson(f, coFacSearchTerm, 'all')
                 );
                 setCoFacSearchResults(filtered);
             } catch (err) {
@@ -72,7 +73,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
     };
 
     const dashboardQuery = useLiveQuery(async () => {
-        // Fetch fresh facilitator to get latest managed groups
+        // Fetch fresh facilitator to get latest meeting place / groups
         const freshFac = await db.registrations.get(facilitator.id) || facilitator;
 
         // Find alias UUIDs for this facilitator (e.g. self-registration UUID vs offline Registration UUID)
@@ -106,16 +107,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
             return aliasUuids.includes(p.facilitator_uuid);
         });
 
-        if (searchTerm) {
-            const lowerFilter = searchTerm.toLowerCase();
-            results = results.filter(p =>
-                (p.first_name + ' ' + p.last_name).toLowerCase().includes(lowerFilter) ||
-                (p.place && p.place.toLowerCase().includes(lowerFilter)) ||
-                (p.affiliation && p.affiliation.toLowerCase().includes(lowerFilter))
-            );
-        }
-
-        // Compute facilitator back-ref just in case
+        // Compute facilitator back-ref and attach assigned facilitator
         results = results.map(p => {
             const attendance = p.attendance;
             let days = 0;
@@ -127,10 +119,15 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
 
             return {
                 ...p,
-                facilitatorName: `${facilitator.first_name} ${facilitator.last_name}`,
+                assignedFacilitator: facilitator,
+                facilitatorName: `${facilitator.first_name || ''} ${facilitator.last_name || ''}`.trim(),
                 qualifying: days >= 6
             };
         });
+
+        if (searchTerm) {
+            results = results.filter(p => matchesPerson(p, searchTerm, 'all'));
+        }
 
         const qualifyingCount = results.filter(p => p.qualifying).length;
 
@@ -270,12 +267,21 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Enter facilitator name..."
+                            placeholder="Search facilitator by name, form #, phone, meeting place/time..."
                             value={coFacSearchTerm}
                             onChange={(e) => setCoFacSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-bold"
+                            className="w-full pl-12 pr-10 py-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-bold"
                             autoFocus
                         />
+                        {coFacSearchTerm && (
+                            <button
+                                onClick={() => setCoFacSearchTerm('')}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
+                                title="Clear search"
+                            >
+                                <X size={15} />
+                            </button>
+                        )}
                     </div>
 
                     {coFacSearchResults && (
@@ -369,9 +375,22 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                                     <Trash2 size={16} />
                                 </button>
                             </div>
-                            <p className="text-[11px] font-black text-[#71167F] uppercase tracking-widest mt-1">
-                                Facilitator Overview
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                <span className="text-[11px] font-black text-[#71167F] uppercase tracking-widest">
+                                    Facilitator Overview
+                                </span>
+                                {facilitator.form_number && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-purple-100/80 text-[#71167F] text-[10px] font-black tracking-wide border border-[#71167F]/20">
+                                        Form #{facilitator.form_number}
+                                    </span>
+                                )}
+                                {facilitator.meeting_time && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-gray-200">
+                                        <Clock size={11} className="text-[#71167F]" />
+                                        Meeting: {facilitator.meeting_time}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -402,15 +421,24 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
                 <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase">Assigned Participants</h3>
                 <div className="flex items-center gap-3 w-full md:w-auto">
-                    <div className="relative w-full md:w-64">
+                    <div className="relative w-full md:w-80">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search by name, district or affiliation..."
+                            placeholder="Search by name, meeting place, form #, phone, date, time..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-100 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-xs font-bold shadow-sm"
+                            className="w-full pl-10 pr-8 py-2.5 rounded-xl bg-white border border-gray-100 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-xs font-bold shadow-sm"
                         />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                                title="Clear search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
                     <button
                         onClick={exportToCSV}
@@ -473,12 +501,38 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                     <div className="w-8 h-8 rounded-full border-4 border-[#71167F]/20 border-t-[#71167F] animate-spin" />
                 </div>
             ) : participants.length === 0 ? (
-                <div className="text-center py-20 bg-white/50 rounded-[2rem] border-2 border-dashed border-gray-100 shadow-inner">
-                    <div className="bg-gray-100/50 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <User className="h-8 w-8 text-gray-300" />
+                <div className="text-center py-20 bg-white/60 backdrop-blur-sm rounded-[2rem] border-2 border-dashed border-gray-200/80 shadow-inner p-8">
+                    <div className="bg-[#71167F]/5 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#71167F]">
+                        <User className="h-8 w-8 opacity-60" />
                     </div>
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">No Participants</h3>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">This facilitator hasn't registered anyone yet.</p>
+                    {searchTerm ? (
+                        <>
+                            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">No Matching Participants</h3>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider max-w-sm mx-auto mb-4">
+                                No participants assigned to this facilitator match "{searchTerm}".
+                            </p>
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest transition-all"
+                            >
+                                Clear Search
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">No Assigned Participants</h3>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider max-w-sm mx-auto mb-4">
+                                This facilitator hasn't registered or been linked to any participants yet.
+                            </p>
+                            <button
+                                onClick={() => setIsAddingParticipant(true)}
+                                className="px-5 py-2.5 rounded-xl bg-[#71167F] text-white hover:shadow-lg transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto shadow-md shadow-[#71167F]/20"
+                            >
+                                <Plus size={14} />
+                                Add First Participant
+                            </button>
+                        </>
+                    )}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-20">

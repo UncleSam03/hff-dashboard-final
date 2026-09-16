@@ -5,12 +5,37 @@ import { db } from "../lib/dexieDb";
 import {
     Users, UserPlus, ClipboardCheck, ArrowLeft, Search,
     Phone, Check, XCircle, ChevronDown, ChevronUp,
-    Calendar, Loader2, Link2, AlertTriangle, User
+    Calendar, Loader2, Link2, AlertTriangle, User, X
 } from "lucide-react";
+import { matchesPerson } from "../lib/searchUtils";
 
 import { TOTAL_CAMPAIGN_DAYS } from "../lib/constants";
+import { cn } from "../lib/utils";
 
 const TOTAL_DAYS = TOTAL_CAMPAIGN_DAYS;
+
+function MenuCard({ icon: Icon, title, desc, onClick, color }) {
+    return (
+        <div
+            onClick={onClick}
+            className="liquid-glass-elevated p-8 rounded-3xl border border-white/75 flex flex-col justify-between group cursor-pointer transition-all relative overflow-hidden min-h-[170px]"
+        >
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+            <div className="flex items-start gap-4 mb-4 relative z-10">
+                <div className={cn("p-3.5 rounded-2xl shadow-sm border border-white/60 shrink-0", color)}>
+                    {Icon && <Icon size={24} />}
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-hff-primary transition-colors">{title}</h3>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">{desc}</p>
+                </div>
+            </div>
+            <div className="text-[11px] font-bold text-[#71167F] uppercase tracking-wider flex items-center gap-1 group-hover:translate-x-1 transition-transform relative z-10">
+                Continue &rarr;
+            </div>
+        </div>
+    );
+}
 
 export default function FacilitatorDashboard({ onBack }) {
     const { user, profile } = useAuth();
@@ -262,7 +287,7 @@ export default function FacilitatorDashboard({ onBack }) {
 
             // Try Supabase
             if (isConfigured) {
-                const { id, sync_status, synced_at, ...supabasePayload } = record;
+                const { id: _id, sync_status: _sync_status, synced_at: _synced_at, ...supabasePayload } = record;
                 
                 let error;
                 if (lookupMatch?.type === 'registration' || (isConfigured && (await supabase.from("registrations").select("uuid").eq("uuid", finalUuid).maybeSingle()).data)) {
@@ -384,21 +409,7 @@ export default function FacilitatorDashboard({ onBack }) {
     }
 
     const filteredParticipants = participants.filter(p =>
-        `${p.first_name} ${p.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    /* ── Card button ── */
-    const MenuCard = ({ icon: Icon, title, desc, onClick, color }) => (
-        <button
-            onClick={onClick}
-            className="flex flex-col items-center justify-center p-8 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group text-center"
-        >
-            <div className={`p-4 rounded-2xl mb-4 ${color} group-hover:scale-110 transition-transform`}>
-                <Icon className="h-8 w-8" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
-            <p className="text-sm text-gray-500">{desc}</p>
-        </button>
+        matchesPerson(p, searchTerm, 'all')
     );
 
     return (
@@ -407,12 +418,12 @@ export default function FacilitatorDashboard({ onBack }) {
             <div className="flex items-center justify-between">
                 <button
                     onClick={view === "menu" ? onBack : () => setView("menu")}
-                    className="flex items-center gap-2 text-gray-600 hover:text-hff-primary transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full liquid-glass-pill text-gray-700 hover:text-[#71167F] hover:border-[#71167F]/30 transition-all text-xs font-bold"
                 >
-                    <ArrowLeft className="h-5 w-5" />
+                    <ArrowLeft className="h-4 w-4" />
                     {view === "menu" ? "Sign Out" : "Back to Menu"}
                 </button>
-                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <div className="flex items-center gap-2 liquid-glass-pill bg-emerald-500/10 text-emerald-700 px-3.5 py-1.5 rounded-full text-xs font-bold border border-emerald-400/30 shadow-sm">
                     <Users className="h-4 w-4" />
                     Facilitator
                 </div>
@@ -454,7 +465,8 @@ export default function FacilitatorDashboard({ onBack }) {
 
             {/* Register Form */}
             {view === "register" && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 max-w-2xl mx-auto">
+                <div className="glass-card p-6 lg:p-8 rounded-3xl border border-white/75 relative overflow-hidden max-w-2xl mx-auto shadow-xl">
+                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
                     <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                         <UserPlus className="h-5 w-5 text-emerald-600" />
                         Register Participant
@@ -653,29 +665,61 @@ export default function FacilitatorDashboard({ onBack }) {
 
             {/* Participants List (Name + Phone only) */}
             {view === "list" && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div className="glass-card p-6 lg:p-8 rounded-3xl border border-white/75 relative overflow-hidden shadow-xl">
+                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
                     <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <Users className="h-5 w-5 text-purple-600" />
                         My Participants ({participants.length})
                     </h2>
                     <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            placeholder="Search by name…"
-                            className="w-full rounded-xl border border-gray-200 pl-10 pr-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-400/40"
+                            placeholder="Search by name, meeting place, form #, phone, date, time…"
+                            className="w-full pl-10 pr-9 py-2.5 liquid-glass-input rounded-full text-xs font-medium focus:border-[#71167F] outline-none"
                         />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-700 transition-colors"
+                                title="Clear search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
                     {loading ? (
                         <div className="flex justify-center py-12">
                             <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
                         </div>
                     ) : filteredParticipants.length === 0 ? (
-                        <div className="text-center py-12 text-gray-400">
-                            <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                            <p>No participants registered yet.</p>
+                        <div className="text-center py-12 text-gray-400 bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-6">
+                            <Users className="h-12 w-12 mx-auto mb-3 opacity-40 text-purple-600" />
+                            {searchTerm ? (
+                                <>
+                                    <p className="font-bold text-gray-700 mb-1">No participants found</p>
+                                    <p className="text-xs text-gray-400 mb-3">No participants match "{searchTerm}".</p>
+                                    <button
+                                        onClick={() => setSearchTerm("")}
+                                        className="text-xs font-bold text-purple-600 hover:underline"
+                                    >
+                                        Clear Search
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="font-bold text-gray-700 mb-1">No participants registered yet</p>
+                                    <p className="text-xs text-gray-400 mb-4">Start by adding your first participant to your group roster.</p>
+                                    <button
+                                        onClick={() => setView("register")}
+                                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-600/20"
+                                    >
+                                        + Register Participant
+                                    </button>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="space-y-2">
@@ -715,20 +759,30 @@ export default function FacilitatorDashboard({ onBack }) {
 
             {/* Attendance */}
             {view === "attendance" && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div className="glass-card p-6 lg:p-8 rounded-3xl border border-white/75 relative overflow-hidden shadow-xl">
+                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
                     <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <ClipboardCheck className="h-5 w-5 text-blue-600" />
                         Mark Attendance
                     </h2>
                     <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            placeholder="Search participant…"
-                            className="w-full rounded-xl border border-gray-200 pl-10 pr-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+                            placeholder="Search by name, meeting place, form #, phone, date, time…"
+                            className="w-full pl-10 pr-9 py-2.5 liquid-glass-input rounded-full text-xs font-medium focus:border-[#71167F] outline-none"
                         />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-700 transition-colors"
+                                title="Clear search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
 
                     {loading ? (
@@ -736,9 +790,31 @@ export default function FacilitatorDashboard({ onBack }) {
                             <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
                         </div>
                     ) : filteredParticipants.length === 0 ? (
-                        <div className="text-center py-12 text-gray-400">
-                            <Calendar className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                            <p>No participants to mark attendance for.</p>
+                        <div className="text-center py-12 text-gray-400 bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-6">
+                            <Calendar className="h-12 w-12 mx-auto mb-3 opacity-40 text-blue-600" />
+                            {searchTerm ? (
+                                <>
+                                    <p className="font-bold text-gray-700 mb-1">No participants found</p>
+                                    <p className="text-xs text-gray-400 mb-3">No participants match "{searchTerm}".</p>
+                                    <button
+                                        onClick={() => setSearchTerm("")}
+                                        className="text-xs font-bold text-blue-600 hover:underline"
+                                    >
+                                        Clear Search
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="font-bold text-gray-700 mb-1">No participants to mark attendance for</p>
+                                    <p className="text-xs text-gray-400 mb-4">You must first register participants under your facilitator profile.</p>
+                                    <button
+                                        onClick={() => setView("register")}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20"
+                                    >
+                                        + Register Participant
+                                    </button>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="space-y-3">

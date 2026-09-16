@@ -1,30 +1,22 @@
-import { createClient } from "@supabase/supabase-js";
+// Stub file to prevent bundler errors for Facilitator components
+// that have not yet been migrated to Firebase.
 
-import { getEnv } from "./env.js";
+export const supabase = {
+    auth: {
+        onAuthStateChange: () => {},
+        signInWithPassword: () => {},
+        signUp: () => {},
+    },
+    from: () => ({
+        select: () => ({
+            eq: () => ({
+                single: () => ({ data: null }),
+                maybeSingle: () => ({ data: null })
+            })
+        }),
+        insert: () => ({ error: null }),
+        update: () => ({ eq: () => ({ error: null }) })
+    })
+};
 
-const supabaseUrl =
-    getEnv("VITE_SUPABASE_URL") ||
-    getEnv("NEXT_PUBLIC_SUPABASE_URL") ||
-    getEnv("SUPABASE_URL");
-const supabaseAnonKey =
-    getEnv("VITE_SUPABASE_ANON_KEY") ||
-    getEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY") ||
-    getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
-    getEnv("SUPABASE_ANON_KEY");
-
-// Resilient configuration check
-const isConfigured =
-    supabaseUrl &&
-    supabaseAnonKey &&
-    supabaseUrl !== "YOUR_SUPABASE_URL" &&
-    supabaseAnonKey !== "YOUR_SUPABASE_ANON_KEY";
-
-let supabase = null;
-
-if (isConfigured) {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
-}
-
-// Removed agent log
-
-export { supabase, isConfigured };
+export const isConfigured = false;

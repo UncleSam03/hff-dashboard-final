@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/dexieDb';
 import { mergeDuplicateRegistrations } from '../lib/dataMaintenance';
 import { syncSubmissions } from '../lib/syncManager';
 import { Trash2, AlertTriangle, CheckCircle, Search, Layers, ArrowRight } from 'lucide-react';

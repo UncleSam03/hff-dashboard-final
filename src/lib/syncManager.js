@@ -1,32 +1,30 @@
 import { getPendingSubmissions, markAsSynced } from './offlineStorage';
 import { hffFetch } from './api';
-import { pushPendingToSupabase, pullFromSupabase, reconcileStoreDeletions } from './supabaseSync';
-import { supabase, isConfigured } from './supabase';
+import { pushPendingToFirebase, pullFromFirebase, reconcileFirebaseDeletions } from './firebaseSync';
+import { db as firestoreDb, isConfigured } from './firebase';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
 
 let isSyncing = false;
 let isActuallyOnline = navigator.onLine;
 
 /**
  * Checks for true connectivity.
- * 
- * Uses Supabase as the primary connectivity probe (always available in production).
- * Falls back to /api/health for Express-only dev environments.
  */
 export async function checkConnectivity() {
     const previousStatus = isActuallyOnline;
     try {
-        // Primary: lightweight health probe (works on Vercel + local)
         const health = await fetch('/api/health', { method: 'GET', cache: 'no-store' });
         if (health.ok) {
             isActuallyOnline = true;
-        } else if (isConfigured && supabase) {
-            // Secondary: Supabase probe (may fail with RLS in some configs)
-            const { error } = await supabase.from('registrations').select('uuid', { count: 'exact', head: true }).limit(0);
-            isActuallyOnline = !error;
+        } else if (isConfigured && firestoreDb) {
+            // Secondary probe: fetch 1 doc from Firestore
+            const q = query(collection(firestoreDb, 'registrations'), limit(1));
+            await getDocs(q);
+            isActuallyOnline = true;
         } else {
             isActuallyOnline = false;
         }
-    } catch (_) {
+    } catch {
         isActuallyOnline = false;
     }
 
@@ -50,7 +48,6 @@ export async function syncSubmissions() {
     isSyncing = true;
 
     try {
-        // Check true connectivity before attempting sync
         const online = await checkConnectivity();
         if (!online) return;
 
@@ -76,9 +73,9 @@ export async function syncSubmissions() {
             }
         }
 
-        // 2. Sync Native Dashboard data (registrations / participants) via Supabase client
-        await pushPendingToSupabase();
-        await pullFromSupabase();
+        // 2. Sync Native Dashboard data via Firebase client
+        await pushPendingToFirebase();
+        await pullFromFirebase();
 
     } finally {
         isSyncing = false;
@@ -87,8 +84,6 @@ export async function syncSubmissions() {
 
 /**
  * Perform a deep reconciliation with the cloud.
- * This is slower than syncSubmissions but ensures 100% parity 
- * by checking for deleted records on the server.
  */
 export async function reconcileWithCloud() {
     if (isSyncing) return;
@@ -100,20 +95,14 @@ export async function reconcileWithCloud() {
 
         console.log("[SyncManager] Starting Full Cloud Reconciliation...");
         
-        // 1. First push any local changes
-        await pushPendingToSupabase();
+        await pushPendingToFirebase();
+        await pullFromFirebase();
         
-        // 2. Pull all updates
-        await pullFromSupabase();
-        
-        // 3. Reconcile deletions for both registrations and notices
-        await reconcileStoreDeletions('registrations');
-        await reconcileStoreDeletions('notices');
+        await reconcileFirebaseDeletions('registrations');
 
         console.log("[SyncManager] Reconciliation Complete.");
         
-        // Trigger generic update event
-        window.dispatchEvent(new CustomEvent('hff-supabase-data-updated'));
+        window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
         
     } catch (err) {
         console.error("[SyncManager] Reconciliation error:", err);

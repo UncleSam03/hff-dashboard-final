@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    Users, Heart, Sparkles, ArrowRight, Play,
+    Users, Heart, Star, ArrowRight, Play,
     MessageCircle, Shield, Globe, Mail, Phone,
     Instagram, Facebook, Twitter, MapPin
 } from 'lucide-react';
@@ -10,28 +10,29 @@ const LandingPage = ({ onStart, onSignIn }) => {
         <div className="min-h-screen font-sans selection:bg-hff-primary/10">
             {/* Navigation */}
             <nav className="fixed top-0 w-full z-50 px-6 py-4">
-                <div className="max-w-7xl mx-auto flex items-center justify-between glass-card px-8 py-4 rounded-full">
-                    <div className="flex items-center gap-2">
-                        <div className="h-10 w-10 bg-gradient-to-br from-hff-primary to-hff-accent rounded-xl flex items-center justify-center text-white">
-                            <Heart className="h-6 w-6" fill="currentColor" />
+                <div className="max-w-7xl mx-auto flex items-center justify-between glass-card px-8 py-4 rounded-full border border-white/80 shadow-lg relative overflow-hidden">
+                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+                    <div className="flex items-center gap-2 relative z-10">
+                        <div className="h-10 w-10 bg-gradient-to-br from-hff-primary to-hff-accent rounded-xl flex items-center justify-center text-white shadow-md shadow-[#71167F]/20">
+                            <Heart className="h-5 w-5" fill="currentColor" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight text-gray-900 font-serif leading-none mt-1">HFF <span className="text-hff-primary">Impact</span></span>
+                        <span className="text-xl font-extrabold tracking-tight text-gray-900 leading-none mt-1">HFF <span className="text-hff-primary">Impact</span></span>
                     </div>
-                    <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-600">
+                    <div className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-gray-600 relative z-10">
                         <a href="#mission" className="hover:text-hff-primary transition-colors">Our Mission</a>
                         <a href="#activities" className="hover:text-hff-primary transition-colors">Activities</a>
                         <a href="#testimonies" className="hover:text-hff-primary transition-colors">Testimonies</a>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 relative z-10">
                         <button
                             onClick={onSignIn}
-                            className="text-sm font-bold text-gray-700 hover:text-hff-primary px-4 py-2 transition-colors"
+                            className="text-xs font-bold text-gray-700 hover:text-hff-primary px-4 py-2 transition-colors liquid-glass-pill"
                         >
                             Sign In
                         </button>
                         <button
                             onClick={() => onStart('signup')}
-                            className="bg-hff-primary text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-hff-accent transition-all shadow-lg shadow-hff-primary/20"
+                            className="hff-gradient-bg text-white text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-full hover:opacity-95 transition-all shadow-lg shadow-hff-primary/25 border border-white/30"
                         >
                             Join Us
                         </button>
@@ -47,7 +48,7 @@ const LandingPage = ({ onStart, onSignIn }) => {
 
                 <div className="max-w-7xl mx-auto px-6 text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full bg-hff-primary/10 text-hff-primary text-sm font-bold tracking-wide uppercase">
-                        <Sparkles className="h-4 w-4" />
+                        <Heart className="h-4 w-4 fill-current" />
                         Making Families Healthier & Happier
                     </div>
                     <h1 className="text-6xl md:text-8xl font-black text-gray-900 mb-8 leading-[1.1] tracking-tight">
@@ -87,19 +88,19 @@ const LandingPage = ({ onStart, onSignIn }) => {
                                 Healthy Families Foundation (HFF) is a non-profit Trust which focuses on strengthening families. We strive to make a positive impact in decreasing social ills like gender-based violence, substance abuse, and depression.
                             </p>
                             <div className="grid grid-cols-2 gap-6">
-                                <div className="p-6 rounded-3xl bg-hff-warm-green border border-green-100">
-                                    <div className="h-10 w-10 bg-hff-secondary rounded-xl flex items-center justify-center text-white mb-4">
-                                        <Users className="h-6 w-6" />
+                                <div className="p-6 rounded-3xl liquid-glass-elevated border border-white/70">
+                                    <div className="h-10 w-10 bg-[#3EB049] rounded-xl flex items-center justify-center text-white mb-4 shadow-sm">
+                                        <Users className="h-5 w-5" />
                                     </div>
-                                    <h4 className="font-bold text-gray-900 mb-1 font-serif text-2xl">4000+</h4>
-                                    <p className="text-sm text-gray-600">Daily Participants</p>
+                                    <h4 className="font-extrabold text-gray-900 mb-1 text-2xl tracking-tight">4000+</h4>
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Daily Participants</p>
                                 </div>
-                                <div className="p-6 rounded-3xl bg-hff-soft-purple border border-purple-100">
-                                    <div className="h-10 w-10 bg-hff-primary rounded-xl flex items-center justify-center text-white mb-4">
-                                        <Globe className="h-6 w-6" />
+                                <div className="p-6 rounded-3xl liquid-glass-elevated border border-white/70">
+                                    <div className="h-10 w-10 bg-[#71167F] rounded-xl flex items-center justify-center text-white mb-4 shadow-sm">
+                                        <Globe className="h-5 w-5" />
                                     </div>
-                                    <h4 className="font-bold text-gray-900 mb-1 font-serif text-2xl">Nationwide</h4>
-                                    <p className="text-sm text-gray-600">Impact Reach</p>
+                                    <h4 className="font-extrabold text-gray-900 mb-1 text-2xl tracking-tight">Nationwide</h4>
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Impact Reach</p>
                                 </div>
                             </div>
                         </div>
@@ -196,18 +197,19 @@ const LandingPage = ({ onStart, onSignIn }) => {
                             { name: "Ministry of Gender Affairs", text: "HFF is a key partner in our mission to eliminate social ills." },
                             { name: "Member of Parliament", text: "Transforming Mahalapye West through evidence-based family programs." }
                         ].map((t, i) => (
-                            <div key={i} className="p-8 rounded-[2.5rem] bg-hff-warm-beige/30 border border-white relative">
-                                <div className="text-hff-primary mb-6 flex gap-1">
-                                    {[1, 2, 3, 4, 5].map(j => <Sparkles key={j} className="h-4 w-4" fill="currentColor" />)}
+                            <div key={i} className="p-8 rounded-[2.5rem] liquid-glass-elevated border border-white/75 relative overflow-hidden">
+                                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+                                <div className="text-amber-400 mb-6 flex gap-1">
+                                    {[1, 2, 3, 4, 5].map(j => <Star key={j} className="h-4 w-4" fill="currentColor" />)}
                                 </div>
-                                <p className="text-gray-700 text-lg italic mb-8">"{t.text}"</p>
+                                <p className="text-gray-700 text-base font-medium italic mb-8 leading-relaxed">"{t.text}"</p>
                                 <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-full bg-hff-primary/10 flex items-center justify-center font-bold text-hff-primary font-serif">
+                                    <div className="h-10 w-10 rounded-full bg-[#71167F]/10 flex items-center justify-center font-bold text-[#71167F] border border-white/60">
                                         {t.name[0]}
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-gray-900 text-sm leading-none mb-1">{t.name}</h4>
-                                        <p className="text-xs text-hff-primary font-bold uppercase tracking-widest leading-none">Endorsement</p>
+                                        <h4 className="font-bold text-gray-900 text-sm leading-none mb-1">{t.name}</h4>
+                                        <p className="text-[10px] text-hff-primary font-bold uppercase tracking-wider leading-none">Endorsement</p>
                                     </div>
                                 </div>
                             </div>

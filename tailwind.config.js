@@ -47,6 +47,14 @@ export default {
                     foreground: "hsl(var(--card-foreground))",
                 },
             },
+            fontFamily: {
+                sans: ["'Google Sans'", "'Product Sans'", "'Plus Jakarta Sans'", "system-ui", "-apple-system", "sans-serif"],
+            },
+            boxShadow: {
+                'liquid-glass': '0 8px 32px 0 rgba(113, 22, 127, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.04), inset 0 1px 1px 0 rgba(255, 255, 255, 0.85)',
+                'liquid-glass-elevated': '0 20px 40px -12px rgba(113, 22, 127, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.05), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95)',
+                'liquid-rim': 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 1px 0 rgba(255, 255, 255, 0.2)',
+            },
             borderRadius: {
                 lg: `var(--radius)`,
                 md: `calc(var(--radius) - 2px)`,
