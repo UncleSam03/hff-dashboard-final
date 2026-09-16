@@ -102,7 +102,7 @@ export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
 
         if (changed) {
             master.updated_at = new Date().toISOString();
-            master.sync_status = 'pending'; // Ensure it gets pushed to Supabase
+            master.sync_status = 'pending'; // Ensure it gets pushed to Firebase
         }
 
         results.push({

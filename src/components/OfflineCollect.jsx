@@ -44,8 +44,8 @@ const OfflineCollect = ({ onBack }) => {
 
     useEffect(() => {
         updatePendingCount();
-        window.addEventListener('hff-supabase-sync-complete', updatePendingCount);
-        return () => window.removeEventListener('hff-supabase-sync-complete', updatePendingCount);
+        window.addEventListener('hff-firebase-sync-complete', updatePendingCount);
+        return () => window.removeEventListener('hff-firebase-sync-complete', updatePendingCount);
     }, []);
 
     // Navigation Handlers

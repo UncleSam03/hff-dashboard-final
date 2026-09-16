@@ -193,7 +193,7 @@ const DataIntegrity = () => {
         const groupsCount = duplicateGroups.length;
         if (groupsCount === 0) return;
 
-        if (!window.confirm(`Are you sure you want to merge ALL ${groupsCount} duplicate groups at once? This will process thousands of records and sync with Supabase.`)) {
+        if (!window.confirm(`Are you sure you want to merge ALL ${groupsCount} duplicate groups at once? This will process thousands of records and sync with Firebase.`)) {
             return;
         }
 

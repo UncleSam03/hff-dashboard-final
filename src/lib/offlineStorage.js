@@ -5,7 +5,7 @@ import Dexie from 'dexie';
  * 
  * NOTE: This is a SEPARATE database from HFF_Dashboard_V2 (see dexieDb.js).
  * - HFF_Offline_DB: stores raw Enketo XML submissions for sync to the Express/Next.js backend
- * - HFF_Dashboard_V2: stores structured registrations/participants for sync to Supabase
+ * - HFF_Dashboard_V2: stores structured registrations/participants for sync to Firebase
  * 
  * The syncManager.js orchestrates both sync pipelines.
  */

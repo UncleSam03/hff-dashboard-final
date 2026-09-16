@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
-import { supabase, isConfigured } from "../lib/supabase";
 import { db } from "../lib/dexieDb";
 import {
     Users, UserPlus, ClipboardCheck, ArrowLeft, Search,
@@ -72,37 +71,7 @@ export default function FacilitatorDashboard({ onBack }) {
     async function loadParticipants() {
         setLoading(true);
         try {
-            let facilitatorIds = [user.id];
-
-            // 1. Identify all IDs associated with this facilitator (Legacy + Auth)
-            if (isConfigured) {
-                // Find any facilitator record matching this user's identity
-                const { data: facRecords } = await supabase
-                    .from("registrations")
-                    .select("uuid")
-                    .eq("type", "facilitator")
-                    .or(`uuid.eq.${user.id},contact.eq.${profile?.phone || user?.phone || 'none'}`);
-
-                if (facRecords) {
-                    const ids = facRecords.map(r => r.uuid);
-                    facilitatorIds = [...new Set([...facilitatorIds, ...ids])];
-                }
-
-                // 2. Fetch participants linked to ANY of these facilitator IDs
-                const { data, error } = await supabase
-                    .from("registrations")
-                    .select("uuid, first_name, last_name, contact, attendance, books_received")
-                    .in("facilitator_uuid", facilitatorIds)
-                    .eq("type", "participant");
-
-                if (!error && data) {
-                    setParticipants(data);
-                    setLoading(false);
-                    return;
-                }
-            }
-
-            // Fallback to local Dexie
+            // Load from local Dexie (synced to Firebase in background by firebaseSync.js)
             let localFacIds = [user.id];
             const phoneStr = profile?.phone || user?.phone || 'none';
             const localFacs = await db.registrations
@@ -149,35 +118,6 @@ export default function FacilitatorDashboard({ onBack }) {
         try {
             // Priority 1: Phone Lookup (Highest confidence)
             if (phoneClean.length >= 7) {
-                if (isConfigured) {
-                    const { data: profileMatch } = await supabase
-                        .from("profiles")
-                        .select("id, full_name, phone, age, gender, occupation, place")
-                        .eq("phone", phoneClean)
-                        .maybeSingle();
-
-                    if (profileMatch) {
-                        setLookupMatch({ type: 'profile', data: profileMatch, reason: 'phone' });
-                        if (!regForm.first_name) {
-                            const [f, ...rest] = (profileMatch.full_name || "").split(" ");
-                            setRegForm(p => ({ ...p, first_name: f || "", last_name: rest.join(" ") || "", age: profileMatch.age || p.age, gender: profileMatch.gender || p.gender, place: profileMatch.place || p.place }));
-                        }
-                        return;
-                    }
-
-                    const { data: regMatch } = await supabase
-                        .from("registrations")
-                        .select("*")
-                        .eq("contact", phoneClean)
-                        .eq("type", "participant")
-                        .maybeSingle();
-
-                    if (regMatch) {
-                        setLookupMatch({ type: 'registration', data: regMatch, reason: 'phone' });
-                        return;
-                    }
-                }
-                
                 const localMatch = await db.registrations.where("contact").equals(phoneClean).filter(r => r.type === 'participant').first();
                 if (localMatch) {
                     setLookupMatch({ type: 'registration', data: localMatch, reason: 'phone' });
@@ -185,25 +125,8 @@ export default function FacilitatorDashboard({ onBack }) {
                 }
             }
 
-            // Priority 2: Name Lookup (If names are provided and no phone match yet)
+            // Priority 2: Name Lookup
             if (firstClean.length >= 2 && lastClean.length >= 2) {
-                if (isConfigured) {
-                    // Try exact name match on Supabase
-                    const { data: nameMatch } = await supabase
-                        .from("registrations")
-                        .select("*")
-                        .ilike("first_name", firstClean)
-                        .ilike("last_name", lastClean)
-                        .eq("type", "participant")
-                        .maybeSingle();
-
-                    if (nameMatch) {
-                        setLookupMatch({ type: 'registration', data: nameMatch, reason: 'name' });
-                        return;
-                    }
-                }
-
-                // Local exact name match
                 const localNameMatch = await db.registrations
                     .filter(r => r.type === 'participant' && 
                             r.first_name?.toLowerCase() === firstClean && 
@@ -285,30 +208,8 @@ export default function FacilitatorDashboard({ onBack }) {
                 await db.registrations.add(record);
             }
 
-            // Try Supabase
-            if (isConfigured) {
-                const { id: _id, sync_status: _sync_status, synced_at: _synced_at, ...supabasePayload } = record;
-                
-                let error;
-                if (lookupMatch?.type === 'registration' || (isConfigured && (await supabase.from("registrations").select("uuid").eq("uuid", finalUuid).maybeSingle()).data)) {
-                    // Update existing registration
-                    const { error: updateError } = await supabase.from("registrations").update(supabasePayload).eq("uuid", finalUuid);
-                    error = updateError;
-                } else {
-                    // Insert new registration
-                    const { error: insertError } = await supabase.from("registrations").insert(supabasePayload);
-                    error = insertError;
-                }
-
-                if (!error) {
-                    await db.registrations.where("uuid").equals(finalUuid).modify({
-                        sync_status: "synced",
-                        synced_at: new Date().toISOString()
-                    });
-                } else {
-                    console.error("Supabase sync error:", error);
-                }
-            }
+            // Cloud sync is handled automatically by firebaseSync.js
+            // Records saved with sync_status: "pending" will be pushed to Firebase
 
             setRegMessage(lookupMatch ? `Updated existing record for ${regForm.first_name}!` : `${regForm.first_name} ${regForm.last_name} registered successfully!`);
             setRegForm({ first_name: "", last_name: "", phone: "", age: "", gender: "", place: "", education: "", marital_status: "", affiliation: "", occupation: "" });
@@ -345,20 +246,7 @@ export default function FacilitatorDashboard({ onBack }) {
                     sync_status: "pending"
                 });
 
-            // Update Supabase
-            if (isConfigured) {
-                const { error } = await supabase
-                    .from("registrations")
-                    .update({ books_received: newStatus, updated_at: new Date().toISOString() })
-                    .eq("uuid", participantUuid);
-
-                if (!error) {
-                    await db.registrations
-                        .where("uuid")
-                        .equals(participantUuid)
-                        .modify({ sync_status: "synced", synced_at: new Date().toISOString() });
-                }
-            }
+            // Cloud sync handled by firebaseSync.js (pending records pushed automatically)
         } catch (err) {
             console.error("Error updating book status:", err);
         }
@@ -389,20 +277,7 @@ export default function FacilitatorDashboard({ onBack }) {
                     sync_status: "pending"
                 });
 
-            // Update Supabase
-            if (isConfigured) {
-                const { error } = await supabase
-                    .from("registrations")
-                    .update({ attendance: att, updated_at: new Date().toISOString() })
-                    .eq("uuid", participantUuid);
-
-                if (!error) {
-                    await db.registrations
-                        .where("uuid")
-                        .equals(participantUuid)
-                        .modify({ sync_status: "synced", synced_at: new Date().toISOString() });
-                }
-            }
+            // Cloud sync handled by firebaseSync.js (pending records pushed automatically)
         } catch (err) {
             console.error("Error updating attendance:", err);
         }

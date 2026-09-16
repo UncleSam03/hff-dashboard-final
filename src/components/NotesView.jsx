@@ -51,7 +51,7 @@ const NotesView = ({ onBack }) => {
                 </button>
                 <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm font-semibold">
                     <StickyNote className="h-4 w-4" />
-                    Supabase Notes Lab
+                    Campaign Notes
                 </div>
             </div>
 
@@ -61,7 +61,7 @@ const NotesView = ({ onBack }) => {
                         <StickyNote className="h-8 w-8" />
                         Campaign Notes
                     </h2>
-                    <p className="opacity-90">Quick research and field notes synced directly to Supabase.</p>
+                    <p className="opacity-90">Quick research and field notes synced to the cloud.</p>
                 </div>
 
                 <div className="p-8">

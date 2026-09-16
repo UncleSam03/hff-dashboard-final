@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { supabase, isConfigured } from "../lib/supabase";
 import { useAuth } from "../auth/AuthContext";
 import { db } from "../lib/dexieDb";
 import {
@@ -41,63 +40,7 @@ export default function FacilitatorOnboarding({ onComplete }) {
                 last_name = parts.slice(1).join(" ");
             }
 
-            let supabaseSuccess = false;
-
-            // 1. Try Supabase first (if configured and online)
-            if (isConfigured && navigator.onLine) {
-                try {
-                    // 1a. Profiles (Use upsert to be safe, though id exists)
-                    const { error: profErr } = await supabase
-                        .from("profiles")
-                        .upsert({
-                            id: user.id,
-                            age: parseInt(form.age),
-                            gender: form.gender,
-                            education: form.education,
-                            marital_status: form.maritalStatus,
-                            place: form.place,
-                            affiliation: form.affiliation,
-                            occupation: form.occupation,
-                            onboarding_completed: true,
-                        }, { onConflict: 'id' });
-
-                    if (profErr) throw profErr;
-
-                    // 1b. Registrations (Atomic upsert by UUID)
-                    const regPayload = {
-                        uuid: user.id,
-                        first_name,
-                        last_name,
-                        age: parseInt(form.age),
-                        gender: form.gender,
-                        contact: phone,
-                        place: form.place,
-                        education: form.education,
-                        marital_status: form.maritalStatus,
-                        affiliation: form.affiliation,
-                        occupation: form.occupation,
-                        type: "facilitator",
-                        facilitator_uuid: user.id,
-                        source: "facilitator-onboarding",
-                        updated_at: new Date().toISOString()
-                    };
-
-                    const { error: regErr } = await supabase
-                        .from("registrations")
-                        .upsert(regPayload, { onConflict: 'uuid' });
-
-                    if (regErr) {
-                        console.warn("[Onboarding] Registration upsert failed, but profile succeeded:", regErr.message);
-                    }
-                    
-                    supabaseSuccess = true;
-                    supabaseSuccess = true;
-                } catch (cloudErr) {
-                    console.warn("[Onboarding] Supabase write failed, falling back to offline:", cloudErr.message);
-                }
-            }
-
-            // 2. Always save to Dexie as a local record (for offline-first)
+            // Save to Dexie (Firebase sync happens automatically via firebaseSync.js)
             try {
                 const existing = await db.registrations.where("uuid").equals(user.id).first();
                 const regData = {
@@ -115,7 +58,7 @@ export default function FacilitatorOnboarding({ onComplete }) {
                     type: "facilitator",
                     facilitator_uuid: user.id,
                     source: "facilitator-onboarding",
-                    sync_status: supabaseSuccess ? "synced" : "pending",
+                    sync_status: "pending",
                     updated_at: new Date().toISOString(),
                 };
 
@@ -129,15 +72,6 @@ export default function FacilitatorOnboarding({ onComplete }) {
                 }
             } catch (dexieErr) {
                 console.error("[Onboarding] Dexie save error:", dexieErr);
-            }
-
-            // If Supabase failed, store a local flag so the profile update
-            // can be retried on next sync.
-            if (!supabaseSuccess) {
-                localStorage.setItem('hff_onboarding_pending', JSON.stringify({
-                    userId: user.id,
-                    ...form,
-                }));
             }
 
             // Trigger reload/redirect

@@ -1,5 +1,10 @@
+// Submissions API endpoint
+// Previously inserted directly into Supabase.
+// Now saves to local Dexie via the client and syncs via Firebase.
+// This server endpoint accepts Enketo XML submissions and returns success
+// so the client can mark them as synced.
+
 import { enketoToHffRow } from '../server/enketoMapper.js';
-import { supabase } from '../src/lib/supabase.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -14,20 +19,15 @@ export default async function handler(req, res) {
 
         console.log('[API] Received Enketo submission XML');
 
-        // Parse XML using existing mapper
-        // Note: nextId is used for legacy local ID, might not be needed for Supabase UUIDs
-        // blocked by not having DB access. We'll pass "N/A" or fetch count if critical,
-        // but for Supabase we rely on UUID/Identity.
         const row = enketoToHffRow(xml, "N/A");
 
         if (!row) {
             return res.status(400).json({ error: "Failed to parse XML submission" });
         }
 
-        // Map the array row back to an object for Supabase
-        // Row structure from mapper:
-        // [0:id, 1:fname, 2:lname, 3:gender, 4:age, 5:other1, 6:edu, 7:marital, 8:other2, 9:occup, 10..27:attendance]
+        // Build record from parsed row
         const record = {
+            uuid: crypto.randomUUID(),
             first_name: row[1],
             last_name: row[2],
             gender: row[3],
@@ -39,27 +39,18 @@ export default async function handler(req, res) {
             occupation: row[9],
             attendance: JSON.stringify(row.slice(10)),
             updated_at: new Date().toISOString(),
-            sync_status: 'synced', // It's directly on the server
             source: 'web_submission'
         };
 
-        // Insert into Supabase
-        const { data, error } = await supabase
-            .from('registrations')
-            .insert([record])
-            .select();
-
-        if (error) {
-            throw error;
-        }
-
-        console.log(`[API] Saved submission to Supabase: ${data[0]?.id}`);
-        res.status(200).json({ ok: true, id: data[0]?.id });
+        // Return the record so the client can store it in Dexie with sync_status: 'pending'
+        // and firebaseSync.js will push it to Firebase automatically.
+        console.log(`[API] Parsed submission for ${record.first_name} ${record.last_name}`);
+        res.status(200).json({ ok: true, id: record.uuid, record });
 
     } catch (err) {
         console.error('[API] /api/submissions error:', err);
         res.status(500).json({
-            error: "Failed to save submission",
+            error: "Failed to parse submission",
             details: err instanceof Error ? err.message : String(err),
         });
     }

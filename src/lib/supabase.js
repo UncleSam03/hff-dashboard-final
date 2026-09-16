@@ -1,7 +1,7 @@
-// Dummy file to replace the old Supabase integration.
-// By exporting isConfigured = false, the app's components (like FacilitatorDashboard and FacilitatorOnboarding)
-// will gracefully fall back to the offline-first Dexie database, and our new firebaseSync.js
-// will handle pushing those local changes to Firebase in the background.
+// Legacy compatibility shim.
+// Supabase has been fully replaced by Firebase.
+// This file exists only so old import statements don't break at build time.
+// All cloud sync now flows through firebaseSync.js.
 
 export const supabase = null;
 export const isConfigured = false;

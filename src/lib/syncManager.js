@@ -114,7 +114,7 @@ export async function reconcileWithCloud() {
 /**
  * Starts the background sync interval.
  */
-// syncIntervalMs: full sync cadence (registrations/participants via Supabase + submission sync)
+// syncIntervalMs: full sync cadence (registrations/participants via Firebase + submission sync)
 // heartbeatIntervalMs: lightweight connectivity check cadence
 export function startAutoSync(syncIntervalMs = 30 * 1000, heartbeatIntervalMs = 15 * 1000) {
     checkConnectivity();

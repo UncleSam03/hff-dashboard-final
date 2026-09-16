@@ -1,25 +1,9 @@
-import { supabase } from '../src/lib/supabase.js';
-
+// Health check endpoint
+// No longer depends on Supabase. Returns healthy if the API layer is reachable.
 export default async function handler(req, res) {
-    try {
-        // Simple health check to verify Supabase connectivity
-        const { error } = await supabase.from('notes').select('count', { count: 'exact', head: true });
-
-        if (error) throw error;
-
-        res.status(200).json({
-            status: 'healthy',
-            database: 'connected',
-            timestamp: new Date().toISOString()
-        });
-    } catch (err) {
-        console.error('[Health] Supabase connection failed:', err);
-        res.status(503).json({
-            status: 'unhealthy',
-            database: 'disconnected',
-            error: err.message,
-            timestamp: new Date().toISOString()
-        });
-    }
+    res.status(200).json({
+        status: 'healthy',
+        backend: 'firebase',
+        timestamp: new Date().toISOString()
+    });
 }
-
