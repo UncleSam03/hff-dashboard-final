@@ -166,6 +166,7 @@ export async function pushPendingToFirebase() {
     if (isSyncing) return;
     isSyncing = true;
     try {
+        await pushStorePending('campaigns');
         await pushStorePending('registrations');
         // excluded notices/testimonies per plan
     } finally {
@@ -178,6 +179,7 @@ export async function pushPendingToFirebase() {
  * Orchestrates pull for registrations
  */
 export async function pullFromFirebase() {
+    await pullStoreUpdates('campaigns');
     await pullStoreUpdates('registrations');
 }
 
@@ -209,9 +211,23 @@ export async function resetLocalFromFirebase() {
             });
         });
 
-        await db.transaction('rw', db.registrations, async () => {
+        const campaignSnapshot = await getDocs(collection(firestoreDb, 'campaigns'));
+        const campaignRows = [];
+        campaignSnapshot.forEach((doc) => {
+            const data = doc.data();
+            campaignRows.push({
+                ...data,
+                sync_status: 'synced',
+                synced_at: now,
+            });
+        });
+
+        await db.transaction('rw', [db.registrations, db.campaigns], async () => {
             await db.registrations.clear();
             if (regRows.length) await db.registrations.bulkAdd(regRows);
+
+            await db.campaigns.clear();
+            if (campaignRows.length) await db.campaigns.bulkAdd(campaignRows);
         });
 
         window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));

@@ -10,7 +10,8 @@ export const DEFAULT_CAMPAIGN = {
     status: 'active',
     description: 'Evidence-based community and family strengthening program in Central District.',
     targetAttendees: 500,
-    created_at: '2026-01-15T08:00:00.000Z'
+    created_at: '2026-01-15T08:00:00.000Z',
+    sync_status: 'synced'
 };
 
 const STORAGE_KEY = 'hff_active_campaign_id';
@@ -82,9 +83,11 @@ export async function createCampaign({ name, village, targetAttendees }) {
         targetAttendees: Number(targetAttendees) || 0,
         status: 'active',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        sync_status: 'pending'
     };
     await db.campaigns.add(campaign);
+    window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
     return campaign;
 }
 
@@ -102,6 +105,7 @@ export async function deleteCampaign(uuid) {
     if (getActiveCampaignId() === uuid) {
         setActiveCampaignId(null);
     }
+    window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
 }
 
 /**
@@ -210,6 +214,7 @@ export async function importFileToCampaign(file, campaignId) {
                     }
                 }
 
+                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
                 resolve({ success: true, count: importedCount });
             } catch (err) {
                 console.error('[CampaignManager] File import failed:', err);
