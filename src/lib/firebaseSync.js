@@ -1,4 +1,4 @@
-import { doc, getDocs, collection, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDocs, collection, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db as firestoreDb, isConfigured } from './firebase';
 import db from './dexieDb';
 import { checkConnectivity } from './syncManager';
@@ -7,7 +7,24 @@ let isSyncing = false;
 let isPulling = false;
 
 /**
- * Push all pending records from IndexedDB to Firebase for a specific store
+ * Recursively remove undefined values to avoid Firestore serialization errors
+ */
+function sanitizeForFirestore(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) {
+        return obj.map(item => item === undefined ? null : sanitizeForFirestore(item));
+    }
+    const clean = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+            clean[key] = (typeof value === 'object' && value !== null) ? sanitizeForFirestore(value) : value;
+        }
+    }
+    return clean;
+}
+
+/**
+ * Push all pending records from IndexedDB to Firebase for a specific store in batches
  */
 async function pushStorePending(storeName) {
     if (!isConfigured) return;
@@ -22,34 +39,69 @@ async function pushStorePending(storeName) {
 
     if (pending.length === 0) return;
 
-    console.log(`[FirebaseSync] Syncing ${pending.length} records from ${storeName}...`);
+    console.log(`[FirebaseSync] Syncing ${pending.length} records from ${storeName} in batches...`);
 
-    for (const record of pending) {
-        // Strip out purely local tracking fields
-        const {
-            id,
-            sync_status,
-            synced_at,
-            processed,
-            processed_at,
-            ...recordToSync
-        } = record;
+    const BATCH_SIZE = 400; // Firestore limit is 500 operations per batch
 
-        if (!recordToSync.updated_at) {
-            recordToSync.updated_at = new Date().toISOString();
+    for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+        const slice = pending.slice(i, i + BATCH_SIZE);
+        const batch = writeBatch(firestoreDb);
+        const syncedItems = [];
+
+        for (const record of slice) {
+            // Strip only local IndexedDB tracking fields
+            const {
+                id,
+                sync_status,
+                synced_at,
+                processed_at,
+                ...rest
+            } = record;
+
+            if (!record.uuid) continue;
+
+            const recordToSync = sanitizeForFirestore({
+                ...rest,
+                updated_at: rest.updated_at || new Date().toISOString()
+            });
+
+            const docRef = doc(firestoreDb, storeName, record.uuid);
+            batch.set(docRef, recordToSync, { merge: true });
+            syncedItems.push({ id, uuid: record.uuid });
         }
 
         try {
-            // In Firestore, we use the UUID as the document ID
-            const docRef = doc(firestoreDb, storeName, recordToSync.uuid);
-            await setDoc(docRef, recordToSync, { merge: true });
-
-            await db[storeName].update(id, {
-                sync_status: 'synced',
-                synced_at: new Date().toISOString()
+            await batch.commit();
+            const now = new Date().toISOString();
+            await db.transaction('rw', db[storeName], async () => {
+                for (const item of syncedItems) {
+                    await db[storeName].update(item.id, {
+                        sync_status: 'synced',
+                        synced_at: now
+                    });
+                }
             });
         } catch (error) {
-            console.error(`[FirebaseSync] Error syncing ${storeName} record ${record.uuid}:`, error.message);
+            console.error(`[FirebaseSync] Batch error syncing ${storeName} chunk (attempting fallback):`, error.message);
+            // Fallback: commit individually if batch failed to isolate any faulty doc
+            for (const item of slice) {
+                try {
+                    const { id, sync_status, synced_at, processed_at, ...rest } = item;
+                    if (!item.uuid) continue;
+                    const recordToSync = sanitizeForFirestore({
+                        ...rest,
+                        updated_at: rest.updated_at || new Date().toISOString()
+                    });
+                    const docRef = doc(firestoreDb, storeName, item.uuid);
+                    await setDoc(docRef, recordToSync, { merge: true });
+                    await db[storeName].update(id, {
+                        sync_status: 'synced',
+                        synced_at: new Date().toISOString()
+                    });
+                } catch (fallbackErr) {
+                    console.error(`[FirebaseSync] Fallback failed for ${storeName} record ${item.uuid}:`, fallbackErr.message);
+                }
+            }
         }
     }
 }

@@ -81,4 +81,12 @@ db.version(15).stores({
     campaigns: '++id, uuid, name, village, year, status, created_at, updated_at, sync_status'
 });
 
+// v16: Added contact and place indexes on registrations for search and duplicate detection
+db.version(16).stores({
+    participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation, campaign_id, form_number, group_form_number, teaching_group, contact, place',
+    notices: '++id, uuid, title, type, priority, created_at',
+    campaigns: '++id, uuid, name, village, year, status, created_at, updated_at, sync_status'
+});
+
 export default db;

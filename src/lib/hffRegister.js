@@ -3,7 +3,7 @@ function normalizeString(value) {
   return String(value).trim();
 }
 
-function normalizeGender(value) {
+export function normalizeGender(value) {
   const g = normalizeString(value).toUpperCase();
   // Support standard codes (1=M, 2=F) and Setswana (Monna=M, Mosadi=F)
   if (g === "M" || g === "MALE" || g === "1" || g === "MONNA") return "M";

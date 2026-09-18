@@ -1,6 +1,6 @@
 import db from './dexieDb';
 import * as XLSX from 'xlsx';
-import { parseHffRegisterRows, detectHffHeaderRowIndex } from './hffRegister';
+import { parseHffRegisterRows, detectHffHeaderRowIndex, normalizeGender } from './hffRegister';
 
 export const DEFAULT_CAMPAIGN = {
     uuid: 'campaign-default-mahalapye',
@@ -131,87 +131,238 @@ export async function importFileToCampaign(file, campaignId) {
                 const hasHffHeader = detectHffHeaderRowIndex(rows) >= 0;
                 let importedCount = 0;
 
+                const parseBool = (val, defaultVal = false) => {
+                    if (val === undefined || val === null || val === '') return defaultVal;
+                    if (typeof val === 'boolean') return val;
+                    const s = String(val).trim().toLowerCase();
+                    if (s === 'true' || s === '1' || s === 'yes' || s === 'y' || s === '✓') return true;
+                    if (s === 'false' || s === '0' || s === 'no' || s === 'n') return false;
+                    return defaultVal;
+                };
+
+                const parseIntOrNull = (val) => {
+                    if (val === undefined || val === null || val === '') return null;
+                    const n = parseInt(String(val).replace(/[^0-9-]/g, ''), 10);
+                    return isNaN(n) ? null : n;
+                };
+
+                const parseStringOrNull = (val) => {
+                    if (val === undefined || val === null) return null;
+                    const s = String(val).trim();
+                    return s === '' ? null : s;
+                };
+
+                const safeIsoDate = (val, fallback) => {
+                    if (!val) return fallback;
+                    try {
+                        const d = new Date(val);
+                        if (!isNaN(d.getTime())) return d.toISOString();
+                    } catch {
+                        // ignore invalid date strings
+                    }
+                    return fallback;
+                };
+
+                const parseAttendance = (val) => {
+                    if (!val) return Array(12).fill(false);
+                    if (Array.isArray(val)) {
+                        return val.map(v => Boolean(v));
+                    }
+                    if (typeof val === 'object') {
+                        return val;
+                    }
+                    if (typeof val === 'string') {
+                        const trimmed = val.trim();
+                        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                            try {
+                                const parsed = JSON.parse(trimmed);
+                                if (Array.isArray(parsed)) {
+                                    return parsed.map(v => Boolean(v));
+                                }
+                            } catch {
+                                // fallback below
+                            }
+                        }
+                    }
+                    return Array(12).fill(false);
+                };
+
+                const isUuidLike = (s) => typeof s === 'string' && s.length >= 24 && s.includes('-');
+
+                const records = [];
+
                 if (hasHffHeader) {
                     const parsed = parseHffRegisterRows(rows);
-                    const records = (parsed.participants || []).map(p => ({
-                        uuid: 'reg-' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)),
-                        first_name: p.firstName || '',
-                        last_name: p.lastName || '',
-                        gender: p.gender || 'Unknown',
-                        age: p.age ? String(p.age) : '',
-                        education: p.education || '',
-                        marital_status: p.maritalStatus || '',
-                        occupation: p.occupation || '',
-                        type: 'participant',
-                        affiliation: '',
-                        attendance: p.attendance || {},
-                        books_received: false,
-                        campaign_id: campaignId,
-                        sync_status: 'pending',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }));
-
-                    if (records.length > 0) {
-                        await db.registrations.bulkAdd(records);
-                        importedCount = records.length;
+                    const now = new Date().toISOString();
+                    for (const p of (parsed.participants || [])) {
+                        records.push({
+                            uuid: (crypto.randomUUID ? crypto.randomUUID() : 'reg-' + Math.random().toString(36).slice(2)),
+                            first_name: p.firstName || '',
+                            last_name: p.lastName || '',
+                            gender: p.gender || 'Unknown',
+                            age: p.age ? parseIntOrNull(p.age) : null,
+                            education: p.education || null,
+                            marital_status: p.maritalStatus || null,
+                            occupation: p.occupation || null,
+                            type: 'participant',
+                            affiliation: null,
+                            contact: null,
+                            place: null,
+                            participants_count: null,
+                            books_distributed: null,
+                            books_received: false,
+                            facilitator_uuid: null,
+                            attendance: p.attendance || Array(12).fill(false),
+                            source: 'excel_register',
+                            campaign_id: campaignId,
+                            sync_status: 'pending',
+                            created_at: now,
+                            updated_at: now,
+                            is_deleted: false,
+                            processed: false
+                        });
                     }
                 } else {
                     // Standard tabular CSV format (First row is headers)
                     const headers = (rows[0] || []).map(h => String(h || '').trim().toLowerCase());
-                    const findCol = (...aliases) => headers.findIndex(h => aliases.some(a => h.includes(a)));
+                    const findCol = (...aliases) => {
+                        const exact = headers.findIndex(h => aliases.some(a => h === a));
+                        if (exact >= 0) return exact;
+                        const starts = headers.findIndex(h => aliases.some(a => h.startsWith(a)));
+                        if (starts >= 0) return starts;
+                        return headers.findIndex(h => aliases.some(a => h.includes(a)));
+                    };
 
-                    const fnCol = findCol('first name', 'firstname', 'first', 'name');
-                    const lnCol = findCol('last name', 'lastname', 'surname');
+                    const uuidCol = findCol('uuid');
+                    const idCol = findCol('id');
+                    const fnCol = findCol('first_name', 'firstname', 'first name', 'first');
+                    const lnCol = findCol('last_name', 'lastname', 'last name', 'surname');
                     const typeCol = findCol('type', 'role');
-                    const genCol = findCol('gender', 'sex');
+                    const genCol = findCol('gender', 'sex', 'bong');
                     const ageCol = findCol('age');
-                    const eduCol = findCol('education');
-                    const marCol = findCol('marital');
+                    const contactCol = findCol('contact', 'phone', 'cell', 'telephone', 'mobile');
+                    const placeCol = findCol('place', 'location', 'village', 'town');
+                    const eduCol = findCol('education', 'education_level');
+                    const marCol = findCol('marital_status', 'marital');
                     const occCol = findCol('occupation', 'job');
-                    const affCol = findCol('affiliation', 'organization', 'group');
+                    const affCol = findCol('affiliation', 'organization', 'organisation', 'ward', 'group');
+                    const partCountCol = findCol('participants_count', 'hall group', 'participants count', 'participants');
+                    const booksDistCol = findCol('books_distributed', 'books distributed');
+                    const booksRecCol = findCol('books_received', 'books received');
+                    const facUuidCol = findCol('facilitator_uuid', 'facilitator uuid', 'facilitator_id');
+                    const attendanceCol = findCol('attendance');
+                    const sourceCol = findCol('source');
+                    const createdAtCol = findCol('created_at', 'created at');
+                    const updatedAtCol = findCol('updated_at', 'updated at');
+                    const processedCol = findCol('processed');
+                    const deletedCol = findCol('is_deleted', 'deleted');
+                    const formNumCol = findCol('form_number', 'form number');
+                    const grpFormNumCol = findCol('group_form_number', 'group form number');
+                    const teachGrpCol = findCol('teaching_group', 'teaching group');
+                    const meetTimeCol = findCol('meeting_time', 'meeting time');
 
-                    const records = [];
+                    const now = new Date().toISOString();
+
                     for (let i = 1; i < rows.length; i++) {
                         const row = rows[i];
                         if (!row || row.length === 0) continue;
-                        const firstName = fnCol >= 0 ? String(row[fnCol] || '').trim() : String(row[0] || '').trim();
+
+                        const firstName = fnCol >= 0 ? parseStringOrNull(row[fnCol]) : parseStringOrNull(row[0]);
                         if (!firstName) continue;
 
-                        const lastName = lnCol >= 0 ? String(row[lnCol] || '').trim() : '';
+                        const rawUuid = uuidCol >= 0 ? parseStringOrNull(row[uuidCol]) : null;
+                        const rawId = idCol >= 0 ? parseStringOrNull(row[idCol]) : null;
+                        const recordUuid = isUuidLike(rawUuid) 
+                            ? rawUuid 
+                            : (isUuidLike(rawId) ? rawId : (crypto.randomUUID ? crypto.randomUUID() : 'reg-' + Math.random().toString(36).slice(2)));
+
+                        const lastName = lnCol >= 0 ? parseStringOrNull(row[lnCol]) || '' : '';
                         const rawType = typeCol >= 0 ? String(row[typeCol] || '').toLowerCase() : 'participant';
                         const type = rawType.includes('fac') ? 'facilitator' : 'participant';
-                        const gender = genCol >= 0 ? String(row[genCol] || '').trim() : 'Unknown';
-                        const age = ageCol >= 0 ? String(row[ageCol] || '').trim() : '';
-                        const education = eduCol >= 0 ? String(row[eduCol] || '').trim() : '';
-                        const marital_status = marCol >= 0 ? String(row[marCol] || '').trim() : '';
-                        const occupation = occCol >= 0 ? String(row[occCol] || '').trim() : '';
-                        const affiliation = affCol >= 0 ? String(row[affCol] || '').trim() : '';
+                        const gender = genCol >= 0 ? normalizeGender(row[genCol]) : 'Unknown';
+                        const age = ageCol >= 0 ? parseIntOrNull(row[ageCol]) : null;
+                        const contact = contactCol >= 0 ? parseStringOrNull(row[contactCol]) : null;
+                        const place = placeCol >= 0 ? parseStringOrNull(row[placeCol]) : null;
+                        const education = eduCol >= 0 ? parseStringOrNull(row[eduCol]) : null;
+                        const marital_status = marCol >= 0 ? parseStringOrNull(row[marCol]) : null;
+                        const occupation = occCol >= 0 ? parseStringOrNull(row[occCol]) : null;
+                        const affiliation = affCol >= 0 ? parseStringOrNull(row[affCol]) : null;
+                        const participants_count = partCountCol >= 0 ? parseIntOrNull(row[partCountCol]) : (type === 'facilitator' ? 1 : null);
+                        const books_distributed = booksDistCol >= 0 ? parseIntOrNull(row[booksDistCol]) : (type === 'facilitator' ? 0 : null);
+                        const books_received = booksRecCol >= 0 ? parseBool(row[booksRecCol], false) : false;
+                        const facilitator_uuid = facUuidCol >= 0 ? parseStringOrNull(row[facUuidCol]) : null;
+                        const attendance = attendanceCol >= 0 ? parseAttendance(row[attendanceCol]) : Array(12).fill(false);
+                        const source = sourceCol >= 0 && parseStringOrNull(row[sourceCol]) ? parseStringOrNull(row[sourceCol]) : 'csv_import';
+                        const created_at = createdAtCol >= 0 ? safeIsoDate(row[createdAtCol], now) : now;
+                        const updated_at = updatedAtCol >= 0 ? safeIsoDate(row[updatedAtCol], now) : now;
+                        const is_deleted = deletedCol >= 0 ? parseBool(row[deletedCol], false) : false;
+                        const processed = processedCol >= 0 ? parseBool(row[processedCol], false) : false;
+                        const form_number = formNumCol >= 0 ? parseStringOrNull(row[formNumCol]) : null;
+                        const group_form_number = grpFormNumCol >= 0 ? parseStringOrNull(row[grpFormNumCol]) : null;
+                        const teaching_group = teachGrpCol >= 0 ? parseBool(row[teachGrpCol], type === 'facilitator') : (type === 'facilitator');
+                        const meeting_time = meetTimeCol >= 0 ? parseStringOrNull(row[meetTimeCol]) : null;
 
                         records.push({
-                            uuid: 'reg-' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)),
+                            uuid: recordUuid,
                             first_name: firstName,
                             last_name: lastName,
                             type,
                             gender,
                             age,
+                            contact,
+                            place,
                             education,
                             marital_status,
                             occupation,
                             affiliation,
-                            attendance: {},
-                            books_received: false,
+                            participants_count,
+                            books_distributed,
+                            books_received,
+                            facilitator_uuid,
+                            attendance,
+                            source,
+                            form_number,
+                            group_form_number,
+                            teaching_group,
+                            meeting_time,
                             campaign_id: campaignId,
                             sync_status: 'pending',
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
+                            created_at,
+                            updated_at,
+                            is_deleted,
+                            processed
                         });
                     }
+                }
 
-                    if (records.length > 0) {
-                        await db.registrations.bulkAdd(records);
-                        importedCount = records.length;
+                if (records.length > 0) {
+                    // Check for existing records to prevent duplicates and safely update/insert
+                    const existing = await db.registrations.where('campaign_id').equals(campaignId).toArray();
+                    const existingMap = new Map(existing.map(r => [r.uuid, r.id]));
+                    const toAdd = [];
+                    const toUpdate = [];
+
+                    for (const rec of records) {
+                        if (existingMap.has(rec.uuid)) {
+                            toUpdate.push({ ...rec, id: existingMap.get(rec.uuid) });
+                        } else {
+                            toAdd.push(rec);
+                        }
                     }
+
+                    const CHUNK_SIZE = 500;
+                    if (toAdd.length > 0) {
+                        for (let c = 0; c < toAdd.length; c += CHUNK_SIZE) {
+                            await db.registrations.bulkAdd(toAdd.slice(c, c + CHUNK_SIZE));
+                        }
+                    }
+                    if (toUpdate.length > 0) {
+                        for (let c = 0; c < toUpdate.length; c += CHUNK_SIZE) {
+                            await db.registrations.bulkPut(toUpdate.slice(c, c + CHUNK_SIZE));
+                        }
+                    }
+
+                    importedCount = records.length;
                 }
 
                 window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
