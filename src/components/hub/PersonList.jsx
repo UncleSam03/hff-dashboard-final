@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { matchesPerson, formatEnteredDate } from '../../lib/searchUtils';
+import { normalizeAttendance } from '../../lib/analytics';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
 
@@ -134,7 +135,7 @@ const PersonList = ({
         allParticipants.forEach(p => {
             if (p.is_deleted || !p.facilitator_uuid) return;
             
-            const attendance = p.attendance;
+            const attendance = normalizeAttendance(p.attendance);
             let days = 0;
             if (Array.isArray(attendance)) {
                 days = attendance.filter(Boolean).length;

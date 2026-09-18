@@ -144,3 +144,118 @@ export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
 function othersCount(duplicatesFound) {
     return duplicatesFound.reduce((acc, group) => acc + (group.members.length - 1), 0);
 }
+
+/**
+ * Auto-sanitizes raw string types in IndexedDB into native types.
+ * Converts string JSON attendance to Array, string booleans ("TRUE"/"FALSE") to boolean,
+ * and string numbers to integer.
+ */
+export async function sanitizeExistingRegistrations() {
+    try {
+        const records = await db.registrations.toArray();
+        const parseBool = (v, defaultVal = false) => {
+            if (v === undefined || v === null || v === '') return defaultVal;
+            if (typeof v === 'boolean') return v;
+            const s = String(v).trim().toLowerCase();
+            if (s === 'true' || s === '1' || s === 'yes' || s === '✓') return true;
+            if (s === 'false' || s === '0' || s === 'no') return false;
+            return defaultVal;
+        };
+
+        const parseIntOrNull = (v) => {
+            if (v === undefined || v === null || v === '') return null;
+            if (typeof v === 'number') return v;
+            const n = parseInt(String(v).replace(/[^0-9-]/g, ''), 10);
+            return isNaN(n) ? null : n;
+        };
+
+        const updates = [];
+
+        for (const r of records) {
+            let needsUpdate = false;
+            const updated = {};
+
+            // 1. Attendance
+            if (typeof r.attendance === 'string') {
+                const trimmed = r.attendance.trim();
+                if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        if (Array.isArray(parsed)) {
+                            updated.attendance = parsed.map(Boolean);
+                            needsUpdate = true;
+                        }
+                    } catch {}
+                }
+            }
+
+            // 2. Books received
+            if (typeof r.books_received === 'string') {
+                updated.books_received = parseBool(r.books_received, false);
+                needsUpdate = true;
+            }
+
+            // 3. Is deleted
+            if (typeof r.is_deleted === 'string') {
+                updated.is_deleted = parseBool(r.is_deleted, false);
+                needsUpdate = true;
+            }
+
+            // 4. Processed
+            if (typeof r.processed === 'string') {
+                updated.processed = parseBool(r.processed, false);
+                needsUpdate = true;
+            }
+
+            // 5. Age
+            if (typeof r.age === 'string' && r.age.trim() !== '') {
+                const parsedAge = parseIntOrNull(r.age);
+                if (parsedAge !== null) {
+                    updated.age = parsedAge;
+                    needsUpdate = true;
+                }
+            }
+
+            // 6. Participants count
+            if (typeof r.participants_count === 'string' && r.participants_count.trim() !== '') {
+                const parsedCount = parseIntOrNull(r.participants_count);
+                if (parsedCount !== null) {
+                    updated.participants_count = parsedCount;
+                    needsUpdate = true;
+                }
+            }
+
+            // 7. Books distributed
+            if (typeof r.books_distributed === 'string' && r.books_distributed.trim() !== '') {
+                const parsedDist = parseIntOrNull(r.books_distributed);
+                if (parsedDist !== null) {
+                    updated.books_distributed = parsedDist;
+                    needsUpdate = true;
+                }
+            }
+
+            if (needsUpdate) {
+                updates.push({ id: r.id, ...updated });
+            }
+        }
+
+        if (updates.length > 0) {
+            console.log(`[DataSanitizer] Auto-sanitizing ${updates.length} records in IndexedDB...`);
+            const CHUNK_SIZE = 500;
+            for (let c = 0; c < updates.length; c += CHUNK_SIZE) {
+                const chunk = updates.slice(c, c + CHUNK_SIZE);
+                await db.transaction('rw', db.registrations, async () => {
+                    for (const item of chunk) {
+                        const { id, ...fields } = item;
+                        await db.registrations.update(id, fields);
+                    }
+                });
+            }
+            console.log(`[DataSanitizer] Completed sanitization of ${updates.length} records.`);
+            window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
+        }
+    } catch (err) {
+        console.warn('[DataSanitizer] Sanitization warning:', err);
+    }
+}
+

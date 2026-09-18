@@ -5,6 +5,7 @@ import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../../lib/campaignManager
 import { Check, Search, ArrowLeft, Users, UserX, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { matchesPerson } from '../../lib/searchUtils';
+import { normalizeAttendance } from '../../lib/analytics';
 
 const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -81,7 +82,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
 
             participants.forEach(p => {
                 if (p.facilitator_uuid) {
-                    const attendance = p.attendance;
+                    const attendance = normalizeAttendance(p.attendance);
                     let days = 0;
                     if (Array.isArray(attendance)) {
                         days = attendance.filter(Boolean).length;
@@ -177,14 +178,9 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
 
     const handleToggleAttendance = async (participant, dayIndex, forceValue = null) => {
         try {
-            let currentAttendance = participant.attendance;
+            let currentAttendance = normalizeAttendance(participant.attendance);
             if (!Array.isArray(currentAttendance)) {
                 currentAttendance = Array(12).fill(false);
-                if (participant.attendance && typeof participant.attendance === 'object') {
-                    for (let i = 0; i < 12; i++) {
-                        if (participant.attendance[`D${i + 1}`]) currentAttendance[i] = true;
-                    }
-                }
             }
 
             const newValue = forceValue !== null ? forceValue : !currentAttendance[dayIndex];

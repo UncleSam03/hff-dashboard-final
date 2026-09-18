@@ -4,6 +4,7 @@ import { db } from '../../lib/dexieDb';
 import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Trash2, Briefcase as OccupationIcon, Clock, FileText, Hash, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { matchesPerson } from '../../lib/searchUtils';
+import { normalizeAttendance } from '../../lib/analytics';
 import ParticipantDetail from './ParticipantDetail';
 import RegistrationForm from '../RegistrationForm';
 
@@ -109,7 +110,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
 
         // Compute facilitator back-ref and attach assigned facilitator
         results = results.map(p => {
-            const attendance = p.attendance;
+            const attendance = normalizeAttendance(p.attendance);
             let days = 0;
             if (Array.isArray(attendance)) {
                 days = attendance.filter(Boolean).length;

@@ -4,6 +4,33 @@
  */
 import { TOTAL_CAMPAIGN_DAYS } from './constants.js';
 
+export function normalizeAttendance(attendance) {
+    if (!attendance) return Array(TOTAL_CAMPAIGN_DAYS).fill(false);
+    if (Array.isArray(attendance)) return attendance.map(Boolean);
+    if (typeof attendance === 'string') {
+        const trimmed = attendance.trim();
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) return parsed.map(Boolean);
+            } catch {
+                // ignore parse failure
+            }
+        }
+    }
+    if (typeof attendance === 'object') return attendance;
+    return Array(TOTAL_CAMPAIGN_DAYS).fill(false);
+}
+
+export function parseBool(val, defaultVal = false) {
+    if (val === undefined || val === null || val === '') return defaultVal;
+    if (typeof val === 'boolean') return val;
+    const s = String(val).trim().toLowerCase();
+    if (s === 'true' || s === '1' || s === 'yes' || s === 'y' || s === '✓') return true;
+    if (s === 'false' || s === '0' || s === 'no' || s === 'n') return false;
+    return defaultVal;
+}
+
 export function processAnalytics(registrations) {
     if (!registrations || registrations.length === 0) {
         return {
@@ -32,7 +59,7 @@ export function processAnalytics(registrations) {
     }
 
     // Filtering: Default any record without a specific 'facilitator' type to 'participant' if it's not deleted
-    const activePeople = registrations.filter(r => !r.is_deleted);
+    const activePeople = registrations.filter(r => !parseBool(r.is_deleted));
     const facilitators = activePeople.filter(r => (r.type || '').toLowerCase() === 'facilitator');
     const participants = activePeople.filter(r => (r.type || '').toLowerCase() !== 'facilitator');
 
@@ -45,8 +72,8 @@ export function processAnalytics(registrations) {
     });
 
     // Attendance Helper: Normalize both array [true, false] and object {D1: true} formats
-    const isPresentOnDay = (attendance, dayIndex) => {
-        if (!attendance) return false;
+    const isPresentOnDay = (rawAttendance, dayIndex) => {
+        const attendance = normalizeAttendance(rawAttendance);
         if (Array.isArray(attendance)) return !!attendance[dayIndex];
         return !!attendance[`D${dayIndex + 1}`];
     };
@@ -94,22 +121,25 @@ export function processAnalytics(registrations) {
 
     const uniqueParticipants = participants.filter(p => {
         if (!p.attendance) return false;
-        if (Array.isArray(p.attendance)) {
-            return p.attendance.some(v => v === true);
+        const att = normalizeAttendance(p.attendance);
+        if (Array.isArray(att)) {
+            return att.some(v => v === true);
         }
-        return Object.values(p.attendance).some(v => v === true);
+        return Object.values(att).some(v => v === true);
     }).length;
 
     const uniqueFacilitators = facilitators.filter(p => {
         if (!p.attendance) return false;
-        if (Array.isArray(p.attendance)) {
-            return p.attendance.some(v => v === true);
+        const att = normalizeAttendance(p.attendance);
+        if (Array.isArray(att)) {
+            return att.some(v => v === true);
         }
-        return Object.values(p.attendance).some(v => v === true);
+        return Object.values(att).some(v => v === true);
     }).length;
 
-    const getDaysAttended = (attendance) => {
-        if (!attendance) return 0;
+    const getDaysAttended = (rawAttendance) => {
+        if (!rawAttendance) return 0;
+        const attendance = normalizeAttendance(rawAttendance);
         if (Array.isArray(attendance)) {
             return attendance.filter(v => v === true).length;
         }
@@ -190,8 +220,8 @@ export function processAnalytics(registrations) {
     });
 
     // Book distribution
-    const participantBooks = participants.filter(p => p.books_received === true).length;
-    const facilitatorBooks = facilitators.reduce((sum, f) => sum + (Number(f.books_distributed) || 0), 0);
+    const participantBooks = participants.filter(p => parseBool(p.books_received)).length;
+    const facilitatorBooks = facilitators.reduce((sum, f) => sum + (parseInt(f.books_distributed, 10) || 0), 0);
     const totalBooksGiven = participantBooks + facilitatorBooks;
 
     return {

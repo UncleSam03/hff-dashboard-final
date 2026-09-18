@@ -16,6 +16,7 @@ import db from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
 import { reconcileWithCloud } from './lib/syncManager';
 import { DEFAULT_CAMPAIGN, getActiveCampaignId, setActiveCampaignId, getAllCampaigns } from './lib/campaignManager';
+import { sanitizeExistingRegistrations } from './lib/dataMaintenance';
 
 function AppContent() {
   const { role, profile, signOut, loading } = useAuth();
@@ -23,6 +24,10 @@ function AppContent() {
   const [hubInitialTab, setHubInitialTab] = useState('people');
   const [_initialSyncing, setInitialSyncing] = useState(false);
   const [activeCampaign, setActiveCampaign] = useState(null);
+
+  useEffect(() => {
+    sanitizeExistingRegistrations();
+  }, []);
 
   console.log("[AppContent] Status:", { role, onboarding_completed: profile?.onboarding_completed, loading });
 

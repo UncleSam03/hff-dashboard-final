@@ -4,6 +4,7 @@ import { db } from '../../lib/dexieDb';
 import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil, Hash, FileText } from 'lucide-react';
 import RegistrationForm from '../RegistrationForm';
 import { cn } from '../../lib/utils';
+import { normalizeAttendance } from '../../lib/analytics';
 
 const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigateToAttendance, onNavigateToFacilitator }) => {
     const [isEditing, setIsEditing] = React.useState(false);
@@ -260,24 +261,29 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                             <CalendarDays size={12} /> Attendance Record
                         </p>
-                        {participant.attendance && (Array.isArray(participant.attendance) ? participant.attendance.some(Boolean) : Object.values(participant.attendance).some(Boolean)) ? (
-                            <div className="flex flex-wrap gap-2">
-                                {Array.isArray(participant.attendance) 
-                                    ? participant.attendance.map((present, i) => present && (
-                                        <div key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100 shadow-sm">
-                                            Day {i + 1}
-                                        </div>
-                                    ))
-                                    : Object.entries(participant.attendance).map(([day, present]) => present && (
-                                        <div key={day} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100 shadow-sm">
-                                            {day.replace('D', 'Day ')}
-                                        </div>
-                                    ))
-                                }
-                            </div>
-                        ) : (
-                            <p className="text-sm text-gray-500 font-bold">No days recorded</p>
-                        )}
+                        {(() => {
+                            const att = normalizeAttendance(participant.attendance);
+                            const hasAttended = Array.isArray(att) ? att.some(Boolean) : Object.values(att).some(Boolean);
+                            if (!hasAttended) {
+                                return <p className="text-sm text-gray-500 font-bold">No days recorded</p>;
+                            }
+                            return (
+                                <div className="flex flex-wrap gap-2">
+                                    {Array.isArray(att) 
+                                        ? att.map((present, i) => present && (
+                                            <div key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100 shadow-sm">
+                                                Day {i + 1}
+                                            </div>
+                                        ))
+                                        : Object.entries(att).map(([day, present]) => present && (
+                                            <div key={day} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-black border border-blue-100 shadow-sm">
+                                                {day.replace('D', 'Day ')}
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     <div className="pt-4 border-t border-gray-50">
