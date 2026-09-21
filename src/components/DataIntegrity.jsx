@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/dexieDb';
+import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../lib/campaignManager';
 import { AlertCircle, User, UserCheck, Edit3, ChevronRight, Search, Filter, Info, Phone, MapPin, Briefcase } from 'lucide-react';
 import { cn } from '../lib/utils';
 import RegistrationForm from './RegistrationForm';
 
-const DataIntegrity = () => {
+const DataIntegrity = ({ activeCampaign }) => {
+    const activeCampId = activeCampaign?.uuid || getActiveCampaignId();
     const [searchTerm, setSearchTerm] = useState('');
     const [editingRecord, setEditingRecord] = useState(null);
     const [viewingFacilitator, setViewingFacilitator] = useState(null);
@@ -14,8 +16,15 @@ const DataIntegrity = () => {
 
     const registrations = useLiveQuery(async () => {
         const all = await db.registrations.toArray();
-        return all.filter(r => !r.is_deleted);
-    }) || [];
+        return all.filter(r => {
+            if (r.is_deleted) return false;
+            if (activeCampId) {
+                if (r.campaign_id) return r.campaign_id === activeCampId;
+                return activeCampId === DEFAULT_CAMPAIGN.uuid;
+            }
+            return true;
+        });
+    }, [activeCampId]) || [];
 
     // Helper to find missing fields
     const getMissingFields = (rec) => {
@@ -154,6 +163,9 @@ const DataIntegrity = () => {
             winner.updated_at = new Date().toISOString();
             winner.sync_status = 'pending';
             winner.is_deleted = false;
+            if (!winner.campaign_id && activeCampId) {
+                winner.campaign_id = activeCampId;
+            }
 
             // 3. Mark Losers for Deletion (Soft Delete)
             const deletedLosers = losers.map(l => ({
@@ -177,7 +189,7 @@ const DataIntegrity = () => {
             if (!skipConfirm) {
                 console.log(`Successfully merged ${group.length} records into ${winner.uuid}. Sync pending...`);
                 // Trigger a sync
-                window.dispatchEvent(new CustomEvent('hff-trigger-sync'));
+                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
             }
 
         } catch (err) {
@@ -206,7 +218,7 @@ const DataIntegrity = () => {
             
             console.log("[BulkMerge] All groups processed. Triggering global sync...");
             if (typeof window !== 'undefined' && window.dispatchEvent) {
-                window.dispatchEvent(new CustomEvent('hff-trigger-sync'));
+                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
             }
             alert(`Succesfully processed ${groupsCount} groups! Updates are being synced to all devices.`);
         } catch (err) {
@@ -232,6 +244,7 @@ const DataIntegrity = () => {
                 <RegistrationForm 
                     type={editingRecord.type}
                     initialData={editingRecord}
+                    campaignId={activeCampId}
                     onBack={() => setEditingRecord(null)}
                     onSaveSuccess={() => setEditingRecord(null)}
                 />
@@ -241,29 +254,38 @@ const DataIntegrity = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
-            <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 self-start rounded-2xl border border-gray-100 shadow-sm w-fit mb-4">
-                <button
-                    onClick={() => setAuditMode('incomplete')}
-                    className={cn(
-                        "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                        auditMode === 'incomplete'
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-400 hover:text-gray-600"
-                    )}
-                >
-                    Incomplete ({incompleteRecords.length})
-                </button>
-                <button
-                    onClick={() => setAuditMode('duplicates')}
-                    className={cn(
-                        "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                        auditMode === 'duplicates'
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-400 hover:text-gray-600"
-                    )}
-                >
-                    Duplicates ({duplicateGroups.length})
-                </button>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-2 p-1.5 bg-gray-100/50 rounded-2xl border border-gray-100 shadow-sm w-fit">
+                    <button
+                        onClick={() => setAuditMode('incomplete')}
+                        className={cn(
+                            "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            auditMode === 'incomplete'
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-400 hover:text-gray-600"
+                        )}
+                    >
+                        Incomplete ({incompleteRecords.length})
+                    </button>
+                    <button
+                        onClick={() => setAuditMode('duplicates')}
+                        className={cn(
+                            "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            auditMode === 'duplicates'
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-400 hover:text-gray-600"
+                        )}
+                    >
+                        Duplicates ({duplicateGroups.length})
+                    </button>
+                </div>
+
+                {activeCampaign && (
+                    <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#71167F]/10 border border-[#71167F]/20 text-[#71167F] text-[11px] font-bold shadow-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#71167F] animate-pulse" />
+                        <span>Auditing: <span className="font-extrabold">{activeCampaign.name}</span></span>
+                    </div>
+                )}
             </div>
 
             {/* Deficiency Scorecard */}
@@ -580,12 +602,17 @@ const DataIntegrity = () => {
                                                 >
                                                     <Edit3 size={14} />
                                                 </button>
-                                                <button 
-                                                    onClick={() => {
-                                                        if(confirm(`Are you sure you want to delete this duplicate (UUID ends in ...${rec.uuid?.slice(-8)})?`)) {
-                                                            db.registrations.delete(rec.id);
-                                                        }
-                                                    }}
+                                                 <button 
+                                                     onClick={async () => {
+                                                         if(confirm(`Are you sure you want to delete this duplicate (UUID ends in ...${rec.uuid?.slice(-8)})?`)) {
+                                                             await db.registrations.update(rec.id, {
+                                                                 is_deleted: true,
+                                                                 sync_status: 'pending',
+                                                                 updated_at: new Date().toISOString()
+                                                             });
+                                                             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                                                         }
+                                                     }}
                                                     className="p-2 text-gray-300 hover:text-red-500 transition-colors"
                                                     title="Delete duplicate"
                                                 >

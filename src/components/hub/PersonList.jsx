@@ -133,7 +133,14 @@ const PersonList = ({
         });
 
         // Map facilitators for lookup, display, and search inheritance
-        const facilitators = await db.registrations.where('type').equals('facilitator').toArray();
+        let facilitators = await db.registrations.where('type').equals('facilitator').toArray();
+        if (activeCampId) {
+            facilitators = facilitators.filter(f => {
+                if (f.is_deleted) return false;
+                if (f.campaign_id) return f.campaign_id === activeCampId;
+                return activeCampId === DEFAULT_CAMPAIGN.uuid;
+            });
+        }
         const facMap = facilitators.reduce((acc, f) => {
             acc[f.uuid] = `${f.first_name} ${f.last_name}`;
             return acc;
@@ -247,6 +254,9 @@ const PersonList = ({
                     }
                 }
             });
+
+            // Trigger instant sync to delete records on Firestore backend
+            window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
 
             setDeleteModal({ open: false, person: null, loading: false });
             if (selectedFacilitator?.id === person.id) {
@@ -437,7 +447,7 @@ const PersonList = ({
                     created_at: now
                 });
             }
-
+            window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
             closeEditor();
         } catch (err) {
             console.error('Save failed:', err);

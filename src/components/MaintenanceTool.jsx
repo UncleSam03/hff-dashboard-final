@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { mergeDuplicateRegistrations } from '../lib/dataMaintenance';
 import { syncSubmissions } from '../lib/syncManager';
+import { getActiveCampaignId } from '../lib/campaignManager';
 import { Trash2, AlertTriangle, CheckCircle, Search, Layers, ArrowRight } from 'lucide-react';
 
-const MaintenanceTool = () => {
+const MaintenanceTool = ({ activeCampaign }) => {
+    const activeCampId = activeCampaign?.uuid || getActiveCampaignId();
     const [duplicates, setDuplicates] = useState([]);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
@@ -12,7 +14,7 @@ const MaintenanceTool = () => {
     const scanForDuplicates = async () => {
         setScanning(true);
         try {
-            const scanResult = await mergeDuplicateRegistrations({ dryRun: true });
+            const scanResult = await mergeDuplicateRegistrations({ dryRun: true, campaignId: activeCampId });
             setDuplicates(scanResult.results || []);
         } catch (err) {
             console.error("Scan error:", err);
@@ -23,7 +25,7 @@ const MaintenanceTool = () => {
 
     useEffect(() => {
         scanForDuplicates();
-    }, []);
+    }, [activeCampId]);
 
     const handleMerge = async () => {
         if (!window.confirm("Are you sure you want to merge these duplicates? This will permanently delete redundant local records and update the master entries.")) {
@@ -32,7 +34,7 @@ const MaintenanceTool = () => {
 
         setLoading(true);
         try {
-            const mergeResult = await mergeDuplicateRegistrations({ dryRun: false });
+            const mergeResult = await mergeDuplicateRegistrations({ dryRun: false, campaignId: activeCampId });
             setResult(mergeResult);
             
             // Trigger an immediate sync to push the updated master records
@@ -57,7 +59,9 @@ const MaintenanceTool = () => {
                         <Layers className="text-hff-primary" />
                         Data Deduplication Tool
                     </h1>
-                    <p className="text-gray-500 text-sm">Merge duplicate entries based on Name, Age, and Affiliation.</p>
+                    <p className="text-gray-500 text-sm">
+                        Merge duplicate entries for <span className="font-semibold text-gray-700">{activeCampaign?.name || 'Active Campaign'}</span> based on Name, Age, and Affiliation.
+                    </p>
                 </div>
                 <button
                     onClick={scanForDuplicates}

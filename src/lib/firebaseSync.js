@@ -37,16 +37,24 @@ async function pushStorePending(storeName) {
         .equals('pending')
         .toArray();
 
-    if (pending.length === 0) return;
+    // Also pick up any local records marked is_deleted: true that might have been marked synced previously
+    const legacyDeleted = await db[storeName]
+        .filter(r => Boolean(r.is_deleted) && r.sync_status !== 'pending')
+        .toArray();
 
-    console.log(`[FirebaseSync] Syncing ${pending.length} records from ${storeName} in batches...`);
+    const allToProcess = [...pending, ...legacyDeleted];
+
+    if (allToProcess.length === 0) return;
+
+    console.log(`[FirebaseSync] Syncing ${allToProcess.length} records from ${storeName} in batches...`);
 
     const BATCH_SIZE = 400; // Firestore limit is 500 operations per batch
 
-    for (let i = 0; i < pending.length; i += BATCH_SIZE) {
-        const slice = pending.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < allToProcess.length; i += BATCH_SIZE) {
+        const slice = allToProcess.slice(i, i + BATCH_SIZE);
         const batch = writeBatch(firestoreDb);
         const syncedItems = [];
+        const deletedItems = [];
 
         for (const record of slice) {
             // Strip only local IndexedDB tracking fields
@@ -60,14 +68,19 @@ async function pushStorePending(storeName) {
 
             if (!record.uuid) continue;
 
-            const recordToSync = sanitizeForFirestore({
-                ...rest,
-                updated_at: rest.updated_at || new Date().toISOString()
-            });
-
             const docRef = doc(firestoreDb, storeName, record.uuid);
-            batch.set(docRef, recordToSync, { merge: true });
-            syncedItems.push({ id, uuid: record.uuid });
+
+            if (record.is_deleted) {
+                batch.delete(docRef);
+                deletedItems.push({ id, uuid: record.uuid });
+            } else {
+                const recordToSync = sanitizeForFirestore({
+                    ...rest,
+                    updated_at: rest.updated_at || new Date().toISOString()
+                });
+                batch.set(docRef, recordToSync, { merge: true });
+                syncedItems.push({ id, uuid: record.uuid });
+            }
         }
 
         try {
@@ -80,6 +93,9 @@ async function pushStorePending(storeName) {
                         synced_at: now
                     });
                 }
+                for (const item of deletedItems) {
+                    await db[storeName].delete(item.id);
+                }
             });
         } catch (error) {
             console.error(`[FirebaseSync] Batch error syncing ${storeName} chunk (attempting fallback):`, error.message);
@@ -88,16 +104,21 @@ async function pushStorePending(storeName) {
                 try {
                     const { id, sync_status, synced_at, processed_at, ...rest } = item;
                     if (!item.uuid) continue;
-                    const recordToSync = sanitizeForFirestore({
-                        ...rest,
-                        updated_at: rest.updated_at || new Date().toISOString()
-                    });
                     const docRef = doc(firestoreDb, storeName, item.uuid);
-                    await setDoc(docRef, recordToSync, { merge: true });
-                    await db[storeName].update(id, {
-                        sync_status: 'synced',
-                        synced_at: new Date().toISOString()
-                    });
+                    if (item.is_deleted) {
+                        await deleteDoc(docRef);
+                        await db[storeName].delete(id);
+                    } else {
+                        const recordToSync = sanitizeForFirestore({
+                            ...rest,
+                            updated_at: rest.updated_at || new Date().toISOString()
+                        });
+                        await setDoc(docRef, recordToSync, { merge: true });
+                        await db[storeName].update(id, {
+                            sync_status: 'synced',
+                            synced_at: new Date().toISOString()
+                        });
+                    }
                 } catch (fallbackErr) {
                     console.error(`[FirebaseSync] Fallback failed for ${storeName} record ${item.uuid}:`, fallbackErr.message);
                 }
@@ -140,6 +161,16 @@ async function pullStoreUpdates(storeName) {
             if (remoteRecord.is_deleted) {
                 if (locData) {
                     await db[storeName].delete(locData.id);
+                }
+                // Clean up soft-deleted doc from Firestore backend
+                if (remoteRecord.uuid) {
+                    try {
+                        const docRef = doc(firestoreDb, storeName, remoteRecord.uuid);
+                        await deleteDoc(docRef);
+                        console.log(`[FirebaseSync] Purged legacy soft-deleted doc ${remoteRecord.uuid} from Firestore ${storeName}`);
+                    } catch (delErr) {
+                        console.warn(`[FirebaseSync] Could not purge legacy doc ${remoteRecord.uuid} from Firestore:`, delErr.message);
+                    }
                 }
                 continue;
             }
@@ -253,11 +284,15 @@ export async function resetLocalFromFirebase() {
         const regRows = [];
         const now = new Date().toISOString();
 
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.is_deleted) {
+                deleteDoc(docSnap.ref).catch(() => {});
+                return;
+            }
             regRows.push({
                 ...data,
-                is_deleted: data.is_deleted ?? false,
+                is_deleted: false,
                 sync_status: 'synced',
                 synced_at: now,
             });
@@ -265,8 +300,12 @@ export async function resetLocalFromFirebase() {
 
         const campaignSnapshot = await getDocs(collection(firestoreDb, 'campaigns'));
         const campaignRows = [];
-        campaignSnapshot.forEach((doc) => {
-            const data = doc.data();
+        campaignSnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.is_deleted) {
+                deleteDoc(docSnap.ref).catch(() => {});
+                return;
+            }
             campaignRows.push({
                 ...data,
                 sync_status: 'synced',

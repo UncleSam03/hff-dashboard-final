@@ -27,6 +27,22 @@ function AppContent() {
 
   useEffect(() => {
     sanitizeExistingRegistrations();
+    // Restore active campaign from storage if previously selected
+    async function restoreCampaign() {
+      const savedId = getActiveCampaignId();
+      if (savedId) {
+        try {
+          const campaigns = await getAllCampaigns();
+          const found = campaigns.find(c => c.uuid === savedId);
+          if (found) {
+            setActiveCampaign(found);
+          }
+        } catch (err) {
+          console.warn("[App] Could not restore campaign:", err);
+        }
+      }
+    }
+    restoreCampaign();
   }, []);
 
   console.log("[AppContent] Status:", { role, onboarding_completed: profile?.onboarding_completed, loading });
@@ -132,11 +148,11 @@ function AppContent() {
       {mode === 'overview' ? (
         <Dashboard analytics={analytics} onNavigate={handleSelectMode} />
       ) : mode === 'hub' ? (
-        <Hub onBack={handleBackToHome} initialTab={hubInitialTab} />
+        <Hub onBack={handleBackToHome} initialTab={hubInitialTab} activeCampaign={activeCampaign} />
       ) : mode === 'analysis' ? (
-        <AnalysisHub analytics={analytics} onBack={handleBackToHome} />
+        <AnalysisHub analytics={analytics} activeCampaign={activeCampaign} onBack={handleBackToHome} />
       ) : mode === 'sat' ? (
-        <SatDashboard analytics={analytics} onBack={handleBackToHome} />
+        <SatDashboard analytics={analytics} activeCampaign={activeCampaign} onBack={handleBackToHome} />
       ) : (
         <Dashboard analytics={analytics} onNavigate={handleSelectMode} />
       )}

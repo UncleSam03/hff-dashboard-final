@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Activity, Share2, DollarSign, TrendingUp, Target, ShieldCheck } from 'lucide-react';
 
-const DeepAnalysis = ({ analytics }) => {
+const DeepAnalysis = ({ analytics, activeCampaign }) => {
 
 
     if (!analytics || !analytics.totalRegistered || analytics.totalRegistered === 0) {
@@ -12,7 +12,9 @@ const DeepAnalysis = ({ analytics }) => {
                     <ShieldCheck size={44} />
                 </div>
                 <h3 className="text-lg font-black text-gray-800 uppercase tracking-widest">Awaiting Campaign Data</h3>
-                <p className="text-sm text-gray-500 mt-2 max-w-md">No registration or attendance records have been registered yet. Once facilitators log data or campaign registers are uploaded, deep intelligence reports will generate automatically.</p>
+                <p className="text-sm text-gray-500 mt-2 max-w-md">
+                    No registration or attendance records have been registered yet{activeCampaign ? ` for ${activeCampaign.name}` : ''}. Once facilitators log data or campaign registers are uploaded, deep intelligence reports will generate automatically.
+                </p>
             </div>
         );
     }
@@ -26,7 +28,7 @@ const DeepAnalysis = ({ analytics }) => {
     const generateTextReport = () => {
         return `
 [EXECUTIVE SUMMARY: HFF IMPACT]
-The Healthy Families Foundation successfully registered ${totalRegistered} total stakeholders.
+The Healthy Families Foundation successfully registered ${totalRegistered} total stakeholders for ${activeCampaign?.name || 'this campaign'}.
 
 ENGAGEMENT SPLIT:
 - Participants: ${uniqueParticipants} unique individuals
@@ -40,10 +42,10 @@ Peak utilization observed on ${peakDay?.date || 'N/A'} with ${peakDay?.count || 
 
 DEMOGRAPHIC INTELLIGENCE:
 Female participation stands at ${femalePct}%, indicating strong gender-inclusive outreach.
-Educational diversity spans ${Object.keys(demographics.education).length} distinct tiers.
+Educational diversity spans ${Object.keys(demographics?.education || {}).length} distinct tiers.
 
 STRATEGIC CONCLUSION:
-Current operational metrics validate regional expansion. Resource allocation is optimized.
+Current operational metrics validate regional impact for ${activeCampaign?.village || activeCampaign?.name || 'this regional cluster'}. Resource allocation is optimized.
         `.trim();
     };
 
@@ -66,7 +68,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
             doc.setFontSize(24);
             doc.text('HFF DEEP ANALYSIS REPORT', 20, 25);
             doc.setFontSize(10);
-            doc.text(`SECURITY LEVEL: ADMINISTRATIVE | DATE: ${new Date().toLocaleDateString()}`, 20, 35);
+            doc.text(`CAMPAIGN: ${activeCampaign?.name || 'GENERAL'} | SECURITY LEVEL: ADMINISTRATIVE | DATE: ${new Date().toLocaleDateString()}`, 20, 35);
 
             // Content
             doc.setTextColor(40, 40, 40);
@@ -142,7 +144,7 @@ Current operational metrics validate regional expansion. Resource allocation is 
                     <Target size={32} className="text-[#71167F] mb-6 transform group-hover:scale-110 transition-transform" />
                     <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-2">Regional Reach</h3>
                     <p className="text-xs text-gray-500 font-bold leading-relaxed">
-                        Molepolole and surrounding clusters show a 14% higher density than baseline projections.
+                        {activeCampaign?.village || activeCampaign?.name || 'Current campaign'} cluster shows strong engagement across all participant nodes.
                     </p>
                 </Card>
                 <Card className="glass-card p-8 border hover:border-[#3EB049]/20 transition-all group">

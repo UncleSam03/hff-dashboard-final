@@ -49,7 +49,8 @@ export async function seedDefaultCampaignIfEmpty() {
  */
 export async function getAllCampaigns() {
     await seedDefaultCampaignIfEmpty();
-    return db.campaigns.toArray();
+    const all = await db.campaigns.toArray();
+    return all.filter(c => !c.is_deleted);
 }
 
 /**
@@ -98,9 +99,24 @@ export async function deleteCampaign(uuid) {
     if (uuid === DEFAULT_CAMPAIGN.uuid) {
         throw new Error('Default campaign cannot be deleted.');
     }
+    const now = new Date().toISOString();
     await db.transaction('rw', [db.campaigns, db.registrations], async () => {
-        await db.campaigns.where('uuid').equals(uuid).delete();
-        await db.registrations.where('campaign_id').equals(uuid).delete();
+        const camp = await db.campaigns.where('uuid').equals(uuid).first();
+        if (camp) {
+            await db.campaigns.update(camp.id, {
+                is_deleted: true,
+                sync_status: 'pending',
+                updated_at: now
+            });
+        }
+        const regs = await db.registrations.where('campaign_id').equals(uuid).toArray();
+        for (const r of regs) {
+            await db.registrations.update(r.id, {
+                is_deleted: true,
+                sync_status: 'pending',
+                updated_at: now
+            });
+        }
     });
     if (getActiveCampaignId() === uuid) {
         setActiveCampaignId(null);

@@ -5,7 +5,7 @@ import MaintenanceTool from './MaintenanceTool';
 import { ShieldCheck, BarChart3, Layers, LayoutPanelTop } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-const AnalysisHub = ({ analytics, onBack }) => {
+const AnalysisHub = ({ analytics, activeCampaign, onBack }) => {
     const [activeTab, setActiveTab] = useState('integrity'); // 'integrity', 'performance', 'maintenance'
 
     const tabs = [
@@ -26,7 +26,7 @@ const AnalysisHub = ({ analytics, onBack }) => {
                         Strategic Analysis Hub
                     </h1>
                     <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.25em]">
-                        Advanced diagnostics and campaign intelligence
+                        Advanced diagnostics and campaign intelligence {activeCampaign ? `• ${activeCampaign.name}` : ''}
                     </p>
                 </div>
 
@@ -38,7 +38,7 @@ const AnalysisHub = ({ analytics, onBack }) => {
                             className={cn(
                                 "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300",
                                 activeTab === tab.id
-                                    ? "liquid-glass-active shadow-sm font-extrabold scale-105"
+                                     ? "liquid-glass-active shadow-sm font-extrabold scale-105"
                                     : "text-gray-500 hover:text-gray-800 hover:bg-white/40"
                             )}
                         >
@@ -51,9 +51,9 @@ const AnalysisHub = ({ analytics, onBack }) => {
 
             {/* Content Area */}
             <div className="min-h-[60vh]">
-                {activeTab === 'integrity' && <DataIntegrity />}
-                {activeTab === 'performance' && <DeepAnalysis analytics={analytics} />}
-                {activeTab === 'maintenance' && <MaintenanceTool />}
+                {activeTab === 'integrity' && <DataIntegrity activeCampaign={activeCampaign} />}
+                {activeTab === 'performance' && <DeepAnalysis analytics={analytics} activeCampaign={activeCampaign} />}
+                {activeTab === 'maintenance' && <MaintenanceTool activeCampaign={activeCampaign} />}
             </div>
             
             {/* Back Button */}

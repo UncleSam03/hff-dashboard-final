@@ -9,7 +9,7 @@ import { isConfigured } from '../lib/firebase';
 import db from '../lib/dexieDb';
 import './hub/Hub.css';
 
-const Hub = ({ onBack, initialTab = 'people' }) => {
+const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
     const [activeTab, setActiveTab] = useState(initialTab); // 'people', 'attendance', 'notice'
 
     useEffect(() => {
@@ -165,7 +165,7 @@ const Hub = ({ onBack, initialTab = 'people' }) => {
             case 'notice':
                 return <NoticeBoard />;
             case 'maintenance':
-                return <MaintenanceTool />;
+                return <MaintenanceTool activeCampaign={activeCampaign} />;
             default:
                 return <PersonList />;
         }

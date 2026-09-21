@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/dexieDb';
+import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../lib/campaignManager';
 
 import { Save, Search, User, Check, AlertCircle, FileText, Hash, Clock, Users, MapPin, Phone, X } from 'lucide-react';
 import { matchesPerson } from '../lib/searchUtils';
 
-const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator, initialData }) => {
+const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator, initialData, campaignId }) => {
+    const activeCampId = campaignId || initialData?.campaign_id || getActiveCampaignId() || DEFAULT_CAMPAIGN.uuid;
+
     // Form State
     const [formData, setFormData] = useState({
         firstName: initialData?.first_name || '',
@@ -43,7 +46,16 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
 
             try {
                 const allFacs = await db.registrations.where('type').equals('facilitator').toArray();
-                const results = allFacs.filter(rec => !rec.is_deleted && matchesPerson(rec, searchTerm, 'all'));
+                const results = allFacs
+                    .filter(rec => {
+                        if (rec.is_deleted) return false;
+                        if (activeCampId) {
+                            if (rec.campaign_id) return rec.campaign_id === activeCampId;
+                            return activeCampId === DEFAULT_CAMPAIGN.uuid;
+                        }
+                        return true;
+                    })
+                    .filter(rec => matchesPerson(rec, searchTerm, 'all'));
                 setFacilitatorResults(results);
             } catch (err) {
                 console.error("Search error:", err);
@@ -52,7 +64,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
 
         const debounce = setTimeout(searchFacilitators, 300);
         return () => clearTimeout(debounce);
-    }, [searchTerm]);
+    }, [searchTerm, activeCampId]);
 
     // Check for duplicates (Admin Side Protection)
     useEffect(() => {
@@ -69,20 +81,36 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             }
 
             try {
-                // Search by phone if available
+                // Search by phone if available (scoped to active campaign)
                 if (ct.length >= 7) {
-                    const match = await db.registrations.where('contact').equals(ct).first();
+                    const match = await db.registrations.where('contact').equals(ct)
+                        .filter(r => {
+                            if (r.is_deleted) return false;
+                            if (activeCampId) {
+                                if (r.campaign_id) return r.campaign_id === activeCampId;
+                                return activeCampId === DEFAULT_CAMPAIGN.uuid;
+                            }
+                            return true;
+                        })
+                        .first();
                     if (match) {
                         setDuplicateFound(match);
                         return;
                     }
                 }
 
-                // Search by Name
+                // Search by Name (scoped to active campaign)
                 const nameMatch = await db.registrations
-                    .filter(r => r.type === type && 
+                    .filter(r => {
+                        if (r.is_deleted) return false;
+                        if (activeCampId) {
+                            if (r.campaign_id) return r.campaign_id === activeCampId;
+                            return activeCampId === DEFAULT_CAMPAIGN.uuid;
+                        }
+                        return r.type === type && 
                             r.first_name?.toLowerCase() === fn && 
-                            r.last_name?.toLowerCase() === ln)
+                            r.last_name?.toLowerCase() === ln;
+                    })
                     .first();
                 
                 setDuplicateFound(nameMatch || null);
@@ -93,7 +121,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
 
         const debounce = setTimeout(checkDuplicates, 600);
         return () => clearTimeout(debounce);
-    }, [formData.firstName, formData.lastName, formData.contact, type, initialData]);
+    }, [formData.firstName, formData.lastName, formData.contact, type, initialData, activeCampId]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -110,6 +138,14 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             try {
                 const matched = await db.registrations
                     .where('form_number').equals(trimmed)
+                    .filter(r => {
+                        if (r.is_deleted) return false;
+                        if (activeCampId) {
+                            if (r.campaign_id) return r.campaign_id === activeCampId;
+                            return activeCampId === DEFAULT_CAMPAIGN.uuid;
+                        }
+                        return true;
+                    })
                     .first();
                 if (matched) {
                     setSelectedFacilitator(matched);
@@ -162,6 +198,9 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 group_form_number: (type === 'participant' || !formData.teachingGroup) ? (formData.groupFormNumber?.trim() || null) : null,
                 meeting_time: (type === 'facilitator' || formData.teachingGroup) ? (formData.meetingTime?.trim() || null) : null,
 
+                // Campaign Association
+                campaign_id: initialData?.campaign_id || activeCampId,
+
                 // Metadata
                 sync_status: 'pending',
                 updated_at: now,
@@ -175,6 +214,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 // Save new record
                 const newRecord = {
                     ...recordData,
+                    campaign_id: activeCampId,
                     id: self.crypto.randomUUID(),
                     uuid: self.crypto.randomUUID(),
                     source: 'pwa_offline',

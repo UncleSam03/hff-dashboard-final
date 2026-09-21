@@ -1,4 +1,5 @@
 import db from './dexieDb';
+import { getActiveCampaignId, DEFAULT_CAMPAIGN } from './campaignManager';
 
 /**
  * Data Maintenance Utility
@@ -12,16 +13,27 @@ import db from './dexieDb';
  * 
  * @param {Object} options 
  * @param {boolean} options.dryRun - If true, only log changes without applying them.
+ * @param {string} [options.campaignId] - Optional campaign UUID to scope duplicates to.
  * @returns {Promise<Object>} Summary of the operation.
  */
-export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
-    console.log(`[DataMaintenance] Starting merge process (${dryRun ? 'DRY RUN' : 'LIVE'})...`);
+export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = null } = {}) {
+    const activeCampId = campaignId || getActiveCampaignId();
+    console.log(`[DataMaintenance] Starting merge process (${dryRun ? 'DRY RUN' : 'LIVE'}) for campaign: ${activeCampId || 'all'}...`);
     
     const allRegistrations = await db.registrations.toArray();
+    const registrations = allRegistrations.filter(reg => {
+        if (reg.is_deleted) return false;
+        if (activeCampId) {
+            if (reg.campaign_id) return reg.campaign_id === activeCampId;
+            return activeCampId === DEFAULT_CAMPAIGN.uuid;
+        }
+        return true;
+    });
+
     const groups = new Map();
 
     // 1. Group by (first_name, last_name, age, affiliation)
-    allRegistrations.forEach(reg => {
+    registrations.forEach(reg => {
         // Normalize for matching
         const fn = (reg.first_name || '').trim().toLowerCase();
         const ln = (reg.last_name || '').trim().toLowerCase();
@@ -100,6 +112,11 @@ export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
             }
         });
 
+        if (!master.campaign_id && activeCampId) {
+            master.campaign_id = activeCampId;
+            changed = true;
+        }
+
         if (changed) {
             master.updated_at = new Date().toISOString();
             master.sync_status = 'pending'; // Ensure it gets pushed to Firebase
@@ -130,6 +147,10 @@ export async function mergeDuplicateRegistrations({ dryRun = true } = {}) {
             recordsDeletedCount += others.length;
             recordsUpdatedCount += 1;
         }
+    }
+
+    if (!dryRun && typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
     }
 
     return {

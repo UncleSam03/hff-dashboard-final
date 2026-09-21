@@ -94,16 +94,16 @@ export async function reconcileWithCloud() {
         if (!online) return;
 
         console.log("[SyncManager] Starting Full Cloud Reconciliation...");
-        
+
         await pushPendingToFirebase();
         await pullFromFirebase();
-        
+
         await reconcileFirebaseDeletions('registrations');
 
         console.log("[SyncManager] Reconciliation Complete.");
-        
+
         window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
-        
+
     } catch (err) {
         console.error("[SyncManager] Reconciliation error:", err);
     } finally {
