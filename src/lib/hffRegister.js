@@ -74,6 +74,17 @@ export function parseHffRegisterRows(rows) {
   const dateRow = rows[dateRowIndex] || [];
   const campaignDates = attendanceCols.map((idx, i) => dateRow[idx] || `Day ${i + 1}`);
 
+  const headerRow = rows[headerRowIndex] || [];
+  const booksCol = headerRow.findIndex(c => String(c || '').toLowerCase().includes('book'));
+  const contactCol = headerRow.findIndex(c => {
+    const s = String(c || '').toLowerCase();
+    return s.includes('contact') || s.includes('phone') || s.includes('cell');
+  });
+  const affCol = headerRow.findIndex(c => {
+    const s = String(c || '').toLowerCase();
+    return s.includes('affiliation') || s.includes('org') || s.includes('church');
+  });
+
   const participants = [];
   const skippedRows = [];
 
@@ -98,31 +109,47 @@ export function parseHffRegisterRows(rows) {
     }
 
     const gender = normalizeGender(row[3]);
-    // Note: We don't add to skippedRows for missing gender to keep the dashboard clean.
-    // Name and ID are the primary requirements for a valid participant.
+    const rawContact = contactCol >= 0 ? normalizeString(row[contactCol]) : normalizeString(row[5]);
+    const rawAff = affCol >= 0 ? normalizeString(row[affCol]) : normalizeString(row[8]);
+    
+    let booksReceived = false;
+    if (booksCol >= 0 && row[booksCol] !== undefined && row[booksCol] !== null) {
+      const bVal = String(row[booksCol]).trim().toLowerCase();
+      booksReceived = bVal === '1' || bVal === 'true' || bVal === 'yes' || bVal === '✓' || bVal === 'y';
+    }
+
+    const attendanceArray = Array(12).fill(false);
+    const attendanceMap = {};
+    let daysAttended = 0;
+
+    attendanceCols.forEach((colIdx, index) => {
+      const dateKey = campaignDates[index] || `Day ${index + 1}`;
+      const val = row[colIdx];
+      const isPresent = val == 1 || String(val).toLowerCase() === 'true' || String(val).toLowerCase() === 'yes' || String(val).toLowerCase() === '✓';
+      attendanceMap[dateKey] = isPresent;
+      if (index < 12) {
+        attendanceArray[index] = isPresent;
+      }
+      if (isPresent) daysAttended++;
+    });
 
     const participant = {
       id,
       firstName,
-      lastName: row[2],
+      lastName: normalizeString(row[2]) || '',
       gender,
-      age: row[4],
-      education: row[6],
-      maritalStatus: row[7],
-      occupation: row[9],
-      attendance: {},
+      age: row[4] ? (parseInt(String(row[4]).replace(/[^0-9]/g, ''), 10) || null) : null,
+      contact: rawContact || null,
+      affiliation: rawAff || null,
+      education: normalizeString(row[6]) || null,
+      maritalStatus: normalizeString(row[7]) || null,
+      occupation: normalizeString(row[9]) || null,
+      attendance: attendanceArray,
+      attendanceMap,
+      booksReceived,
+      daysAttended,
     };
 
-    let daysAttended = 0;
-    attendanceCols.forEach((colIdx, index) => {
-      const dateKey = campaignDates[index];
-      const val = row[colIdx];
-      const isPresent = val == 1; // supports number 1 or string "1"
-      participant.attendance[dateKey] = isPresent;
-      if (isPresent) daysAttended++;
-    });
-
-    participant.daysAttended = daysAttended;
     participants.push(participant);
   }
 
@@ -146,8 +173,19 @@ export function calculateAnalytics(participants, dates) {
   const totalRegistered = participants.length;
   const uniqueAttendees = participants.filter((p) => p.daysAttended > 0).length;
 
-  const dailyStats = dates.map((date) => {
-    const count = participants.filter((p) => p.attendance && p.attendance[date]).length;
+  const dailyStats = dates.map((date, dayIdx) => {
+    const count = participants.filter((p) => {
+      if (Array.isArray(p.attendance) && p.attendance[dayIdx] !== undefined) {
+        return Boolean(p.attendance[dayIdx]);
+      }
+      if (p.attendanceMap && p.attendanceMap[date] !== undefined) {
+        return Boolean(p.attendanceMap[date]);
+      }
+      if (p.attendance && typeof p.attendance === 'object') {
+        return Boolean(p.attendance[date]);
+      }
+      return false;
+    }).length;
     return { date, count };
   });
 

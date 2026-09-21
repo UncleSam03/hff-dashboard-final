@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../../lib/campaignManager';
+import { getActiveCampaignId, DEFAULT_CAMPAIGN, importFileToCampaign } from '../../lib/campaignManager';
 import { 
     Search, User, Briefcase, Download, Trash2, Plus, Pencil, X, 
     BookOpen, ArrowLeft, CalendarCheck, AlertTriangle, Shield, Users, 
     Check, Minus, MapPin, GraduationCap, Phone, Target, UserCheck, UserPlus, BookCheck, AlertCircle,
-    Clock, FileText, Hash, Calendar
+    Clock, FileText, Hash, Calendar, Upload, Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { matchesPerson, formatEnteredDate } from '../../lib/searchUtils';
@@ -34,7 +34,6 @@ const PersonList = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [searchCriterion, setSearchCriterion] = useState('all');
     const [filterType, setFilterType] = useState('all');
-    const [selectedAffiliation, setSelectedAffiliation] = useState('Self');
     const [editorOpen, setEditorOpen] = useState(false);
     const [editorMode, setEditorMode] = useState('create');
     const [editingPerson, setEditingPerson] = useState(null);
@@ -66,6 +65,29 @@ const PersonList = ({
     });
 
     const activeCampId = getActiveCampaignId();
+    const [isImporting, setIsImporting] = useState(false);
+    const [importFeedback, setImportFeedback] = useState(null);
+    const fileInputRef = useRef(null);
+
+    const handleFileImport = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsImporting(true);
+        setImportFeedback(null);
+        try {
+            const targetCampaignId = activeCampId || DEFAULT_CAMPAIGN.uuid;
+            const res = await importFileToCampaign(file, targetCampaignId);
+            setImportFeedback({ success: true, message: `Successfully imported ${res.count} records!` });
+            setTimeout(() => setImportFeedback(null), 5000);
+        } catch (err) {
+            console.error('Import failed:', err);
+            setImportFeedback({ success: false, message: err.message || 'Import failed.' });
+            setTimeout(() => setImportFeedback(null), 6000);
+        } finally {
+            setIsImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
 
     const facilitators = useLiveQuery(async () => {
         const results = await db.registrations.where('type').equals('facilitator').toArray();
@@ -96,7 +118,7 @@ const PersonList = ({
         let collection = db.registrations.orderBy('created_at').reverse();
         
         // Base filter by type
-        if (filterType !== 'all' && filterType !== 'affiliation') {
+        if (filterType !== 'all') {
             collection = db.registrations.where('type').equals(filterType);
         }
         
@@ -172,43 +194,11 @@ const PersonList = ({
             };
         });
 
-        // Secondary filter by Affiliation if active
-        if (filterType === 'affiliation') {
-            const target = selectedAffiliation.toLowerCase().trim();
-            results = results.filter(p => {
-                const aff = (p.affiliation || '').toLowerCase().trim();
-                if (target === 'self') {
-                    return !aff || aff === 'self';
-                }
-                return aff === target;
-            });
-        }
-
         if (searchTerm) {
             results = results.filter(p => matchesPerson(p, searchTerm, searchCriterion));
         }
         return results;
-    }, [searchTerm, searchCriterion, filterType, selectedAffiliation]);
-
-    // Unique Affiliations for the Affiliation Tab
-    const affiliationsList = useLiveQuery(async () => {
-        const all = await db.registrations.toArray();
-        const set = new Set(['Self']);
-        all.forEach(p => {
-            if (p.is_deleted) return;
-            if (p.affiliation && p.affiliation.trim()) {
-                const parts = p.affiliation.split(',').map(s => s.trim().toLowerCase()).filter(s => s && s !== 'self');
-                parts.forEach(s => {
-                    // Find original casing if possible by looking at the input string
-                    // But for consistency let's just title-case or keep as is
-                    // Let's find the original string part to keep casing pretty
-                    const originalPart = p.affiliation.split(',').find(part => part.trim().toLowerCase() === s);
-                    set.add(originalPart ? originalPart.trim() : s);
-                });
-            }
-        });
-        return Array.from(set).sort((a, b) => a.toLowerCase() === 'self' ? -1 : b.toLowerCase() === 'self' ? 1 : a.localeCompare(b));
-    }, []);
+    }, [searchTerm, searchCriterion, filterType]);
 
     const handleDeleteClick = (person) => {
         if (person.type === 'facilitator') {
@@ -548,7 +538,7 @@ const PersonList = ({
 
                     <div className="flex items-center gap-4 w-full lg:w-auto justify-end">
                         <div className="flex bg-gray-100/50 p-1.5 rounded-2xl border border-gray-100">
-                            {['all', 'facilitator', 'participant', 'affiliation'].map(t => (
+                            {['all', 'facilitator', 'participant'].map(t => (
                                 <button
                                     key={t}
                                     onClick={() => setFilterType(t)}
@@ -557,11 +547,26 @@ const PersonList = ({
                                         filterType === t ? "bg-white text-[#71167F] shadow-sm shadow-gray-200" : "text-gray-400 hover:text-gray-600"
                                     )}
                                 >
-                                    {t === 'affiliation' ? 'By Affiliation' : t}
+                                    {t}
                                 </button>
                             ))}
                         </div>
 
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleFileImport} 
+                            accept=".csv,.xlsx,.xls" 
+                            className="hidden" 
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isImporting}
+                            className="p-3.5 rounded-2xl bg-white border border-gray-100 text-gray-400 hover:text-[#71167F] hover:shadow-lg transition-all active:scale-95 flex items-center justify-center"
+                            title="Import CSV or Excel Register"
+                        >
+                            {isImporting ? <Loader2 size={20} className="animate-spin text-[#71167F]" /> : <Upload size={20} />}
+                        </button>
                         <button
                             onClick={exportToCSV}
                             className="p-3.5 rounded-2xl bg-white border border-gray-100 text-gray-400 hover:text-[#71167F] hover:shadow-lg transition-all active:scale-95"
@@ -587,6 +592,17 @@ const PersonList = ({
                         </button>
                     </div>
                 </div>
+
+                {/* Import Feedback Banner */}
+                {importFeedback && (
+                    <div className={cn(
+                        "p-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all animate-in fade-in slide-in-from-top-2",
+                        importFeedback.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-800 border border-red-200"
+                    )}>
+                        {importFeedback.success ? <Check size={16} className="text-emerald-600" /> : <AlertCircle size={16} className="text-red-600" />}
+                        <span>{importFeedback.message}</span>
+                    </div>
+                )}
 
                 {/* Search Criteria Filter Pills */}
                 <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-gray-100/80">
@@ -632,25 +648,7 @@ const PersonList = ({
                 )}
             </div>
             
-            {/* Affiliation Secondary Selector */}
-            {filterType === 'affiliation' && affiliationsList && (
-                <div className="flex flex-wrap gap-2 px-6 py-4 bg-white/30 backdrop-blur-md rounded-3xl border border-white shadow-sm overflow-x-auto">
-                    {affiliationsList.map(aff => (
-                        <button
-                            key={aff}
-                            onClick={() => setSelectedAffiliation(aff)}
-                            className={cn(
-                                "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
-                                selectedAffiliation === aff 
-                                    ? "bg-[#71167F] text-white border-[#71167F] shadow-lg shadow-[#71167F]/20" 
-                                    : "bg-white text-gray-400 border-gray-100 hover:border-[#71167F]/20 hover:text-gray-600"
-                            )}
-                        >
-                            {aff}
-                        </button>
-                    ))}
-                </div>
-            )}
+
 
             {/* List Engine */}
             {!people ? (
@@ -663,7 +661,7 @@ const PersonList = ({
                     <div className="bg-[#71167F]/5 h-20 w-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-[#71167F]">
                         <User className="h-10 w-10 opacity-60" />
                     </div>
-                    {searchTerm || filterType !== 'all' || (filterType === 'affiliation' && selectedAffiliation !== 'Self') ? (
+                    {searchTerm || filterType !== 'all' ? (
                         <>
                             <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">No Matching Records</h3>
                             <p className="text-sm text-gray-400 font-bold uppercase tracking-wider max-w-md mx-auto mb-6">
@@ -673,7 +671,6 @@ const PersonList = ({
                                 onClick={() => {
                                     setSearchTerm('');
                                     setFilterType('all');
-                                    setSelectedAffiliation('Self');
                                 }}
                                 className="px-6 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest transition-all"
                             >

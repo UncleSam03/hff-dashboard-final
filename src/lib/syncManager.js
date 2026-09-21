@@ -129,6 +129,11 @@ export function startAutoSync(syncIntervalMs = 30 * 1000, heartbeatIntervalMs = 
         window.dispatchEvent(new CustomEvent('hff-connectivity-status', { detail: { online: false } }));
     });
 
+    window.addEventListener('hff-firebase-sync-request', () => {
+        console.log('[SyncManager] Received instant sync request event, triggering syncSubmissions...');
+        syncSubmissions().catch(e => console.warn('[SyncManager] Instant sync error:', e));
+    });
+
     setInterval(checkConnectivity, heartbeatIntervalMs);
     setInterval(syncSubmissions, syncIntervalMs);
 }

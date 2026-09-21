@@ -205,14 +205,14 @@ export async function importFileToCampaign(file, campaignId) {
                             marital_status: p.maritalStatus || null,
                             occupation: p.occupation || null,
                             type: 'participant',
-                            affiliation: null,
-                            contact: null,
-                            place: null,
+                            affiliation: p.affiliation || null,
+                            contact: p.contact || null,
+                            place: p.place || null,
                             participants_count: null,
                             books_distributed: null,
-                            books_received: false,
+                            books_received: Boolean(p.booksReceived),
                             facilitator_uuid: null,
-                            attendance: p.attendance || Array(12).fill(false),
+                            attendance: Array.isArray(p.attendance) ? p.attendance : parseAttendance(p.attendance),
                             source: 'excel_register',
                             campaign_id: campaignId,
                             sync_status: 'pending',
@@ -248,7 +248,7 @@ export async function importFileToCampaign(file, campaignId) {
                     const affCol = findCol('affiliation', 'organization', 'organisation', 'ward', 'group');
                     const partCountCol = findCol('participants_count', 'hall group', 'participants count', 'participants');
                     const booksDistCol = findCol('books_distributed', 'books distributed');
-                    const booksRecCol = findCol('books_received', 'books received');
+                    const booksRecCol = findCol('books_received', 'books received', 'books');
                     const facUuidCol = findCol('facilitator_uuid', 'facilitator uuid', 'facilitator_id');
                     const attendanceCol = findCol('attendance');
                     const sourceCol = findCol('source');
@@ -260,6 +260,14 @@ export async function importFileToCampaign(file, campaignId) {
                     const grpFormNumCol = findCol('group_form_number', 'group form number');
                     const teachGrpCol = findCol('teaching_group', 'teaching group');
                     const meetTimeCol = findCol('meeting_time', 'meeting time');
+
+                    // Detect if there are individual day columns Day 1, Day 2, ..., Day 12
+                    const dayCols = [];
+                    for (let d = 1; d <= 12; d++) {
+                        const colIdx = findCol(`day ${d}`, `day_${d}`, `day${d}`, `d${d}`, `attendance_day${d}`, `attendance_${d}`);
+                        dayCols.push(colIdx);
+                    }
+                    const hasDayCols = dayCols.some(idx => idx >= 0);
 
                     const now = new Date().toISOString();
 
@@ -291,7 +299,16 @@ export async function importFileToCampaign(file, campaignId) {
                         const books_distributed = booksDistCol >= 0 ? parseIntOrNull(row[booksDistCol]) : (type === 'facilitator' ? 0 : null);
                         const books_received = booksRecCol >= 0 ? parseBool(row[booksRecCol], false) : false;
                         const facilitator_uuid = facUuidCol >= 0 ? parseStringOrNull(row[facUuidCol]) : null;
-                        const attendance = attendanceCol >= 0 ? parseAttendance(row[attendanceCol]) : Array(12).fill(false);
+
+                        let attendance = Array(12).fill(false);
+                        if (attendanceCol >= 0 && row[attendanceCol] !== undefined && row[attendanceCol] !== null && String(row[attendanceCol]).trim() !== '') {
+                            attendance = parseAttendance(row[attendanceCol]);
+                        } else if (hasDayCols) {
+                            attendance = dayCols.map(colIdx => {
+                                if (colIdx < 0 || row[colIdx] === undefined || row[colIdx] === null || row[colIdx] === '') return false;
+                                return parseBool(row[colIdx], false);
+                            });
+                        }
                         const source = sourceCol >= 0 && parseStringOrNull(row[sourceCol]) ? parseStringOrNull(row[sourceCol]) : 'csv_import';
                         const created_at = createdAtCol >= 0 ? safeIsoDate(row[createdAtCol], now) : now;
                         const updated_at = updatedAtCol >= 0 ? safeIsoDate(row[updatedAtCol], now) : now;
