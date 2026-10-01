@@ -1,5 +1,7 @@
 import db from './dexieDb';
 import { getActiveCampaignId, DEFAULT_CAMPAIGN } from './campaignManager';
+import { db as firestoreDb, isConfigured } from './firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 /**
  * Data Maintenance Utility
@@ -7,9 +9,16 @@ import { getActiveCampaignId, DEFAULT_CAMPAIGN } from './campaignManager';
  * Functions to clean up and optimize the local database.
  */
 
+const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+/, '');
+const cleanStr = (s) => String(s || '').trim().toLowerCase();
+
 /**
- * Merges duplicate registrations based on (first_name, last_name, age, affiliation).
+ * Merges duplicate registrations based on:
+ * 1. Form Number + Type + Campaign (exact form duplicate)
+ * 2. First Name + Last Name + Type + Campaign (person duplicate)
+ * 
  * Information from all duplicates is combined into a single master record.
+ * Redundant local records and cloud documents are permanently purged.
  * 
  * @param {Object} options 
  * @param {boolean} options.dryRun - If true, only log changes without applying them.
@@ -18,7 +27,7 @@ import { getActiveCampaignId, DEFAULT_CAMPAIGN } from './campaignManager';
  */
 export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = null } = {}) {
     const activeCampId = campaignId || getActiveCampaignId();
-    console.log(`[DataMaintenance] Starting merge process (${dryRun ? 'DRY RUN' : 'LIVE'}) for campaign: ${activeCampId || 'all'}...`);
+    console.log(`[DataMaintenance] Starting deduplication (${dryRun ? 'DRY RUN' : 'LIVE'}) for campaign: ${activeCampId || 'all'}...`);
     
     const allRegistrations = await db.registrations.toArray();
     const registrations = allRegistrations.filter(reg => {
@@ -30,60 +39,111 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         return true;
     });
 
-    const groups = new Map();
+    if (registrations.length <= 1) {
+        return { message: "No duplicates found.", duplicatesMerged: 0, recordsDeleted: 0, recordsUpdated: 0, results: [] };
+    }
 
-    // 1. Group by (first_name, last_name, age, affiliation)
-    registrations.forEach(reg => {
-        // Normalize for matching
-        const fn = (reg.first_name || '').trim().toLowerCase();
-        const ln = (reg.last_name || '').trim().toLowerCase();
-        const age = reg.age || 'unknown';
-        const aff = (reg.affiliation || '').trim().toLowerCase();
-        
-        const key = `${fn}|${ln}|${age}|${aff}`;
-        
-        if (!groups.has(key)) {
-            groups.set(key, []);
+    // Cluster registrations using Disjoint Set / Map clustering
+    const visited = new Set();
+    const clusters = [];
+
+    // Helper to test if two records are duplicate representations of the same person/form
+    const areDuplicates = (a, b) => {
+        if (a.id === b.id) return false;
+        // Must match type
+        if (a.type !== b.type) return false;
+
+        // Check 1: Matching Form Number
+        const formA = cleanForm(a.form_number);
+        const formB = cleanForm(b.form_number);
+        if (formA && formB && formA === formB) {
+            return true;
         }
-        groups.get(key).push(reg);
-    });
 
-    const duplicatesFound = [];
-    for (const [key, members] of groups.entries()) {
-        if (members.length > 1) {
-            duplicatesFound.push({ key, members });
+        // Check 2: Matching First and Last Name
+        const fnA = cleanStr(a.first_name);
+        const fnB = cleanStr(b.first_name);
+        const lnA = cleanStr(a.last_name);
+        const lnB = cleanStr(b.last_name);
+
+        if (fnA && lnA && fnA === fnB && lnA === lnB) {
+            // If contact is present on both, they must match or one is blank
+            const cntA = cleanStr(a.contact);
+            const cntB = cleanStr(b.contact);
+            if (cntA && cntB && cntA !== cntB) return false;
+
+            // If age is present on both, must match within +/- 1 year
+            if (a.age && b.age && Math.abs(Number(a.age) - Number(b.age)) > 1) return false;
+
+            return true;
+        }
+
+        return false;
+    };
+
+    for (let i = 0; i < registrations.length; i++) {
+        const current = registrations[i];
+        if (visited.has(current.id)) continue;
+
+        const cluster = [current];
+        visited.add(current.id);
+
+        for (let j = i + 1; j < registrations.length; j++) {
+            const candidate = registrations[j];
+            if (visited.has(candidate.id)) continue;
+
+            if (cluster.some(member => areDuplicates(member, candidate))) {
+                cluster.push(candidate);
+                visited.add(candidate.id);
+            }
+        }
+
+        if (cluster.length > 1) {
+            clusters.push(cluster);
         }
     }
 
-    if (duplicatesFound.length === 0) {
-        return { message: "No duplicates found.", duplicatesMerged: 0, recordsDeleted: 0 };
+    if (clusters.length === 0) {
+        return { message: "No duplicates found.", duplicatesMerged: 0, recordsDeleted: 0, recordsUpdated: 0, results: [] };
     }
 
-    console.log(`[DataMaintenance] Found ${duplicatesFound.length} sets of duplicates.`);
+    console.log(`[DataMaintenance] Found ${clusters.length} duplicate clusters.`);
 
     let recordsDeletedCount = 0;
     let recordsUpdatedCount = 0;
-
     const results = [];
 
-    for (const { members } of duplicatesFound) {
-        // Sort by updated_at descending, then created_at descending
-        const sorted = [...members].sort((a, b) => {
-            const dateA = new Date(a.updated_at || a.created_at || 0);
-            const dateB = new Date(b.updated_at || b.created_at || 0);
-            return dateB - dateA;
-        });
+    for (const members of clusters) {
+        // Score each record to pick the most authoritative master
+        const scoreRecord = (r) => {
+            let score = 0;
+            if (r.sync_status === 'synced') score += 10;
+            if (r.form_number) score += 5;
+            if (r.contact) score += 3;
+            if (r.place) score += 2;
+            if (r.education) score += 1;
+            if (r.marital_status) score += 1;
+            if (r.affiliation) score += 1;
+            if (r.occupation) score += 1;
+            if (r.meeting_time) score += 2;
+            if (r.teaching_group) score += 2;
+            if (r.attendance && (Array.isArray(r.attendance) ? r.attendance.some(Boolean) : Object.keys(r.attendance).length > 0)) score += 5;
+            const time = new Date(r.updated_at || r.created_at || 0).getTime();
+            score += (time / 1e14); // subtle tie-breaker for newer record
+            return score;
+        };
 
+        const sorted = [...members].sort((a, b) => scoreRecord(b) - scoreRecord(a));
         const master = { ...sorted[0] };
         const others = sorted.slice(1);
-        
         let changed = false;
 
         others.forEach(dup => {
-            // Merge simple fields if master is missing them
             const fieldsToMerge = [
                 'gender', 'contact', 'place', 'education', 
-                'marital_status', 'occupation', 'facilitator_uuid'
+                'marital_status', 'occupation', 'affiliation',
+                'facilitator_uuid', 'meeting_time', 'form_number',
+                'group_form_number', 'teaching_group'
             ];
 
             fieldsToMerge.forEach(field => {
@@ -93,22 +153,32 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
                 }
             });
 
-            // Special handling for books_received (boolean)
             if (!master.books_received && dup.books_received) {
                 master.books_received = true;
                 changed = true;
             }
 
-            // Special handling for attendance (object map)
-            if (dup.attendance && typeof dup.attendance === 'object') {
-                if (!master.attendance) master.attendance = {};
-                
-                Object.entries(dup.attendance).forEach(([date, present]) => {
-                    if (present && !master.attendance[date]) {
-                        master.attendance[date] = true;
+            if (dup.attendance) {
+                if (Array.isArray(dup.attendance)) {
+                    if (!Array.isArray(master.attendance)) {
+                        master.attendance = [...dup.attendance];
                         changed = true;
+                    } else {
+                        const mergedAtt = master.attendance.map((val, idx) => Boolean(val || dup.attendance[idx]));
+                        if (JSON.stringify(mergedAtt) !== JSON.stringify(master.attendance)) {
+                            master.attendance = mergedAtt;
+                            changed = true;
+                        }
                     }
-                });
+                } else if (typeof dup.attendance === 'object') {
+                    if (!master.attendance || typeof master.attendance !== 'object') master.attendance = {};
+                    Object.entries(dup.attendance).forEach(([date, present]) => {
+                        if (present && !master.attendance[date]) {
+                            master.attendance[date] = true;
+                            changed = true;
+                        }
+                    });
+                }
             }
         });
 
@@ -117,49 +187,73 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
             changed = true;
         }
 
-        if (changed) {
-            master.updated_at = new Date().toISOString();
-            master.sync_status = 'pending'; // Ensure it gets pushed to Firebase
-        }
-
         results.push({
-            masterUuid: master.uuid,
-            othersUuids: others.map(o => o.uuid),
-            masterName: `${master.first_name} ${master.last_name}`,
+            masterUuid: master.uuid || `local-${master.id}`,
+            masterName: `${master.first_name} ${master.last_name}`.trim(),
+            formNumber: master.form_number || '',
+            othersUuids: others.map(o => o.uuid || `local-${o.id}`),
+            othersIds: others.map(o => o.id),
             changesApplied: changed
         });
 
         if (!dryRun) {
-            await db.transaction('rw', db.registrations, async () => {
-                // Update master
-                await db.registrations.update(master.id, master);
-                
-                // Mark others as deleted (Soft Delete)
+            // Update master
+            master.updated_at = new Date().toISOString();
+            master.sync_status = 'pending';
+            await db.registrations.update(master.id, master);
+
+            // Permanently delete duplicate records from local IndexedDB
+            const idsToDelete = others.map(o => o.id);
+            await db.registrations.bulkDelete(idsToDelete);
+
+            // Purge duplicate documents from Firestore if online and configured
+            if (isConfigured && firestoreDb && navigator.onLine) {
                 for (const other of others) {
-                    await db.registrations.update(other.id, {
-                        ...other,
-                        is_deleted: true,
-                        sync_status: 'pending',
-                        updated_at: new Date().toISOString()
-                    });
+                    if (other.uuid && other.uuid !== master.uuid) {
+                        try {
+                            const docRef = doc(firestoreDb, 'registrations', other.uuid);
+                            await deleteDoc(docRef);
+                            console.log(`[DataMaintenance] Purged remote duplicate document ${other.uuid}`);
+                        } catch (delErr) {
+                            console.warn(`[DataMaintenance] Could not delete remote doc ${other.uuid}:`, delErr.message);
+                        }
+                    }
                 }
-            });
+            }
+
             recordsDeletedCount += others.length;
             recordsUpdatedCount += 1;
         }
     }
 
-    if (!dryRun && typeof window !== 'undefined' && window.dispatchEvent) {
-        window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+    if (!dryRun) {
+        if (typeof window !== 'undefined' && window.dispatchEvent) {
+            window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+            window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
+        }
     }
 
     return {
-        message: dryRun ? "Dry run complete. Check logs." : "Merge complete.",
-        duplicatesMerged: duplicatesFound.length,
-        recordsDeleted: dryRun ? othersCount(duplicatesFound) : recordsDeletedCount,
+        message: dryRun ? `Dry run complete. Found ${clusters.length} duplicate groups.` : `Merge complete. Cleaned ${recordsDeletedCount} duplicate records.`,
+        duplicatesMerged: clusters.length,
+        recordsDeleted: dryRun ? clusters.reduce((acc, c) => acc + (c.length - 1), 0) : recordsDeletedCount,
         recordsUpdated: recordsUpdatedCount,
         results
     };
+}
+
+/**
+ * Automatically runs a live deduplication pass on startup to clean up duplicates
+ */
+export async function autoDeduplicateRegistrations() {
+    try {
+        const res = await mergeDuplicateRegistrations({ dryRun: false });
+        if (res.duplicatesMerged > 0) {
+            console.log(`[AutoDeduplicate] Cleaned up ${res.duplicatesMerged} duplicate groups (${res.recordsDeleted} redundant records removed).`);
+        }
+    } catch (err) {
+        console.warn('[AutoDeduplicate] Warning during automatic deduplication:', err);
+    }
 }
 
 function othersCount(duplicatesFound) {

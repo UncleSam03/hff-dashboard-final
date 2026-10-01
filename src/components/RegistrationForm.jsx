@@ -216,12 +216,53 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 await db.registrations.update(initialData.id, recordData);
                 setMessage({ type: 'success', text: 'Update Saved to Device.' });
             } else {
-                // Save new record with full author audit trail
+                const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+/, '');
+
+                // Check 1: Form Number already registered in this campaign
+                if (recordData.form_number) {
+                    const existingByForm = await db.registrations
+                        .filter(r => !r.is_deleted &&
+                                     (r.campaign_id === activeCampId || !r.campaign_id) &&
+                                     r.type === type &&
+                                     cleanForm(r.form_number) === cleanForm(recordData.form_number))
+                        .first();
+                    if (existingByForm) {
+                        throw new Error(`Form #${recordData.form_number} is already registered to ${existingByForm.first_name} ${existingByForm.last_name}. Please edit their record or use a unique form number.`);
+                    }
+                }
+
+                // Check 2: Same Person already registered in this campaign
+                const existingByName = await db.registrations
+                    .filter(r => !r.is_deleted &&
+                                 (r.campaign_id === activeCampId || !r.campaign_id) &&
+                                 r.type === type &&
+                                 r.first_name?.trim().toLowerCase() === recordData.first_name.trim().toLowerCase() &&
+                                 r.last_name?.trim().toLowerCase() === recordData.last_name.trim().toLowerCase())
+                    .first();
+                if (existingByName) {
+                    const shouldUpdate = window.confirm(`A ${type} named "${recordData.first_name} ${recordData.last_name}" already exists in this campaign (Form #${existingByName.form_number || 'N/A'}).\n\nDo you want to update their existing record instead of creating a duplicate?`);
+                    if (shouldUpdate) {
+                        await db.registrations.update(existingByName.id, {
+                            ...recordData,
+                            updated_at: now,
+                            updated_by_uid: user?.uid || null,
+                            updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                            updated_by_email: user?.email || null,
+                        });
+                        window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                        setMessage({ type: 'success', text: 'Existing record updated.' });
+                        return;
+                    } else {
+                        return;
+                    }
+                }
+
+                // Save new record with clean single UUID and allow Dexie to manage auto-increment ID
+                const recordUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).substring(2));
                 const newRecord = {
                     ...recordData,
                     campaign_id: activeCampId,
-                    id: self.crypto.randomUUID(),
-                    uuid: self.crypto.randomUUID(),
+                    uuid: recordUuid,
                     source: 'pwa_offline',
                     created_at: now,
                     created_by_uid: user?.uid || null,

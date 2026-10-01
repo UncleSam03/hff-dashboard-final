@@ -123,7 +123,7 @@ const MaintenanceTool = ({ activeCampaign }) => {
                                 {duplicates.map((dup, idx) => (
                                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
-                                            <div className="font-bold text-gray-800">{dup.masterName}</div>
+                                            <div className="font-bold text-gray-800">{dup.masterName} {dup.formNumber ? <span className="text-purple-700 font-extrabold text-xs ml-1">(Form #{dup.formNumber})</span> : ''}</div>
                                             <div className="text-xs text-gray-400">UUID: {dup.masterUuid.substring(0, 8)}...</div>
                                         </td>
                                         <td className="px-6 py-4 text-gray-600">

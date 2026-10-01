@@ -454,9 +454,55 @@ const PersonList = ({
                     });
                 }
             } else {
+                const targetCampId = activeCampId || DEFAULT_CAMPAIGN.uuid;
+                const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+/, '');
+
+                // Check 1: Form Number already registered in this campaign
+                if (normalized.form_number) {
+                    const existingByForm = await db.registrations
+                        .filter(r => !r.is_deleted &&
+                                     (r.campaign_id === targetCampId || !r.campaign_id) &&
+                                     r.type === normalized.type &&
+                                     cleanForm(r.form_number) === cleanForm(normalized.form_number))
+                        .first();
+                    if (existingByForm) {
+                        setEditorError(`Form #${normalized.form_number} is already registered to ${existingByForm.first_name} ${existingByForm.last_name}. Please edit the existing record or use a unique form number.`);
+                        setEditorSubmitting(false);
+                        return;
+                    }
+                }
+
+                // Check 2: Same Person already registered in this campaign
+                const existingByName = await db.registrations
+                    .filter(r => !r.is_deleted &&
+                                 (r.campaign_id === targetCampId || !r.campaign_id) &&
+                                 r.type === normalized.type &&
+                                 r.first_name?.trim().toLowerCase() === normalized.first_name.toLowerCase() &&
+                                 r.last_name?.trim().toLowerCase() === normalized.last_name.toLowerCase())
+                    .first();
+                if (existingByName) {
+                    const shouldUpdate = window.confirm(`A ${normalized.type} named "${normalized.first_name} ${normalized.last_name}" already exists in this campaign (Form #${existingByName.form_number || 'N/A'}).\n\nDo you want to update their existing record instead of creating a duplicate?`);
+                    if (shouldUpdate) {
+                        const editPayload = {
+                            ...normalized,
+                            updated_at: now,
+                            updated_by_uid: user?.uid || null,
+                            updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                            updated_by_email: user?.email || null,
+                        };
+                        await db.registrations.update(existingByName.id, editPayload);
+                        window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                        closeEditor();
+                        return;
+                    } else {
+                        setEditorSubmitting(false);
+                        return;
+                    }
+                }
+
                 await db.registrations.add({
                     ...normalized,
-                    campaign_id: activeCampId || DEFAULT_CAMPAIGN.uuid,
+                    campaign_id: targetCampId,
                     uuid: globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).substring(2)),
                     created_at: now,
                     created_by_uid: user?.uid || null,

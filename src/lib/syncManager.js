@@ -1,32 +1,16 @@
 import { getPendingSubmissions, markAsSynced } from './offlineStorage';
 import { hffFetch } from './api';
 import { pushPendingToFirebase, pullFromFirebase, reconcileFirebaseDeletions } from './firebaseSync';
-import { db as firestoreDb, isConfigured } from './firebase';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
 
 let isSyncing = false;
-let isActuallyOnline = navigator.onLine;
+let isActuallyOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
 /**
- * Checks for true connectivity.
+ * Checks for true connectivity without burning Firestore read quota.
  */
 export async function checkConnectivity() {
     const previousStatus = isActuallyOnline;
-    try {
-        const health = await fetch('/api/health', { method: 'GET', cache: 'no-store' });
-        if (health.ok) {
-            isActuallyOnline = true;
-        } else if (isConfigured && firestoreDb) {
-            // Secondary probe: fetch 1 doc from Firestore
-            const q = query(collection(firestoreDb, 'registrations'), limit(1));
-            await getDocs(q);
-            isActuallyOnline = true;
-        } else {
-            isActuallyOnline = false;
-        }
-    } catch {
-        isActuallyOnline = false;
-    }
+    isActuallyOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
     if (isActuallyOnline !== previousStatus) {
         console.log(`[SyncManager] Connectivity status changed: ${isActuallyOnline ? 'ONLINE' : 'OFFLINE'}`);
@@ -115,8 +99,7 @@ export async function reconcileWithCloud() {
  * Starts the background sync interval.
  */
 // syncIntervalMs: full sync cadence (registrations/participants via Firebase + submission sync)
-// heartbeatIntervalMs: lightweight connectivity check cadence
-export function startAutoSync(syncIntervalMs = 30 * 1000, heartbeatIntervalMs = 15 * 1000) {
+export function startAutoSync(syncIntervalMs = 90 * 1000, heartbeatIntervalMs = 30 * 1000) {
     checkConnectivity();
     syncSubmissions();
 

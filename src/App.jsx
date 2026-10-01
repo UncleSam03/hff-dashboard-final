@@ -14,7 +14,7 @@ import db from './lib/dexieDb';
 import { processAnalytics } from './lib/analytics';
 import { reconcileWithCloud } from './lib/syncManager';
 import { DEFAULT_CAMPAIGN, getActiveCampaignId, setActiveCampaignId, getAllCampaigns } from './lib/campaignManager';
-import { sanitizeExistingRegistrations } from './lib/dataMaintenance';
+import { sanitizeExistingRegistrations, autoDeduplicateRegistrations } from './lib/dataMaintenance';
 
 function AppContent() {
   const { role, profile, signOut, loading, isMasterAdmin, masterAdminEmail } = useAuth();
@@ -25,6 +25,7 @@ function AppContent() {
 
   useEffect(() => {
     sanitizeExistingRegistrations();
+    autoDeduplicateRegistrations();
     // Restore active campaign from storage or default to current campaign
     async function restoreCampaign() {
       try {
