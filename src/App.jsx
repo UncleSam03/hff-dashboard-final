@@ -6,8 +6,6 @@ import { useAuth } from "./auth/AuthContext";
 
 import Hub from './components/Hub';
 import AnalysisHub from './components/AnalysisHub';
-import FacilitatorDashboard from './components/FacilitatorDashboard';
-import FacilitatorOnboarding from './components/FacilitatorOnboarding';
 import SatDashboard from './components/SatDashboard';
 import UnderConstruction from './components/UnderConstruction';
 import CampaignSelector from './components/campaign/CampaignSelector';
@@ -31,15 +29,15 @@ function AppContent() {
     async function restoreCampaign() {
       try {
         const campaigns = await getAllCampaigns();
-        const current = campaigns.find(c => c.is_current === true || c.is_current === 1) ||
-                        campaigns.find(c => c.status === 'active') ||
-                        campaigns.find(c => c.uuid === DEFAULT_CAMPAIGN.uuid) ||
-                        campaigns[0] || DEFAULT_CAMPAIGN;
+        const currentOngoing = campaigns.find(c => c.is_current === true || c.is_current === 1) ||
+                               campaigns.find(c => c.status === 'active') ||
+                               campaigns.find(c => c.uuid === DEFAULT_CAMPAIGN.uuid) ||
+                               campaigns[0] || DEFAULT_CAMPAIGN;
 
-        // If standard admin (not master admin), they are locked strictly to the current active campaign
-        if (!isMasterAdmin && role === 'admin') {
-          setActiveCampaign(current);
-          setActiveCampaignId(current.uuid);
+        // If standard admin (not master admin), they are locked strictly to the current ongoing campaign
+        if (!isMasterAdmin) {
+          setActiveCampaign(currentOngoing);
+          setActiveCampaignId(currentOngoing.uuid);
           return;
         }
 
@@ -51,6 +49,9 @@ function AppContent() {
             return;
           }
         }
+
+        setActiveCampaign(currentOngoing);
+        setActiveCampaignId(currentOngoing.uuid);
       } catch (err) {
         console.warn("[App] Could not restore campaign:", err);
       }
@@ -134,22 +135,16 @@ function AppContent() {
     setMode('overview');
   };
 
-  // Facilitator role — dedicated dashboard
-  if (role === 'facilitator') {
-    if (!profile?.onboarding_completed) {
-      return <FacilitatorOnboarding onComplete={() => {
-        // Mark onboarding as just completed to trigger a custom redirect message on sign-in page
-        localStorage.setItem('hff_onboarding_just_completed', 'true');
-        // Sign out to force the user back to the login screen
-        signOut();
-      }} />;
-    }
+  // Standard Admins: Always lock directly to ongoing campaign without showing campaign selector
+  if (!isMasterAdmin && !activeCampaign) {
     return (
-      <FacilitatorDashboard onBack={signOut} />
+      <div className="min-h-screen bg-[#FDFCF9] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-hff-primary border-t-transparent"></div>
+      </div>
     );
   }
 
-  // Admin role — if no campaign is selected, present the Campaign Selector window
+  // Master Admin: if no campaign is selected, present the Campaign Selector window
   if (!activeCampaign) {
     return (
       <CampaignSelector 

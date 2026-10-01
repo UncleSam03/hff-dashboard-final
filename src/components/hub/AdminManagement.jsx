@@ -91,7 +91,7 @@ export default function AdminManagement() {
     };
 
     const handleRevoke = async (targetUser) => {
-        if (!window.confirm(`Are you sure you want to revoke admin access for ${targetUser.full_name || targetUser.email}? They will be demoted to Facilitator.`)) {
+        if (!window.confirm(`Are you sure you want to revoke admin access for ${targetUser.full_name || targetUser.email}?`)) {
             return;
         }
 

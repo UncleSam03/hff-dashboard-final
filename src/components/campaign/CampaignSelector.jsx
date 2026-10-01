@@ -320,7 +320,8 @@ export default function CampaignSelector({ onSelectCampaign }) {
                     )}
                 </section>
 
-                {/* 2. PAST & HISTORICAL CAMPAIGNS SECTION */}
+                {/* 2. PAST & HISTORICAL CAMPAIGNS SECTION (Master Admin Only) */}
+                {isMasterAdmin && (
                 <section className="space-y-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200/80 pb-3">
                         <div className="flex items-center gap-2">
@@ -518,6 +519,7 @@ export default function CampaignSelector({ onSelectCampaign }) {
                         })}
                     </div>
                 </section>
+                )}
             </main>
 
             {/* NEW CAMPAIGN CREATION MODAL */}

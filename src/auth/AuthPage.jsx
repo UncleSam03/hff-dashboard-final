@@ -80,7 +80,7 @@ function ConfigRequired({ onBypass }) {
           {onBypass && (
             <div className="pt-2">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Quick Entry (No Password Required):</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
                 <button
                   type="button"
                   onClick={() => onBypass("admin")}
@@ -88,14 +88,6 @@ function ConfigRequired({ onBypass }) {
                 >
                   <Shield className="w-4 h-4" />
                   Enter Directly as Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onBypass("facilitator")}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-white/70 hover:bg-white text-gray-800 font-bold text-sm shadow-sm border border-gray-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                  <Users className="w-4 h-4" />
-                  Enter as Facilitator
                 </button>
               </div>
             </div>
@@ -235,8 +227,7 @@ export default function AuthPage() {
         // Check for must_change_password after successful login (not typical in Firebase, but keeping logic)
         // Would need to fetch profile doc here if strictly required
       } else {
-        const isDomainEmail = trimmedEmail.toLowerCase().endsWith("@thehealthyfamilies.net");
-        const metadataRole = isDomainEmail ? "admin" : "facilitator";
+        const metadataRole = "admin";
 
         const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
         // Note: Profile creation happens automatically in AuthContext's onAuthStateChanged
@@ -764,7 +755,7 @@ export default function AuthPage() {
               </button>
             </p>
             <p className="text-[10px] text-gray-400 font-medium">
-              Admitted administrators & facilitators will access assigned workspaces upon sign-in.
+              Administrators will access the active ongoing campaign workspace upon sign-in.
             </p>
           </div>
         </div>

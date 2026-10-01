@@ -38,20 +38,6 @@ const DEV_MOCK_USERS = {
       phone: "+267 71234568",
       onboarding_completed: true
     }
-  },
-  facilitator: {
-    user: {
-      uid: "dev-facilitator-id",
-      email: "facilitator@thehealthyfamilies.net",
-    },
-    profile: {
-      id: "dev-facilitator-id",
-      role: "facilitator",
-      admin_status: "none",
-      full_name: "Lead Facilitator",
-      phone: "+267 72345678",
-      onboarding_completed: true
-    }
   }
 };
 
@@ -100,18 +86,16 @@ export function AuthProvider({ children }) {
         let currentProfile;
 
         if (!profileSnap.exists()) {
-          // No profile row — legacy user or just signed up
-          const role = isMasterAdminEmail ? "master_admin" : "facilitator";
-          const admin_status = isMasterAdminEmail 
-            ? "approved" 
-            : (isOrgEmail ? "pending_approval" : "none");
+          // No profile row — user just signed up or was added in Firebase Console
+          const role = isMasterAdminEmail ? "master_admin" : "admin";
+          const admin_status = "approved";
 
           const newProfile = {
             id: authUser.uid,
             email: email,
             role: role,
             admin_status: admin_status,
-            full_name: authUser.displayName || (isMasterAdminEmail ? "Samukeliso Mayabane" : ""),
+            full_name: authUser.displayName || (isMasterAdminEmail ? "Samukeliso Mayabane" : (email.split('@')[0] || "Administrator")),
             phone: authUser.phoneNumber || "",
             must_change_password: false,
             created_at: new Date().toISOString()
@@ -131,21 +115,9 @@ export function AuthProvider({ children }) {
         }
 
         // ROLE & ADMISSION RESOLUTION
-        let resolvedRole = currentProfile.role;
-        let resolvedStatus = currentProfile.admin_status || "none";
-
-        if (isMasterAdminEmail) {
-          resolvedRole = "master_admin";
-          resolvedStatus = "approved";
-        } else if (currentProfile.role === "admin" && currentProfile.admin_status === "approved") {
-          resolvedRole = "admin";
-          resolvedStatus = "approved";
-        } else if (isOrgEmail && currentProfile.admin_status !== "approved") {
-          resolvedRole = "facilitator";
-          resolvedStatus = currentProfile.admin_status || "pending_approval";
-        } else if (!isOrgEmail && resolvedRole !== "master_admin" && resolvedRole !== "admin") {
-          resolvedRole = "facilitator";
-        }
+        // Every authenticated user is an Admin (or Master Admin if Samukeliso)
+        let resolvedRole = isMasterAdminEmail ? "master_admin" : "admin";
+        let resolvedStatus = currentProfile.admin_status === "revoked" ? "revoked" : "approved";
 
         if (currentProfile.role !== resolvedRole || currentProfile.admin_status !== resolvedStatus) {
           console.log(`[AuthContext] Syncing user role: ${resolvedRole}, admin_status: ${resolvedStatus}`);
@@ -168,8 +140,8 @@ export function AuthProvider({ children }) {
       const isMasterAdminEmail = (authUser.email?.toLowerCase() || "") === MASTER_ADMIN_EMAIL.toLowerCase();
       const fallback = { 
         id: authUser.uid, 
-        role: isMasterAdminEmail ? "master_admin" : "facilitator", 
-        admin_status: isMasterAdminEmail ? "approved" : "none",
+        role: isMasterAdminEmail ? "master_admin" : "admin", 
+        admin_status: "approved",
         full_name: "", 
         phone: "" 
       };
@@ -238,9 +210,9 @@ export function AuthProvider({ children }) {
     setProfile(null);
   }
 
-  const role = profile?.role || null;
-  const isMasterAdmin = (role === 'master_admin') || (user?.email?.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase());
-  const isAdmin = isMasterAdmin || (role === 'admin' && profile?.admin_status === 'approved') || role === 'admin';
+  const isMasterAdmin = (profile?.role === 'master_admin') || (user?.email?.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase());
+  const role = isMasterAdmin ? 'master_admin' : (profile?.role || 'admin');
+  const isAdmin = isMasterAdmin || role === 'admin';
 
   async function admitAdmin(targetUid) {
     if (!isMasterAdmin) {
@@ -266,7 +238,7 @@ export function AuthProvider({ children }) {
     if (isConfigured && db) {
       const targetRef = doc(db, "profiles", targetUid);
       await updateDoc(targetRef, {
-        role: "facilitator",
+        role: "revoked",
         admin_status: "revoked",
         revoked_at: new Date().toISOString(),
         revoked_by: user?.email || MASTER_ADMIN_EMAIL

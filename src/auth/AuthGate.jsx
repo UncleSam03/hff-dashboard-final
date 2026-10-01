@@ -96,17 +96,6 @@ export default function AuthGate({ children }) {
             Admin
           </button>
 
-          <button
-            onClick={() => switchDevRole("facilitator")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              role === "facilitator"
-                ? "liquid-glass-active text-white shadow-md"
-                : "bg-white/40 hover:bg-white/70 text-gray-700"
-            }`}
-          >
-            <Users className="w-3 h-3" />
-            Facilitator
-          </button>
 
           <button
             onClick={() => switchDevRole("none")}
