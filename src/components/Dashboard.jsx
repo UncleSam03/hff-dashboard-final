@@ -107,17 +107,17 @@ const Dashboard = ({ analytics, onNavigate }) => {
                     />
                     <StatsCard
                         title="Participants"
-                        value={analytics.uniqueParticipants}
+                        value={analytics.totalRegistrations}
                         icon={Users2}
-                        description="Unique attendees"
+                        description={analytics.uniqueParticipants > 0 ? `${analytics.uniqueParticipants} unique attendees` : "Registered attendees"}
                         color="blue"
                         onClick={() => onNavigate?.('hub')}
                     />
                     <StatsCard
                         title="Facilitators"
-                        value={analytics.uniqueFacilitators}
+                        value={analytics.totalFacilitators}
                         icon={UserCheck}
-                        description="Active support"
+                        description={analytics.uniqueFacilitators > 0 ? `${analytics.uniqueFacilitators} active in support` : "Active facilitators"}
                         color="amber"
                         onClick={() => onNavigate?.('hub')}
                     />

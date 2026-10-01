@@ -26,15 +26,14 @@ const cleanStr = (s) => String(s || '').trim().toLowerCase();
  * @returns {Promise<Object>} Summary of the operation.
  */
 export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = null } = {}) {
-    const activeCampId = campaignId || getActiveCampaignId();
-    console.log(`[DataMaintenance] Starting deduplication (${dryRun ? 'DRY RUN' : 'LIVE'}) for campaign: ${activeCampId || 'all'}...`);
+    console.log(`[DataMaintenance] Starting deduplication (${dryRun ? 'DRY RUN' : 'LIVE'}) for campaign: ${campaignId || 'all'}...`);
     
     const allRegistrations = await db.registrations.toArray();
     const registrations = allRegistrations.filter(reg => {
         if (reg.is_deleted) return false;
-        if (activeCampId) {
-            if (reg.campaign_id) return reg.campaign_id === activeCampId;
-            return activeCampId === DEFAULT_CAMPAIGN.uuid;
+        if (campaignId) {
+            if (reg.campaign_id) return reg.campaign_id === campaignId;
+            return campaignId === DEFAULT_CAMPAIGN.uuid;
         }
         return true;
     });
@@ -49,9 +48,13 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
 
     // Helper to test if two records are duplicate representations of the same person/form
     const areDuplicates = (a, b) => {
-        if (a.id === b.id) return false;
-        // Must match type
-        if (a.type !== b.type) return false;
+        if (a.id && b.id && a.id === b.id) return false;
+        if (a.uuid && b.uuid && a.uuid === b.uuid) return true;
+
+        // Must match type if both are present
+        const typeA = cleanStr(a.type);
+        const typeB = cleanStr(b.type);
+        if (typeA && typeB && typeA !== typeB) return false;
 
         // Check 1: Matching Form Number
         const formA = cleanForm(a.form_number);
@@ -67,34 +70,37 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         const lnB = cleanStr(b.last_name);
 
         if (fnA && lnA && fnA === fnB && lnA === lnB) {
-            // If contact is present on both, they must match or one is blank
-            const cntA = cleanStr(a.contact);
-            const cntB = cleanStr(b.contact);
-            if (cntA && cntB && cntA !== cntB) return false;
+            return true;
+        }
 
-            // If age is present on both, must match within +/- 1 year
-            if (a.age && b.age && Math.abs(Number(a.age) - Number(b.age)) > 1) return false;
-
+        // Check 3: Matching full name string
+        const fullA = cleanStr(`${a.first_name || ''} ${a.last_name || ''}`);
+        const fullB = cleanStr(`${b.first_name || ''} ${b.last_name || ''}`);
+        if (fullA && fullB && fullA.length > 3 && fullA === fullB) {
             return true;
         }
 
         return false;
     };
 
+    const getRecKey = (r, idx) => (r.id !== undefined && r.id !== null ? `id_${r.id}` : (r.uuid ? `uuid_${r.uuid}` : `idx_${idx}`));
+
     for (let i = 0; i < registrations.length; i++) {
         const current = registrations[i];
-        if (visited.has(current.id)) continue;
+        const currentKey = getRecKey(current, i);
+        if (visited.has(currentKey)) continue;
 
         const cluster = [current];
-        visited.add(current.id);
+        visited.add(currentKey);
 
         for (let j = i + 1; j < registrations.length; j++) {
             const candidate = registrations[j];
-            if (visited.has(candidate.id)) continue;
+            const candidateKey = getRecKey(candidate, j);
+            if (visited.has(candidateKey)) continue;
 
             if (cluster.some(member => areDuplicates(member, candidate))) {
                 cluster.push(candidate);
-                visited.add(candidate.id);
+                visited.add(candidateKey);
             }
         }
 
@@ -182,9 +188,13 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
             }
         });
 
-        if (!master.campaign_id && activeCampId) {
-            master.campaign_id = activeCampId;
-            changed = true;
+        // Adopt campaign_id if master was missing it
+        if (!master.campaign_id) {
+            const withCamp = others.find(o => o.campaign_id);
+            if (withCamp) {
+                master.campaign_id = withCamp.campaign_id;
+                changed = true;
+            }
         }
 
         results.push({
@@ -203,8 +213,14 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
             await db.registrations.update(master.id, master);
 
             // Permanently delete duplicate records from local IndexedDB
-            const idsToDelete = others.map(o => o.id);
-            await db.registrations.bulkDelete(idsToDelete);
+            for (const other of others) {
+                if (other.id) {
+                    await db.registrations.delete(other.id);
+                }
+                if (other.uuid && other.uuid !== master.uuid) {
+                    await db.registrations.where('uuid').equals(other.uuid).delete();
+                }
+            }
 
             // Purge duplicate documents from Firestore if online and configured
             if (isConfigured && firestoreDb && navigator.onLine) {

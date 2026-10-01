@@ -2,6 +2,7 @@ import { doc, getDocs, collection, setDoc, deleteDoc, writeBatch } from 'firebas
 import { db as firestoreDb, isConfigured } from './firebase';
 import db from './dexieDb';
 import { checkConnectivity } from './syncManager';
+import { autoDeduplicateRegistrations } from './dataMaintenance';
 
 let isSyncing = false;
 let isPulling = false;
@@ -153,7 +154,7 @@ async function pullStoreUpdates(storeName) {
         const localFormMap = new Map();
         const localNameMap = new Map();
 
-        const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+/, '');
+        const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+(?=\d)/, '');
         const cleanStr = (s) => String(s || '').trim().toLowerCase();
 
         for (const loc of localRecords) {
@@ -163,13 +164,13 @@ async function pullStoreUpdates(storeName) {
             if (storeName === 'registrations' && !loc.is_deleted) {
                 const cf = cleanForm(loc.form_number);
                 if (cf) {
-                    const formKey = `${loc.campaign_id || ''}|${loc.type || ''}|${cf}`;
+                    const formKey = `${cleanStr(loc.type)}|${cf}`;
                     if (!localFormMap.has(formKey)) localFormMap.set(formKey, { id: loc.id, updated_at: loc.updated_at, record: loc });
                 }
                 const fn = cleanStr(loc.first_name);
                 const ln = cleanStr(loc.last_name);
                 if (fn && ln) {
-                    const nameKey = `${loc.campaign_id || ''}|${loc.type || ''}|${fn}|${ln}`;
+                    const nameKey = `${cleanStr(loc.type)}|${fn}|${ln}`;
                     if (!localNameMap.has(nameKey)) localNameMap.set(nameKey, { id: loc.id, updated_at: loc.updated_at, record: loc });
                 }
             }
@@ -184,14 +185,25 @@ async function pullStoreUpdates(storeName) {
             if (!locData && storeName === 'registrations') {
                 const cf = cleanForm(remoteRecord.form_number);
                 if (cf) {
-                    locData = localFormMap.get(`${remoteRecord.campaign_id || ''}|${remoteRecord.type || ''}|${cf}`);
+                    locData = localFormMap.get(`${cleanStr(remoteRecord.type)}|${cf}`);
                 }
                 if (!locData) {
                     const fn = cleanStr(remoteRecord.first_name);
                     const ln = cleanStr(remoteRecord.last_name);
                     if (fn && ln) {
-                        locData = localNameMap.get(`${remoteRecord.campaign_id || ''}|${remoteRecord.type || ''}|${fn}|${ln}`);
+                        locData = localNameMap.get(`${cleanStr(remoteRecord.type)}|${fn}|${ln}`);
                     }
+                }
+            }
+
+            // If matched locally but remoteRecord has a different UUID, remote is a redundant cloud duplicate
+            if (locData && locData.record?.uuid && remoteRecord.uuid && locData.record.uuid !== remoteRecord.uuid) {
+                try {
+                    const dupRef = doc(firestoreDb, storeName, remoteRecord.uuid);
+                    deleteDoc(dupRef).catch(() => {});
+                    console.log(`[FirebaseSync] Purged redundant cloud duplicate ${remoteRecord.uuid}`);
+                } catch {
+                    // ignore
                 }
             }
             
@@ -228,6 +240,10 @@ async function pullStoreUpdates(storeName) {
                 });
                 updatedCount++;
             }
+        }
+
+        if (storeName === 'registrations') {
+            await autoDeduplicateRegistrations();
         }
 
         if (updatedCount > 0) {
