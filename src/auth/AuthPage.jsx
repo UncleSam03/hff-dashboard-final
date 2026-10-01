@@ -30,6 +30,8 @@ function friendlyAuthError(err) {
   if (code === "auth/wrong-password" || m.includes("wrong-password")) return "Incorrect password. Please try again or use Forgot Password.";
   if (code === "auth/email-already-in-use" || m.includes("email-already-in-use")) return "That email is already registered. Try signing in.";
   if (code === "auth/weak-password" || m.includes("weak-password")) return "Password should be at least 6 characters.";
+  if (code === "auth/invalid-email" || m.includes("invalid-email")) return "Invalid email address. Please check for typos (e.g. check for a comma ',' instead of a dot '.' in the domain).";
+  if (code === "auth/unauthorized-domain" || m.includes("unauthorized-domain")) return "This web domain is not authorized for authentication. Please contact the administrator.";
   if (code === "auth/popup-closed-by-user" || m.includes("popup-closed-by-user")) return "Google sign-in popup was closed before completing.";
   if (code === "auth/popup-blocked" || m.includes("popup-blocked")) return "Sign-in popup was blocked by browser. Please allow popups.";
   if (code === "auth/network-request-failed" || m.includes("network-request-failed")) return "Network error. Please check your internet connection.";
@@ -180,7 +182,11 @@ export default function AuthPage() {
     setError("");
     setMessage("");
 
-    const trimmedEmail = email.trim();
+    let trimmedEmail = email.trim();
+    if (trimmedEmail.includes("@")) {
+      // Auto-correct keyboard typos like @domain,net -> @domain.net
+      trimmedEmail = trimmedEmail.replace(/,([a-zA-Z]{2,})$/, '.$1');
+    }
     const trimmedPassword = password.trim();
     const trimmedConfirmPassword = confirmPassword.trim();
 
@@ -665,6 +671,9 @@ export default function AuthPage() {
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                     className="w-full rounded-2xl border border-gray-200 pl-12 pr-4 py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hff-primary/20 focus:border-hff-primary transition-all font-medium"
                     placeholder={authMode === "signin" ? "you@example.com or Full Name" : "you@example.com"}
                     required
@@ -741,7 +750,18 @@ export default function AuthPage() {
           {/* Master Admin Notice */}
           <div className="mt-8 pt-5 border-t border-gray-100 text-center space-y-1 relative z-10">
             <p className="text-[11px] font-semibold text-gray-500">
-              Master Admin: <strong className="text-[#71167F]">samukeliso.mayabane@thehealthyfamilies.net</strong>
+              Master Admin:{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("samukeliso.mayabane@thehealthyfamilies.net");
+                  setAuthMethod("email");
+                }}
+                title="Click to auto-fill email"
+                className="text-[#71167F] hover:underline font-bold transition-all cursor-pointer inline-block"
+              >
+                samukeliso.mayabane@thehealthyfamilies.net
+              </button>
             </p>
             <p className="text-[10px] text-gray-400 font-medium">
               Admitted administrators & facilitators will access assigned workspaces upon sign-in.
