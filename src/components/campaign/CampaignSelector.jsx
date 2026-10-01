@@ -220,23 +220,6 @@ export default function CampaignSelector({ onSelectCampaign }) {
                     <h2 className="text-3xl sm:text-5xl font-black text-gray-900 tracking-tight leading-tight mb-3">
                         Campaign Workspaces
                     </h2>
-                    
-                    {/* Role Notice Card */}
-                    {isMasterAdmin ? (
-                        <div className="mt-4 p-4 rounded-3xl bg-amber-500/10 border border-amber-500/30 max-w-2xl mx-auto flex items-center gap-3 text-left">
-                            <Crown className="w-6 h-6 text-amber-600 shrink-0" />
-                            <p className="text-xs text-amber-900 font-semibold leading-relaxed">
-                                <strong>Master Admin Control:</strong> You have exclusive permission to access past campaigns, create new campaigns, switch the active campaign, and admit or revoke administrators.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="mt-4 p-4 rounded-3xl bg-[#71167F]/10 border border-[#71167F]/20 max-w-2xl mx-auto flex items-center gap-3 text-left">
-                            <Lock className="w-5 h-5 text-[#71167F] shrink-0" />
-                            <p className="text-xs text-gray-700 font-semibold leading-relaxed">
-                                <strong>Standard Admin Scope:</strong> You have operational access to the <strong>Current Active Campaign</strong>. Historical past campaigns are preserved and restricted to the Master Admin (<span className="text-[#71167F]">{masterAdminEmail}</span>).
-                            </p>
-                        </div>
-                    )}
                 </div>
 
                 {/* 1. CURRENT ACTIVE CAMPAIGN SECTION */}
