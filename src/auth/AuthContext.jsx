@@ -8,7 +8,7 @@ console.log("[AuthContext] Script loaded - Firebase Migration");
 
 export const MASTER_ADMIN_EMAIL = "samukeliso.mayabane@thehealthyfamilies.net";
 
-export const DEV_BYPASS_PASSWORDS = true;
+export const DEV_BYPASS_PASSWORDS = false;
 
 const DEV_MOCK_USERS = {
   master_admin: {
@@ -55,24 +55,15 @@ const DEV_MOCK_USERS = {
   }
 };
 
-function getInitialBypassRole() {
-  if (typeof window === "undefined") return "master_admin";
-  const stored = localStorage.getItem("hff_bypass_role");
-  return stored !== null ? stored : "master_admin";
-}
-
 export function AuthProvider({ children }) {
-  const initialRole = getInitialBypassRole();
-  const initialMock = initialRole !== "none" ? DEV_MOCK_USERS[initialRole] || DEV_MOCK_USERS.master_admin : null;
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [user, setUser] = useState(initialMock ? initialMock.user : null);
-  const [profile, setProfile] = useState(initialMock ? initialMock.profile : null);
-  const [loading, setLoading] = useState(false);
-
-  // Switch role dynamically without password
+  // Switch role dynamically without password (development helper only)
   const switchDevRole = (newRole) => {
     if (newRole === "none") {
-      localStorage.setItem("hff_bypass_role", "none");
+      localStorage.removeItem("hff_bypass_role");
       setUser(null);
       setProfile(null);
     } else {

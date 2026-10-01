@@ -5,6 +5,8 @@ import {
   createUserWithEmailAndPassword, 
   sendPasswordResetEmail, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   updatePassword,
   RecaptchaVerifier,
@@ -14,7 +16,7 @@ import { doc, getDocs, collection, query, where, limit, updateDoc } from "fireba
 import {
   AlertCircle, Key, Info, Shield, Users, User,
   Mail, Phone, Lock, Eye, EyeOff, ArrowRight,
-  Check, ChevronLeft, LockOpen
+  Check, ChevronLeft, LockOpen, Globe, Sparkles
 } from "lucide-react";
 import LandingPage from "../components/LandingPage";
 import { useAuth } from "./AuthContext";
@@ -22,10 +24,16 @@ import { useAuth } from "./AuthContext";
 /* ───────── helpers ───────── */
 function friendlyAuthError(err) {
   const m = err?.message || "";
-  if (m.includes("auth/invalid-credential")) return "Incorrect email or password.";
-  if (m.includes("auth/email-already-in-use")) return "That email is already in use. Try signing in.";
-  if (m.includes("auth/invalid-phone-number")) return "Invalid phone number.";
-  return m || "Something went wrong. Please try again.";
+  const code = err?.code || "";
+  if (code === "auth/invalid-credential" || m.includes("invalid-credential")) return "Incorrect email or password. Please verify your credentials.";
+  if (code === "auth/user-not-found" || m.includes("user-not-found")) return "No account found with this email.";
+  if (code === "auth/wrong-password" || m.includes("wrong-password")) return "Incorrect password. Please try again or use Forgot Password.";
+  if (code === "auth/email-already-in-use" || m.includes("email-already-in-use")) return "That email is already registered. Try signing in.";
+  if (code === "auth/weak-password" || m.includes("weak-password")) return "Password should be at least 6 characters.";
+  if (code === "auth/popup-closed-by-user" || m.includes("popup-closed-by-user")) return "Google sign-in popup was closed before completing.";
+  if (code === "auth/popup-blocked" || m.includes("popup-blocked")) return "Sign-in popup was blocked by browser. Please allow popups.";
+  if (code === "auth/network-request-failed" || m.includes("network-request-failed")) return "Network error. Please check your internet connection.";
+  return m || "Authentication failed. Please try again.";
 }
 
 const ROLES = [
@@ -98,7 +106,7 @@ function ConfigRequired({ onBypass }) {
 
 /* ───────── Main AuthPage ───────── */
 export default function AuthPage() {
-  const [screen, setScreen] = useState("landing"); // landing | auth
+  const [screen, setScreen] = useState("auth"); // landing | auth
   const [authMode, setAuthMode] = useState("signin"); // signin | signup | change-password
   const [authMethod, setAuthMethod] = useState("email"); // email | phone
   const selectedRole = "facilitator";
@@ -118,6 +126,22 @@ export default function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  // Check for Google redirect sign in result
+  useEffect(() => {
+    if (isConfigured && auth) {
+      getRedirectResult(auth)
+        .then((result) => {
+          if (result?.user) {
+            console.log("[AuthPage] Google redirect sign in success:", result.user.email);
+          }
+        })
+        .catch((err) => {
+          console.warn("[AuthPage] Google redirect notice:", err);
+          setError(friendlyAuthError(err));
+        });
+    }
+  }, []);
 
   // Handle post-onboarding redirect
   useEffect(() => {
@@ -250,11 +274,25 @@ export default function AuthPage() {
   async function handleGoogleSignIn() {
     setSubmitting(true);
     setError("");
+    setMessage("");
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
     } catch (err) {
-      setError(friendlyAuthError(err));
+      console.error("[AuthPage] Google sign-in failed:", err);
+      if (err.code === "auth/popup-blocked") {
+        try {
+          const provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: 'select_account' });
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr) {
+          setError(friendlyAuthError(redirectErr));
+        }
+      } else {
+        setError(friendlyAuthError(err));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -353,56 +391,60 @@ export default function AuthPage() {
           className="liquid-glass-pill px-4 py-2 inline-flex items-center gap-2 text-gray-600 hover:text-hff-primary mb-6 transition-colors text-xs font-bold shadow-sm"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to HFF Campaigns
+          <span>About HFF Mission</span>
         </button>
 
         {/* Card - Apple Liquid Glass */}
-        <div className="glass-card p-6 sm:p-10 rounded-[2.5rem] border border-white/80 shadow-2xl relative overflow-hidden">
+        <div className="glass-card p-6 sm:p-10 rounded-[2.5rem] border border-white/80 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
           {/* Specular top rim */}
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
 
           {/* Header */}
-          <div className="text-center mb-8 relative z-10">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
-              {authMode === "signin" ? "Welcome Back" : "Create Account"}
+          <div className="text-center mb-6 relative z-10">
+            <img 
+              src="/hff-logo.png" 
+              alt="HFF Logo" 
+              className="w-12 h-12 object-contain mx-auto mb-3 drop-shadow-sm" 
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-1.5">
+              HFF <span className="text-[#71167F]">Impact</span>
             </h1>
             <p className="text-gray-500 text-xs font-medium">
               {authMode === "signin"
-                ? "Sign in to your HFF Campaign account."
-                : "Join our mission to restore hope and help families."}
+                ? "Sign in to your campaign workspace"
+                : authMode === "signup"
+                ? "Create an account to join the campaign"
+                : "Update your account password"}
             </p>
           </div>
 
-          {/* Quick Dev Passwordless Entry */}
-          {isDevBypass && (
-            <div className="mb-8 p-4 rounded-2xl liquid-glass border border-emerald-500/30 bg-emerald-500/5 relative z-10 animate-in fade-in">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
-                  <LockOpen className="w-4 h-4 text-emerald-600" />
-                  <span>Passwords Disabled for Review</span>
+          {/* 1. PRIMARY GOOGLE / GMAIL SIGN-IN BUTTON */}
+          {authMode !== "change-password" && (
+            <div className="space-y-4 mb-6 relative z-10">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={submitting}
+                className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 text-gray-800 text-xs sm:text-sm font-black shadow-md hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 group"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" aria-hidden="true">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+                <span>Continue with Google / Gmail</span>
+              </button>
+
+              {/* Divider */}
+              <div className="relative text-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
                 </div>
-                <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  Dev Mode
+                <span className="relative bg-white/95 px-3 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                  or with email credentials
                 </span>
-              </div>
-              <p className="text-[11px] text-gray-600 mb-3">Jump straight into the app without entering passwords:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => switchDevRole("admin")}
-                  className="py-2.5 px-3 rounded-xl liquid-glass-active text-white text-xs font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  Enter as Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchDevRole("facilitator")}
-                  className="py-2.5 px-3 rounded-xl bg-white/80 hover:bg-white text-gray-800 text-xs font-bold border border-gray-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  Enter as Facilitator
-                </button>
               </div>
             </div>
           )}
@@ -696,21 +738,14 @@ export default function AuthPage() {
             </form>
           )}
 
-          {/* Google Sign-in moved below forms for cleaner look */}
-          <div className="mt-8 pt-8 border-t border-gray-100">
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={submitting}
-              className="w-full flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-white border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all disabled:opacity-50 shadow-sm"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-              Continue with Google
-            </button>
+          {/* Master Admin Notice */}
+          <div className="mt-8 pt-5 border-t border-gray-100 text-center space-y-1 relative z-10">
+            <p className="text-[11px] font-semibold text-gray-500">
+              Master Admin: <strong className="text-[#71167F]">samukeliso.mayabane@thehealthyfamilies.net</strong>
+            </p>
+            <p className="text-[10px] text-gray-400 font-medium">
+              Admitted administrators & facilitators will access assigned workspaces upon sign-in.
+            </p>
           </div>
         </div>
       </div>
