@@ -6,9 +6,25 @@ import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 const AuthContext = createContext(null);
 console.log("[AuthContext] Script loaded - Firebase Migration");
 
+export const MASTER_ADMIN_EMAIL = "samukeliso.mayabane@thehealthyfamilies.net";
+
 export const DEV_BYPASS_PASSWORDS = true;
 
 const DEV_MOCK_USERS = {
+  master_admin: {
+    user: {
+      uid: "dev-master-admin-id",
+      email: MASTER_ADMIN_EMAIL,
+    },
+    profile: {
+      id: "dev-master-admin-id",
+      role: "master_admin",
+      admin_status: "approved",
+      full_name: "Samukeliso Mayabane",
+      phone: "+267 71234567",
+      onboarding_completed: true
+    }
+  },
   admin: {
     user: {
       uid: "dev-admin-id",
@@ -17,8 +33,9 @@ const DEV_MOCK_USERS = {
     profile: {
       id: "dev-admin-id",
       role: "admin",
+      admin_status: "approved",
       full_name: "HFF Administrator",
-      phone: "+267 71234567",
+      phone: "+267 71234568",
       onboarding_completed: true
     }
   },
@@ -30,6 +47,7 @@ const DEV_MOCK_USERS = {
     profile: {
       id: "dev-facilitator-id",
       role: "facilitator",
+      admin_status: "none",
       full_name: "Lead Facilitator",
       phone: "+267 72345678",
       onboarding_completed: true
@@ -38,14 +56,14 @@ const DEV_MOCK_USERS = {
 };
 
 function getInitialBypassRole() {
-  if (typeof window === "undefined") return "admin";
+  if (typeof window === "undefined") return "master_admin";
   const stored = localStorage.getItem("hff_bypass_role");
-  return stored !== null ? stored : "admin";
+  return stored !== null ? stored : "master_admin";
 }
 
 export function AuthProvider({ children }) {
   const initialRole = getInitialBypassRole();
-  const initialMock = initialRole !== "none" ? DEV_MOCK_USERS[initialRole] || DEV_MOCK_USERS.admin : null;
+  const initialMock = initialRole !== "none" ? DEV_MOCK_USERS[initialRole] || DEV_MOCK_USERS.master_admin : null;
 
   const [user, setUser] = useState(initialMock ? initialMock.user : null);
   const [profile, setProfile] = useState(initialMock ? initialMock.profile : null);
@@ -58,7 +76,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setProfile(null);
     } else {
-      const mock = DEV_MOCK_USERS[newRole] || DEV_MOCK_USERS.admin;
+      const mock = DEV_MOCK_USERS[newRole] || DEV_MOCK_USERS.master_admin;
       localStorage.setItem("hff_bypass_role", newRole);
       setUser(mock.user);
       setProfile(mock.profile);
@@ -74,7 +92,8 @@ export function AuthProvider({ children }) {
     }
 
     const email = authUser.email?.toLowerCase() || "";
-    const isAdminEmail = email.endsWith("@thehealthyfamilies.net");
+    const isMasterAdminEmail = email === MASTER_ADMIN_EMAIL.toLowerCase();
+    const isOrgEmail = email.endsWith("@thehealthyfamilies.net");
 
     // Set a timeout of 10 seconds for the profile fetch
     const timeoutPromise = new Promise((_, reject) => {
@@ -91,14 +110,20 @@ export function AuthProvider({ children }) {
 
         if (!profileSnap.exists()) {
           // No profile row — legacy user or just signed up
-          const role = isAdminEmail ? "admin" : "facilitator";
+          const role = isMasterAdminEmail ? "master_admin" : "facilitator";
+          const admin_status = isMasterAdminEmail 
+            ? "approved" 
+            : (isOrgEmail ? "pending_approval" : "none");
 
           const newProfile = {
             id: authUser.uid,
+            email: email,
             role: role,
-            full_name: authUser.displayName || "",
+            admin_status: admin_status,
+            full_name: authUser.displayName || (isMasterAdminEmail ? "Samukeliso Mayabane" : ""),
             phone: authUser.phoneNumber || "",
             must_change_password: false,
+            created_at: new Date().toISOString()
           };
 
           try {
@@ -106,7 +131,7 @@ export function AuthProvider({ children }) {
             currentProfile = newProfile;
           } catch (insertErr) {
             console.error("[AuthContext] Failed to create profile:", insertErr);
-            const fallback = { id: authUser.uid, role, full_name: newProfile.full_name, phone: newProfile.phone };
+            const fallback = { id: authUser.uid, role, admin_status, full_name: newProfile.full_name, phone: newProfile.phone };
             setProfile(fallback);
             return fallback;
           }
@@ -114,16 +139,29 @@ export function AuthProvider({ children }) {
           currentProfile = { id: profileSnap.id, ...profileSnap.data() };
         }
 
-        // STRICT DOMAIN ENFORCEMENT
-        const expectedRole = isAdminEmail ? "admin" : "facilitator";
+        // ROLE & ADMISSION RESOLUTION
+        let resolvedRole = currentProfile.role;
+        let resolvedStatus = currentProfile.admin_status || "none";
 
-        if (currentProfile.role !== expectedRole) {
-          console.log(`[AuthContext] Correcting user role to ${expectedRole} based on email domain`);
-          currentProfile = { ...currentProfile, role: expectedRole };
+        if (isMasterAdminEmail) {
+          resolvedRole = "master_admin";
+          resolvedStatus = "approved";
+        } else if (currentProfile.role === "admin" && currentProfile.admin_status === "approved") {
+          resolvedRole = "admin";
+          resolvedStatus = "approved";
+        } else if (isOrgEmail && currentProfile.admin_status !== "approved") {
+          resolvedRole = "facilitator";
+          resolvedStatus = currentProfile.admin_status || "pending_approval";
+        } else if (!isOrgEmail && resolvedRole !== "master_admin" && resolvedRole !== "admin") {
+          resolvedRole = "facilitator";
+        }
 
-          // Sync to database
+        if (currentProfile.role !== resolvedRole || currentProfile.admin_status !== resolvedStatus) {
+          console.log(`[AuthContext] Syncing user role: ${resolvedRole}, admin_status: ${resolvedStatus}`);
+          currentProfile = { ...currentProfile, role: resolvedRole, admin_status: resolvedStatus };
+
           try {
-            await updateDoc(profileRef, { role: expectedRole });
+            await updateDoc(profileRef, { role: resolvedRole, admin_status: resolvedStatus });
           } catch (error) {
             console.error("[AuthContext] Failed to sync role update:", error);
           }
@@ -136,7 +174,14 @@ export function AuthProvider({ children }) {
       return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
       console.error("[AuthContext] Profile fetch error:", err);
-      const fallback = { id: authUser.uid, role: isAdminEmail ? "admin" : "facilitator", full_name: "", phone: "" };
+      const isMasterAdminEmail = (authUser.email?.toLowerCase() || "") === MASTER_ADMIN_EMAIL.toLowerCase();
+      const fallback = { 
+        id: authUser.uid, 
+        role: isMasterAdminEmail ? "master_admin" : "facilitator", 
+        admin_status: isMasterAdminEmail ? "approved" : "none",
+        full_name: "", 
+        phone: "" 
+      };
       setProfile(fallback);
       return fallback;
     }
@@ -203,10 +248,60 @@ export function AuthProvider({ children }) {
   }
 
   const role = profile?.role || null;
+  const isMasterAdmin = (role === 'master_admin') || (user?.email?.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase());
+  const isAdmin = isMasterAdmin || (role === 'admin' && profile?.admin_status === 'approved') || role === 'admin';
+
+  async function admitAdmin(targetUid) {
+    if (!isMasterAdmin) {
+      throw new Error("Only the Master Admin (samukeliso.mayabane@thehealthyfamilies.net) can admit administrators.");
+    }
+    if (isConfigured && db) {
+      const targetRef = doc(db, "profiles", targetUid);
+      await updateDoc(targetRef, {
+        role: "admin",
+        admin_status: "approved",
+        approved_at: new Date().toISOString(),
+        approved_by: user?.email || MASTER_ADMIN_EMAIL
+      });
+    }
+    window.dispatchEvent(new CustomEvent('hff-profile-refresh'));
+    return true;
+  }
+
+  async function revokeAdmin(targetUid) {
+    if (!isMasterAdmin) {
+      throw new Error("Only the Master Admin can revoke administrator privileges.");
+    }
+    if (isConfigured && db) {
+      const targetRef = doc(db, "profiles", targetUid);
+      await updateDoc(targetRef, {
+        role: "facilitator",
+        admin_status: "revoked",
+        revoked_at: new Date().toISOString(),
+        revoked_by: user?.email || MASTER_ADMIN_EMAIL
+      });
+    }
+    window.dispatchEvent(new CustomEvent('hff-profile-refresh'));
+    return true;
+  }
 
   const value = useMemo(
-    () => ({ user, profile, role, loading, signOut, refreshProfile, switchDevRole, isDevBypass: DEV_BYPASS_PASSWORDS }),
-    [user, profile, role, loading]
+    () => ({ 
+      user, 
+      profile, 
+      role, 
+      isMasterAdmin,
+      isAdmin,
+      loading, 
+      signOut, 
+      refreshProfile, 
+      switchDevRole, 
+      admitAdmin,
+      revokeAdmin,
+      isDevBypass: DEV_BYPASS_PASSWORDS,
+      masterAdminEmail: MASTER_ADMIN_EMAIL
+    }),
+    [user, profile, role, isMasterAdmin, isAdmin, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -12,7 +12,7 @@ const ROLE_BADGES = {
 };
 
 const Layout = ({ children, activeTab, onTabChange, activeCampaign, onSwitchCampaign }) => {
-  const { profile, role, signOut } = useAuth();
+  const { profile, role, signOut, isMasterAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
@@ -90,14 +90,18 @@ const Layout = ({ children, activeTab, onTabChange, activeCampaign, onSwitchCamp
                       <span className="w-1.5 h-1.5 rounded-full bg-[#71167F] animate-pulse" />
                       <span className="max-w-[140px] truncate">{activeCampaign.name}</span>
                     </span>
-                    {onSwitchCampaign && (
+                    {isMasterAdmin && onSwitchCampaign ? (
                       <button
                         onClick={onSwitchCampaign}
                         className="text-[11px] font-bold text-gray-500 hover:text-[#71167F] px-2 py-0.5 rounded-md hover:bg-white/60 transition-colors"
-                        title="Switch Campaign"
+                        title="Switch Campaign (Master Admin)"
                       >
                         Switch
                       </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-gray-400 px-1">
+                        (Active)
+                      </span>
                     )}
                   </div>
                 )}
@@ -109,12 +113,12 @@ const Layout = ({ children, activeTab, onTabChange, activeCampaign, onSwitchCamp
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5">
-            {/* Quick Switch Campaign Button */}
-            {onSwitchCampaign && (
+            {/* Quick Switch Campaign Button - Master Admin only */}
+            {isMasterAdmin && onSwitchCampaign && (
               <button
                 onClick={onSwitchCampaign}
                 className="flex items-center gap-2 px-3.5 py-2 rounded-full liquid-glass-pill text-gray-700 hover:text-[#71167F] hover:border-[#71167F]/30 transition-all active:scale-95 group shadow-xs"
-                title="Switch or start another campaign"
+                title="Switch or start another campaign (Master Admin)"
               >
                 <Layers size={14} className="text-[#71167F] group-hover:rotate-12 transition-transform" />
                 <span className="hidden md:inline text-[11px] font-bold tracking-wide">

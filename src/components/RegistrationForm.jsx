@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/dexieDb';
 import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../lib/campaignManager';
+import { useAuth } from '../auth/AuthContext';
 
 import { Save, Search, User, Check, AlertCircle, FileText, Hash, Clock, Users, MapPin, Phone, X } from 'lucide-react';
 import { matchesPerson } from '../lib/searchUtils';
 
 const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator, initialData, campaignId }) => {
+    const { user, profile, role } = useAuth();
     const activeCampId = campaignId || initialData?.campaign_id || getActiveCampaignId() || DEFAULT_CAMPAIGN.uuid;
 
     // Form State
@@ -201,9 +203,12 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 // Campaign Association
                 campaign_id: initialData?.campaign_id || activeCampId,
 
-                // Metadata
+                // Metadata & Audit Attribution
                 sync_status: 'pending',
                 updated_at: now,
+                updated_by_uid: user?.uid || null,
+                updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                updated_by_email: user?.email || null,
             };
 
             if (initialData) {
@@ -211,7 +216,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 await db.registrations.update(initialData.id, recordData);
                 setMessage({ type: 'success', text: 'Update Saved to Device.' });
             } else {
-                // Save new record
+                // Save new record with full author audit trail
                 const newRecord = {
                     ...recordData,
                     campaign_id: activeCampId,
@@ -219,6 +224,11 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                     uuid: self.crypto.randomUUID(),
                     source: 'pwa_offline',
                     created_at: now,
+                    created_by_uid: user?.uid || null,
+                    created_by_name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                    created_by_email: user?.email || null,
+                    created_by_role: role || 'admin',
+                    submission_source: 'admin_portal',
                 };
                 await db.registrations.add(newRecord);
                 setMessage({ type: 'success', text: 'Saved to Device (Will sync when online).' });

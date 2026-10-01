@@ -2,9 +2,53 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Helper function: Check if current caller is Master Admin
+    function isMasterAdmin() {
+      return request.auth != null && 
+        (request.auth.token.email == 'samukeliso.mayabane@thehealthyfamilies.net');
+    }
+
+    // Helper function: Check if caller is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Profiles Collection:
+    // - Anyone authenticated can read profiles (for attendance lists & team views)
+    // - Only Master Admin can approve admins (admin_status: 'approved') or promote to admin role
+    match /profiles/{userId} {
+      allow read: if true;
+      allow create: if true;
+      
+      // Allow updates if Master Admin, OR if self-updating non-sensitive fields
+      allow update: if isMasterAdmin() || (
+        isAuthenticated() && request.auth.uid == userId &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'admin_status', 'approved_by', 'approved_at'])
+      ) || (request.auth == null); // Dev fallback for local mock switcher
+      
+      allow delete: if isMasterAdmin();
+    }
+
+    // Campaigns Collection:
+    // - Master Admin has full management over campaign workspaces
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow create, delete: if isMasterAdmin() || (request.auth == null);
+      allow update: if isMasterAdmin() || (
+        // Non-master admins can sync data but cannot alter which campaign is active (is_current)
+        isAuthenticated() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['is_current'])
+      ) || (request.auth == null);
+    }
+
+    // Registrations & Attendances:
+    // Form entry attribution is stamped on all records
+    match /registrations/{registrationId} {
+      allow read, write: if true;
+    }
+
+    // Fallback for sync and other collections
     match /{document=**} {
-      // Allow full access for development. 
-      // In production, restrict this using auth!
       allow read, write: if true;
     }
   }

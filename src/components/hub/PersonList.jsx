@@ -13,6 +13,7 @@ import { matchesPerson, formatEnteredDate } from '../../lib/searchUtils';
 import { normalizeAttendance } from '../../lib/analytics';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
+import { useAuth } from '../../auth/AuthContext';
 
 const SEARCH_CRITERIA = [
     { id: 'all', label: 'All Criteria' },
@@ -22,6 +23,7 @@ const SEARCH_CRITERIA = [
     { id: 'facilitator_names', label: 'Facilitator' },
     { id: 'date_entered', label: 'Date Entered' },
     { id: 'meeting_times', label: 'Meeting Time' },
+    { id: 'submitted_by', label: 'Submitted By' },
 ];
 
 const PersonList = ({ 
@@ -31,6 +33,7 @@ const PersonList = ({
     selectedParticipant, 
     setSelectedParticipant 
 }) => {
+    const { user, profile, role } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [searchCriterion, setSearchCriterion] = useState('all');
     const [filterType, setFilterType] = useState('all');
@@ -76,7 +79,12 @@ const PersonList = ({
         setImportFeedback(null);
         try {
             const targetCampaignId = activeCampId || DEFAULT_CAMPAIGN.uuid;
-            const res = await importFileToCampaign(file, targetCampaignId);
+            const res = await importFileToCampaign(file, targetCampaignId, {
+                uid: user?.uid || null,
+                name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                email: user?.email || null,
+                role: role || 'admin'
+            });
             setImportFeedback({ success: true, message: `Successfully imported ${res.count} records!` });
             setTimeout(() => setImportFeedback(null), 5000);
         } catch (err) {
@@ -431,10 +439,16 @@ const PersonList = ({
             };
 
             if (editorMode === 'edit' && editingPerson?.id) {
-                await db.registrations.update(editingPerson.id, normalized);
+                const editPayload = {
+                    ...normalized,
+                    updated_by_uid: user?.uid || null,
+                    updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                    updated_by_email: user?.email || null,
+                };
+                await db.registrations.update(editingPerson.id, editPayload);
                 if (onRecordEdited) {
                     onRecordEdited({
-                        ...normalized,
+                        ...editPayload,
                         id: editingPerson.id,
                         uuid: editingPerson.uuid
                     });
@@ -444,7 +458,12 @@ const PersonList = ({
                     ...normalized,
                     campaign_id: activeCampId || DEFAULT_CAMPAIGN.uuid,
                     uuid: globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).substring(2)),
-                    created_at: now
+                    created_at: now,
+                    created_by_uid: user?.uid || null,
+                    created_by_name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                    created_by_email: user?.email || null,
+                    created_by_role: role || 'admin',
+                    submission_source: 'admin_person_list'
                 });
             }
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
@@ -894,6 +913,20 @@ const PersonList = ({
                                     <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-400 uppercase tracking-wider" title="Date Entered">
                                         <CalendarCheck size={11} className="shrink-0" />
                                         <span>Entered: {formatEnteredDate(person.created_at)}</span>
+                                    </div>
+                                )}
+
+                                {(person.created_by_name || person.created_by_email) && (
+                                    <div className="flex items-center justify-between text-[10px] font-bold text-gray-700 bg-purple-50/70 border border-purple-100/80 px-2.5 py-1.5 rounded-xl mt-1.5" title={`Entered by: ${person.created_by_name || person.created_by_email}`}>
+                                        <span className="flex items-center gap-1.5 truncate">
+                                            <UserCheck size={12} className="text-[#71167F] shrink-0" />
+                                            <span className="truncate">Form by: <strong className="text-gray-900 font-extrabold">{person.created_by_name || person.created_by_email}</strong></span>
+                                        </span>
+                                        {person.created_by_role && (
+                                            <span className="capitalize px-1.5 py-0.2 rounded-md bg-white text-[#71167F] text-[8px] font-black uppercase tracking-wider border border-purple-200/60 shrink-0 ml-1">
+                                                {person.created_by_role}
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>

@@ -195,8 +195,16 @@ export default function FacilitatorDashboard({ onBack }) {
                 attendance: lookupMatch?.data?.attendance || Array(TOTAL_DAYS).fill(false),
                 books_received: lookupMatch?.data?.books_received || false,
                 source: "facilitator-dashboard",
+                submission_source: "facilitator-dashboard",
                 created_at: lookupMatch?.data?.created_at || new Date().toISOString(),
                 updated_at: new Date().toISOString(),
+                created_by_uid: lookupMatch?.data?.created_by_uid || user?.uid || null,
+                created_by_name: lookupMatch?.data?.created_by_name || profile?.full_name || user?.displayName || user?.email || "Facilitator",
+                created_by_email: lookupMatch?.data?.created_by_email || user?.email || null,
+                created_by_role: lookupMatch?.data?.created_by_role || "facilitator",
+                updated_by_uid: user?.uid || null,
+                updated_by_name: profile?.full_name || user?.displayName || user?.email || "Facilitator",
+                updated_by_email: user?.email || null,
                 sync_status: "pending",
             };
 

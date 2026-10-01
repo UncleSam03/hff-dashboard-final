@@ -235,6 +235,18 @@ export function matchSingleCriterion(person, criterion, query) {
             return reversed.includes(cleanQuery);
         }
 
+        case 'submitted_by':
+        case 'created_by': {
+            const submitterFields = [
+                person.created_by_name,
+                person.created_by_email,
+                person.created_by_role,
+                person.submission_source,
+                person.updated_by_name
+            ].filter(Boolean);
+            return submitterFields.some(val => String(val).toLowerCase().includes(cleanQuery));
+        }
+
         default:
             return false;
     }
@@ -242,12 +254,12 @@ export function matchSingleCriterion(person, criterion, query) {
 
 /**
  * Evaluates whether a person record matches the search query.
- * If criterion is 'all', tests across meeting place, form #, phone, facilitator, date, meeting time, and name.
+ * If criterion is 'all', tests across meeting place, form #, phone, facilitator, date, meeting time, name, and submitter.
  * Also supports multi-token search (e.g. "Tuesday St Jude" matches if all tokens match at least one criterion).
  *
  * @param {Object} person - The person or facilitator object
  * @param {string} query - The search query
- * @param {string} [criterion='all'] - 'all' | 'meeting_place' | 'form_number' | 'phone_number' | 'facilitator_names' | 'date_entered' | 'meeting_times' | 'name'
+ * @param {string} [criterion='all'] - 'all' | 'meeting_place' | 'form_number' | 'phone_number' | 'facilitator_names' | 'date_entered' | 'meeting_times' | 'name' | 'submitted_by'
  * @returns {boolean}
  */
 export function matchesPerson(person, query, criterion = 'all') {
@@ -268,7 +280,8 @@ export function matchesPerson(person, query, criterion = 'all') {
         'facilitator_names',
         'date_entered',
         'meeting_times',
-        'name'
+        'name',
+        'submitted_by'
     ];
 
     if (ALL_CRITERIA.some(crit => matchSingleCriterion(person, crit, trimmed))) {

@@ -19,7 +19,7 @@ import { DEFAULT_CAMPAIGN, getActiveCampaignId, setActiveCampaignId, getAllCampa
 import { sanitizeExistingRegistrations } from './lib/dataMaintenance';
 
 function AppContent() {
-  const { role, profile, signOut, loading } = useAuth();
+  const { role, profile, signOut, loading, isMasterAdmin, masterAdminEmail } = useAuth();
   const [mode, setMode] = useState('overview'); // 'overview', 'hub', 'analysis', 'sat'
   const [hubInitialTab, setHubInitialTab] = useState('people');
   const [_initialSyncing, setInitialSyncing] = useState(false);
@@ -27,23 +27,36 @@ function AppContent() {
 
   useEffect(() => {
     sanitizeExistingRegistrations();
-    // Restore active campaign from storage if previously selected
+    // Restore active campaign from storage or default to current campaign
     async function restoreCampaign() {
-      const savedId = getActiveCampaignId();
-      if (savedId) {
-        try {
-          const campaigns = await getAllCampaigns();
+      try {
+        const campaigns = await getAllCampaigns();
+        const current = campaigns.find(c => c.is_current === true || c.is_current === 1) ||
+                        campaigns.find(c => c.status === 'active') ||
+                        campaigns.find(c => c.uuid === DEFAULT_CAMPAIGN.uuid) ||
+                        campaigns[0] || DEFAULT_CAMPAIGN;
+
+        // If standard admin (not master admin), they are locked strictly to the current active campaign
+        if (!isMasterAdmin && role === 'admin') {
+          setActiveCampaign(current);
+          setActiveCampaignId(current.uuid);
+          return;
+        }
+
+        const savedId = getActiveCampaignId();
+        if (savedId) {
           const found = campaigns.find(c => c.uuid === savedId);
           if (found) {
             setActiveCampaign(found);
+            return;
           }
-        } catch (err) {
-          console.warn("[App] Could not restore campaign:", err);
         }
+      } catch (err) {
+        console.warn("[App] Could not restore campaign:", err);
       }
     }
     restoreCampaign();
-  }, []);
+  }, [isMasterAdmin, role]);
 
   console.log("[AppContent] Status:", { role, onboarding_completed: profile?.onboarding_completed, loading });
 
@@ -103,11 +116,19 @@ function AppContent() {
   };
 
   const handleSelectCampaign = (campaign) => {
+    if (!isMasterAdmin && campaign && campaign.is_current === false) {
+      alert(`Access Restricted: Only the Master Admin (${masterAdminEmail}) can access past campaigns.`);
+      return;
+    }
     setActiveCampaign(campaign);
     setActiveCampaignId(campaign?.uuid || null);
   };
 
   const handleSwitchCampaign = () => {
+    if (!isMasterAdmin) {
+      alert(`Notice: Only the Master Admin (${masterAdminEmail}) can switch or manage campaign workspaces.`);
+      return;
+    }
     setActiveCampaign(null);
     setActiveCampaignId(null);
     setMode('overview');

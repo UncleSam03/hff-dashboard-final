@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, CalendarCheck, ClipboardList, ArrowLeft, CloudUpload, RefreshCw, Check, AlertCircle, Layers } from 'lucide-react';
+import { Users, CalendarCheck, ClipboardList, ArrowLeft, CloudUpload, RefreshCw, Check, AlertCircle, Layers, Crown } from 'lucide-react';
 import PersonList from './hub/PersonList';
 import AttendanceSheet from './hub/AttendanceSheet';
 import NoticeBoard from './hub/NoticeBoard';
 import MaintenanceTool from './MaintenanceTool';
+import AdminManagement from './hub/AdminManagement';
 import { pushPendingToFirebase, resetLocalFromFirebase } from '../lib/firebaseSync';
 import { isConfigured } from '../lib/firebase';
+import { useAuth } from '../auth/AuthContext';
 import db from '../lib/dexieDb';
 import './hub/Hub.css';
 
 const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
-    const [activeTab, setActiveTab] = useState(initialTab); // 'people', 'attendance', 'notice'
+    const { isMasterAdmin } = useAuth();
+    const [activeTab, setActiveTab] = useState(initialTab); // 'people', 'attendance', 'notice', 'admin_access'
 
     useEffect(() => {
         if (initialTab) {
@@ -166,6 +169,8 @@ const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
                 return <NoticeBoard />;
             case 'maintenance':
                 return <MaintenanceTool activeCampaign={activeCampaign} />;
+            case 'admin_access':
+                return <AdminManagement />;
             default:
                 return <PersonList />;
         }
@@ -252,6 +257,21 @@ const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
                         <Layers className="h-5 w-5" />
                         <span>Maintenance</span>
                     </button>
+                    {isMasterAdmin && (
+                        <button
+                            onClick={() => setActiveTab('admin_access')}
+                            className={`hub-nav-button flex items-center gap-2 border border-amber-200/60 ${activeTab === 'admin_access' ? 'active !bg-[#71167F] !text-white' : 'text-gray-700 hover:bg-amber-50/50'}`}
+                            title="Admin Admission & Role Governance (Master Admin Only)"
+                        >
+                            <Crown className="h-4 w-4 text-amber-500" />
+                            <span className="flex items-center gap-1.5">
+                                Admin Access
+                                <span className="px-1.5 py-0.2 rounded-md bg-amber-400/20 text-amber-900 text-[8px] font-black uppercase tracking-wider">
+                                    Master
+                                </span>
+                            </span>
+                        </button>
+                    )}
                 </div>
             </div>
 

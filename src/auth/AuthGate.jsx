@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import AuthPage from "./AuthPage";
 import { useAuth } from "./AuthContext";
-import { Shield, Users, ChevronDown, ChevronUp, LockOpen } from "lucide-react";
+import { Shield, Users, ChevronDown, ChevronUp, LockOpen, Crown } from "lucide-react";
 
 export default function AuthGate({ children }) {
   const { user, loading, role, switchDevRole, isDevBypass } = useAuth();
@@ -71,12 +71,26 @@ export default function AuthGate({ children }) {
           </div>
 
           <button
+            onClick={() => switchDevRole("master_admin")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              role === "master_admin"
+                ? "liquid-glass-active text-white shadow-md bg-[#71167F]"
+                : "bg-white/40 hover:bg-white/70 text-gray-700"
+            }`}
+            title="Samukeliso Mayabane (Master Admin)"
+          >
+            <Crown className="w-3 h-3 text-amber-300" />
+            Master Admin
+          </button>
+
+          <button
             onClick={() => switchDevRole("admin")}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               role === "admin"
                 ? "liquid-glass-active text-white shadow-md"
                 : "bg-white/40 hover:bg-white/70 text-gray-700"
             }`}
+            title="Admitted Admin (Current Campaign Only)"
           >
             <Shield className="w-3 h-3" />
             Admin

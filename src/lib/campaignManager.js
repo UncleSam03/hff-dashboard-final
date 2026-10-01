@@ -8,6 +8,7 @@ export const DEFAULT_CAMPAIGN = {
     village: 'Mahalapye',
     year: '2026',
     status: 'active',
+    is_current: true,
     description: 'Evidence-based community and family strengthening program in Central District.',
     targetAttendees: 500,
     created_at: '2026-01-15T08:00:00.000Z',
@@ -54,6 +55,43 @@ export async function getAllCampaigns() {
 }
 
 /**
+ * Get the currently active/current campaign
+ * If no campaign is explicitly marked as is_current, defaults to the default campaign or the first active one.
+ */
+export async function getCurrentCampaign() {
+    const campaigns = await getAllCampaigns();
+    if (campaigns.length === 0) return DEFAULT_CAMPAIGN;
+    const current = campaigns.find(c => c.is_current === true || c.is_current === 1);
+    if (current) return current;
+    const active = campaigns.find(c => c.status === 'active');
+    if (active) return active;
+    return campaigns[0] || DEFAULT_CAMPAIGN;
+}
+
+/**
+ * Designate a campaign as the Current Active Campaign (Master Admin only)
+ * Sets is_current: true for target campaign and is_current: false for all others
+ */
+export async function setCurrentCampaign(uuid) {
+    const now = new Date().toISOString();
+    await db.transaction('rw', db.campaigns, async () => {
+        const all = await db.campaigns.toArray();
+        for (const c of all) {
+            const isTarget = c.uuid === uuid;
+            await db.campaigns.update(c.id, {
+                is_current: isTarget,
+                status: isTarget ? 'active' : (c.status === 'active' ? 'archived' : c.status),
+                sync_status: 'pending',
+                updated_at: now
+            });
+        }
+    });
+    setActiveCampaignId(uuid);
+    window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+    window.dispatchEvent(new CustomEvent('hff-campaign-changed', { detail: { uuid } }));
+}
+
+/**
  * Get active campaign UUID
  */
 export function getActiveCampaignId() {
@@ -74,8 +112,9 @@ export function setActiveCampaignId(uuid) {
 /**
  * Create a new campaign
  */
-export async function createCampaign({ name, village, targetAttendees }) {
+export async function createCampaign({ name, village, targetAttendees, setAsCurrent = false }) {
     const uuid = 'campaign-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36));
+    const now = new Date().toISOString();
     const campaign = {
         uuid,
         name: (name || 'New Campaign').trim(),
@@ -83,11 +122,28 @@ export async function createCampaign({ name, village, targetAttendees }) {
         year: String(new Date().getFullYear()),
         targetAttendees: Number(targetAttendees) || 0,
         status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        is_current: Boolean(setAsCurrent),
+        created_at: now,
+        updated_at: now,
         sync_status: 'pending'
     };
-    await db.campaigns.add(campaign);
+
+    if (setAsCurrent) {
+        await db.transaction('rw', db.campaigns, async () => {
+            const all = await db.campaigns.toArray();
+            for (const c of all) {
+                await db.campaigns.update(c.id, {
+                    is_current: false,
+                    sync_status: 'pending',
+                    updated_at: now
+                });
+            }
+            await db.campaigns.add(campaign);
+        });
+    } else {
+        await db.campaigns.add(campaign);
+    }
+
     window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
     return campaign;
 }
@@ -127,7 +183,7 @@ export async function deleteCampaign(uuid) {
 /**
  * Parse an uploaded CSV or XLSX file and import into a specific campaign
  */
-export async function importFileToCampaign(file, campaignId) {
+export async function importFileToCampaign(file, campaignId, submitterInfo = null) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -230,6 +286,11 @@ export async function importFileToCampaign(file, campaignId) {
                             facilitator_uuid: null,
                             attendance: Array.isArray(p.attendance) ? p.attendance : parseAttendance(p.attendance),
                             source: 'excel_register',
+                            submission_source: 'excel_register',
+                            created_by_uid: submitterInfo?.uid || null,
+                            created_by_name: submitterInfo?.full_name || submitterInfo?.name || submitterInfo?.email || 'Admin Register Import',
+                            created_by_email: submitterInfo?.email || null,
+                            created_by_role: submitterInfo?.role || 'admin',
                             campaign_id: campaignId,
                             sync_status: 'pending',
                             created_at: now,
@@ -360,6 +421,11 @@ export async function importFileToCampaign(file, campaignId) {
                             meeting_time,
                             campaign_id: campaignId,
                             sync_status: 'pending',
+                            submission_source: sourceCol >= 0 && parseStringOrNull(row[sourceCol]) ? parseStringOrNull(row[sourceCol]) : 'csv_import',
+                            created_by_uid: submitterInfo?.uid || null,
+                            created_by_name: submitterInfo?.full_name || submitterInfo?.name || submitterInfo?.email || 'Admin File Import',
+                            created_by_email: submitterInfo?.email || null,
+                            created_by_role: submitterInfo?.role || 'admin',
                             created_at,
                             updated_at,
                             is_deleted,

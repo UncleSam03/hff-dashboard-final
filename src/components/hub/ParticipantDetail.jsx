@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil, Hash, FileText } from 'lucide-react';
+import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil, Hash, FileText, UserCheck } from 'lucide-react';
 import RegistrationForm from '../RegistrationForm';
 import { cn } from '../../lib/utils';
 import { normalizeAttendance } from '../../lib/analytics';
@@ -285,6 +285,44 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
                             );
                         })()}
                     </div>
+
+                    {(participant.created_by_name || participant.created_by_email) && (
+                        <div className="bg-purple-50/70 rounded-2xl p-4 border border-purple-100/70 space-y-2">
+                            <p className="text-[10px] font-black text-[#71167F] uppercase tracking-widest flex items-center gap-1.5">
+                                <UserCheck size={14} /> Form Entry Attribution
+                            </p>
+                            <div className="text-xs text-gray-700 space-y-1 font-medium">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Submitted by:</span>
+                                    <span className="font-bold text-gray-900">{participant.created_by_name || 'N/A'}</span>
+                                </div>
+                                {participant.created_by_email && (
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Email:</span>
+                                        <span className="font-mono text-gray-800 text-[11px]">{participant.created_by_email}</span>
+                                    </div>
+                                )}
+                                {participant.created_by_role && (
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Role:</span>
+                                        <span className="capitalize font-bold text-[#71167F]">{participant.created_by_role}</span>
+                                    </div>
+                                )}
+                                {participant.submission_source && (
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Source:</span>
+                                        <span className="font-bold text-gray-600">{participant.submission_source}</span>
+                                    </div>
+                                )}
+                                {participant.updated_by_name && (
+                                    <div className="flex justify-between pt-1 border-t border-purple-100">
+                                        <span className="text-gray-500">Last edited by:</span>
+                                        <span className="font-bold text-gray-900">{participant.updated_by_name}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="pt-4 border-t border-gray-50">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
