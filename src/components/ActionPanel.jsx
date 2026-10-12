@@ -1,46 +1,10 @@
 import React from 'react';
-import { TrendingUp, FileDown, CloudLightning, Check, Loader2 } from 'lucide-react';
+import { FileDown, CloudLightning, Check, Loader2 } from 'lucide-react';
 import { cn } from "../lib/utils";
 
 const ActionPanel = ({ syncStatus = 'synced', onDownload, onSync, isDownloading = false, lastSyncedAt = '' }) => {
     return (
-        <div className="space-y-8">
-            {/* AI Insights Card */}
-            <div className="liquid-glass-elevated rounded-[2.5rem] p-8 relative overflow-hidden group border border-white/80 shadow-xl backdrop-blur-2xl">
-                {/* Specular top rim */}
-                <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
-                <div className="absolute -right-8 -top-8 w-40 h-40 bg-[#71167F]/8 rounded-full blur-3xl group-hover:bg-[#71167F]/15 transition-colors pointer-events-none" />
-
-                <div className="flex items-center gap-3 mb-6 relative z-10">
-                    <div className="w-10 h-10 rounded-2xl bg-[#71167F]/10 text-[#71167F] border border-[#71167F]/20 flex items-center justify-center shadow-sm">
-                        <TrendingUp size={18} />
-                    </div>
-                    <h2 className="text-base font-bold text-gray-900 uppercase tracking-wider">Impact Insights</h2>
-                </div>
-
-                <div className="space-y-6 relative z-10">
-                    <div className="relative">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 hff-gradient-bg rounded-full opacity-40" />
-                        <p className="text-xs font-medium text-gray-600 leading-relaxed italic pl-4 py-1">
-                            "Current trends indicate a <span className="text-[#71167F] font-bold">12% surge</span> in engagement within the Molepolole district. Facilitator activity is optimized across all sectors."
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3.5">
-                        <div className="p-4 rounded-2xl liquid-glass-pill border border-white/80 shadow-sm">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Top Segment</span>
-                            <span className="text-xs font-bold text-gray-900 uppercase">Young Adults</span>
-                        </div>
-                        <div className="p-4 rounded-2xl liquid-glass-pill border border-white/80 shadow-sm">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Projection</span>
-                            <span className="text-xs font-bold text-[#3EB049] uppercase">+8.4% growth</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
                 <button
                     onClick={onDownload}
                     disabled={isDownloading}
@@ -100,7 +64,6 @@ const ActionPanel = ({ syncStatus = 'synced', onDownload, onSync, isDownloading 
                         {syncStatus === 'syncing' ? 'Busy' : 'Live'}
                     </div>
                 </button>
-            </div>
         </div>
     );
 };
