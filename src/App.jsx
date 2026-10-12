@@ -21,7 +21,15 @@ function AppContent() {
   const [mode, setMode] = useState('overview'); // 'overview', 'hub', 'analysis', 'sat'
   const [hubInitialTab, setHubInitialTab] = useState('people');
   const [_initialSyncing, setInitialSyncing] = useState(false);
-  const [activeCampaign, setActiveCampaign] = useState(null);
+  const [activeCampaign, setActiveCampaign] = useState(() => {
+    try {
+      const cached = localStorage.getItem('hff_active_campaign_meta');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [campaignRestoring, setCampaignRestoring] = useState(true);
 
   useEffect(() => {
     sanitizeExistingRegistrations();
@@ -39,6 +47,7 @@ function AppContent() {
         if (!isMasterAdmin) {
           setActiveCampaign(currentOngoing);
           setActiveCampaignId(currentOngoing.uuid);
+          try { localStorage.setItem('hff_active_campaign_meta', JSON.stringify(currentOngoing)); } catch {}
           return;
         }
 
@@ -47,14 +56,18 @@ function AppContent() {
           const found = campaigns.find(c => c.uuid === savedId);
           if (found) {
             setActiveCampaign(found);
+            try { localStorage.setItem('hff_active_campaign_meta', JSON.stringify(found)); } catch {}
             return;
           }
         }
 
         setActiveCampaign(currentOngoing);
         setActiveCampaignId(currentOngoing.uuid);
+        try { localStorage.setItem('hff_active_campaign_meta', JSON.stringify(currentOngoing)); } catch {}
       } catch (err) {
         console.warn("[App] Could not restore campaign:", err);
+      } finally {
+        setCampaignRestoring(false);
       }
     }
     restoreCampaign();
@@ -96,7 +109,8 @@ function AppContent() {
     }
   }, [role]);
 
-  if (loading) {
+  // Show clean spinner while auth or initial campaign resolution is happening
+  if (loading || (campaignRestoring && !activeCampaign)) {
     return (
       <div className="min-h-screen bg-[#FDFCF9] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-hff-primary border-t-transparent"></div>
@@ -124,6 +138,13 @@ function AppContent() {
     }
     setActiveCampaign(campaign);
     setActiveCampaignId(campaign?.uuid || null);
+    try {
+      if (campaign) {
+        localStorage.setItem('hff_active_campaign_meta', JSON.stringify(campaign));
+      } else {
+        localStorage.removeItem('hff_active_campaign_meta');
+      }
+    } catch {}
   };
 
   const handleSwitchCampaign = () => {
@@ -133,6 +154,9 @@ function AppContent() {
     }
     setActiveCampaign(null);
     setActiveCampaignId(null);
+    try {
+      localStorage.removeItem('hff_active_campaign_meta');
+    } catch {}
     setMode('overview');
   };
 
@@ -145,7 +169,7 @@ function AppContent() {
     );
   }
 
-  // Master Admin: if no campaign is selected, present the Campaign Selector window
+  // Master Admin: if no campaign is selected (e.g. after clicking Switch Campaign), present the Campaign Selector window
   if (!activeCampaign) {
     return (
       <CampaignSelector 
