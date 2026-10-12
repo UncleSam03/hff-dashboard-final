@@ -74,19 +74,19 @@ const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
         setSyncState('syncing');
         try {
             await pushPendingToFirebase();
-            await refreshPendingCount();
-            const remaining = await db.registrations
+            const pending = await db.registrations
                 .where('sync_status')
-                .equals('failed')
+                .equals('pending')
                 .count();
-            setSyncState(remaining > 0 ? 'error' : 'success');
+            setPendingCount(pending);
+            setSyncState(pending === 0 ? 'success' : 'error');
         } catch (err) {
             console.error('[Hub] Sync failed:', err);
             setSyncState('error');
         }
 
-        // Reset to idle after 3 seconds
-        setTimeout(() => setSyncState('idle'), 3000);
+        // Reset to idle after 4 seconds
+        setTimeout(() => setSyncState('idle'), 4000);
     };
 
     const handleResetFromCloud = async () => {

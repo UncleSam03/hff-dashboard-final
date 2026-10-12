@@ -8,10 +8,22 @@ import { normalizeAttendance } from './analytics';
 
 let isSyncing = false;
 let isPulling = false;
-const lastPullTimes = {
-    registrations: null,
-    campaigns: null
-};
+
+const STORAGE_PREFIX = 'hff_last_pull_';
+
+function getLastPullTime(storeName) {
+    try {
+        return localStorage.getItem(`${STORAGE_PREFIX}${storeName}`) || null;
+    } catch {
+        return null;
+    }
+}
+
+function setLastPullTime(storeName, timestamp) {
+    try {
+        localStorage.setItem(`${STORAGE_PREFIX}${storeName}`, timestamp);
+    } catch {}
+}
 
 /**
  * Recursively remove undefined values to avoid Firestore serialization errors
@@ -144,9 +156,10 @@ async function pullStoreUpdates(storeName, forceFull = false) {
     isPulling = true;
     try {
         let querySnapshot;
-        const lastPull = lastPullTimes[storeName];
+        const lastPull = getLastPullTime(storeName);
+        const localCount = await db[storeName].count();
 
-        if (!forceFull && lastPull) {
+        if (!forceFull && lastPull && localCount > 0) {
             try {
                 const incrementalQ = query(
                     collection(firestoreDb, storeName),
@@ -154,14 +167,18 @@ async function pullStoreUpdates(storeName, forceFull = false) {
                 );
                 querySnapshot = await getDocs(incrementalQ);
             } catch (queryErr) {
-                console.warn(`[FirebaseSync] Incremental query failed for ${storeName}, falling back to full query:`, queryErr.message);
-                querySnapshot = await getDocs(collection(firestoreDb, storeName));
+                console.warn(`[FirebaseSync] Incremental query failed for ${storeName}:`, queryErr.message);
+                if (localCount === 0) {
+                    querySnapshot = await getDocs(collection(firestoreDb, storeName));
+                } else {
+                    return; // Avoid hammering Firestore with full read on transient errors
+                }
             }
         } else {
             querySnapshot = await getDocs(collection(firestoreDb, storeName));
         }
 
-        lastPullTimes[storeName] = new Date().toISOString();
+        setLastPullTime(storeName, new Date().toISOString());
 
         const remoteRecords = [];
         querySnapshot.forEach((doc) => {
@@ -301,11 +318,18 @@ async function pullStoreUpdates(storeName, forceFull = false) {
 /**
  * Reconciliation: Fetches all UUIDs from Firebase and deletes local records that aren't in that list.
  */
-export async function reconcileFirebaseDeletions(storeName) {
+export async function reconcileFirebaseDeletions(storeName, force = false) {
     if (!isConfigured) return;
     
     const online = await checkConnectivity();
     if (!online) return;
+
+    const LAST_REC_KEY = `hff_last_rec_${storeName}`;
+    const lastRec = localStorage.getItem(LAST_REC_KEY);
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    if (!force && lastRec && (Date.now() - Number(lastRec)) < ONE_DAY) {
+        return; // Throttled to prevent daily quota exhaustion
+    }
 
     console.log(`[FirebaseSync] Reconciling deletions for ${storeName}...`);
     
@@ -332,6 +356,7 @@ export async function reconcileFirebaseDeletions(storeName) {
             window.dispatchEvent(new CustomEvent(`hff-firebase-${storeName}-updated`));
             window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
         }
+        localStorage.setItem(LAST_REC_KEY, String(Date.now()));
     } catch (error) {
         console.error(`[FirebaseSync] Reconciliation failed for ${storeName}:`, error.message);
     }

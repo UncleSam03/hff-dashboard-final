@@ -101,7 +101,7 @@ function AppContent() {
   // For admin users: pull cloud data into Dexie on first mount
   // so the dashboard isn't empty on a new session / cleared browser
   useEffect(() => {
-    if (role === 'admin' && navigator.onLine) {
+    if ((role === 'admin' || role === 'master_admin') && navigator.onLine) {
       setInitialSyncing(true);
       reconcileWithCloud()
         .catch(err => console.warn('[App] Initial Firebase reconciliation failed:', err))

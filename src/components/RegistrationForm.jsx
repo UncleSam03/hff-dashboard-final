@@ -214,7 +214,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
             if (initialData) {
                 // Update existing record
                 await db.registrations.update(initialData.id, recordData);
-                setMessage({ type: 'success', text: 'Update Saved to Device.' });
+                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                setMessage({ type: 'success', text: 'Update Saved & Syncing to Cloud.' });
             } else {
                 const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+/, '');
 
@@ -250,7 +251,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                             updated_by_email: user?.email || null,
                         });
                         window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
-                        setMessage({ type: 'success', text: 'Existing record updated.' });
+                        setMessage({ type: 'success', text: 'Existing record updated & Syncing to Cloud.' });
                         return;
                     } else {
                         return;
@@ -272,7 +273,8 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                     submission_source: 'admin_portal',
                 };
                 await db.registrations.add(newRecord);
-                setMessage({ type: 'success', text: 'Saved to Device (Will sync when online).' });
+                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                setMessage({ type: 'success', text: 'Saved & Syncing to Cloud.' });
             }
 
             // Reset Form (only if not editing)
