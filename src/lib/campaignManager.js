@@ -1,15 +1,17 @@
 import db from './dexieDb';
 import * as XLSX from 'xlsx';
 import { parseHffRegisterRows, detectHffHeaderRowIndex, normalizeGender } from './hffRegister';
+import { db as firestoreDb, isConfigured as isFirestoreConfigured } from './firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 export const DEFAULT_CAMPAIGN = {
-    uuid: 'campaign-default-mahalapye',
-    name: 'Mahalapye West Campaign',
-    village: 'Mahalapye',
+    uuid: 'campaign-default-national',
+    name: 'National Campaign',
+    village: 'National',
     year: '2026',
     status: 'active',
     is_current: true,
-    description: 'Evidence-based community and family strengthening program in Central District.',
+    description: 'Evidence-based community and family strengthening program in Botswana.',
     targetAttendees: 500,
     created_at: '2026-01-15T08:00:00.000Z',
     sync_status: 'synced'
@@ -18,27 +20,81 @@ export const DEFAULT_CAMPAIGN = {
 const STORAGE_KEY = 'hff_active_campaign_id';
 
 /**
+ * Automatically purge legacy/placeholder Mahalapye campaign records
+ */
+export async function purgeMahalapyePlaceholder() {
+    try {
+        const matches = await db.campaigns
+            .filter(c => c.uuid === 'campaign-default-mahalapye' || c.name === 'Mahalapye West Campaign')
+            .toArray();
+
+        if (matches.length > 0) {
+            console.log(`[CampaignManager] Purging ${matches.length} placeholder Mahalapye campaign(s)...`);
+
+            const realCampaign = await db.campaigns
+                .filter(c => c.uuid !== 'campaign-default-mahalapye' && c.name !== 'Mahalapye West Campaign' && !c.is_deleted)
+                .first();
+
+            for (const camp of matches) {
+                // If any registrations were linked to it, reassign to active real campaign
+                const linkedRegs = await db.registrations.where('campaign_id').equals(camp.uuid).toArray();
+                if (linkedRegs.length > 0 && realCampaign) {
+                    await db.transaction('rw', db.registrations, async () => {
+                        for (const r of linkedRegs) {
+                            await db.registrations.update(r.id, { campaign_id: realCampaign.uuid });
+                        }
+                    });
+                }
+
+                // Delete permanently from local Dexie DB
+                await db.campaigns.delete(camp.id);
+
+                // Delete from remote Firestore so it never re-syncs back down
+                try {
+                    if (isFirestoreConfigured && firestoreDb) {
+                        const docRef = doc(firestoreDb, 'campaigns', camp.uuid);
+                        await deleteDoc(docRef);
+                        console.log(`[CampaignManager] Purged ${camp.uuid} from Firestore campaigns.`);
+                    }
+                } catch (fsErr) {
+                    console.warn('[CampaignManager] Firestore purge error (non-fatal):', fsErr);
+                }
+            }
+
+            // If active campaign in localStorage was the placeholder, update to realCampaign
+            if (getActiveCampaignId() === 'campaign-default-mahalapye') {
+                setActiveCampaignId(realCampaign ? realCampaign.uuid : null);
+                if (realCampaign) {
+                    try { localStorage.setItem('hff_active_campaign_meta', JSON.stringify(realCampaign)); } catch {}
+                } else {
+                    try { localStorage.removeItem('hff_active_campaign_meta'); } catch {}
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('[CampaignManager] purgeMahalapyePlaceholder error:', err);
+    }
+}
+
+/**
  * Initialize default campaign if none exists, and link existing unassigned records
  */
 export async function seedDefaultCampaignIfEmpty() {
     try {
-        const count = await db.campaigns.count();
-        if (count === 0) {
-            await db.campaigns.add({
-                ...DEFAULT_CAMPAIGN,
-                created_at: new Date().toISOString()
-            });
-        }
+        await purgeMahalapyePlaceholder();
 
-        // Backfill any existing records without a campaign_id to default
+        // Backfill any existing records without a campaign_id to first active campaign
         const unassigned = await db.registrations.filter(r => !r.campaign_id).toArray();
         if (unassigned.length > 0) {
-            console.log(`[CampaignManager] Backfilling ${unassigned.length} records to default campaign`);
-            await db.transaction('rw', db.registrations, async () => {
-                for (const r of unassigned) {
-                    await db.registrations.update(r.id, { campaign_id: DEFAULT_CAMPAIGN.uuid });
-                }
-            });
+            const active = await db.campaigns.filter(c => !c.is_deleted).first();
+            if (active) {
+                console.log(`[CampaignManager] Backfilling ${unassigned.length} records to campaign ${active.name}`);
+                await db.transaction('rw', db.registrations, async () => {
+                    for (const r of unassigned) {
+                        await db.registrations.update(r.id, { campaign_id: active.uuid });
+                    }
+                });
+            }
         }
     } catch (err) {
         console.warn('[CampaignManager] Seeding default campaign warning:', err);
@@ -49,9 +105,10 @@ export async function seedDefaultCampaignIfEmpty() {
  * Get all campaigns from Dexie
  */
 export async function getAllCampaigns() {
+    await purgeMahalapyePlaceholder();
     await seedDefaultCampaignIfEmpty();
     const all = await db.campaigns.toArray();
-    return all.filter(c => !c.is_deleted);
+    return all.filter(c => !c.is_deleted && c.uuid !== 'campaign-default-mahalapye' && c.name !== 'Mahalapye West Campaign');
 }
 
 /**
@@ -152,9 +209,6 @@ export async function createCampaign({ name, village, targetAttendees, setAsCurr
  * Delete a campaign and its associated records
  */
 export async function deleteCampaign(uuid) {
-    if (uuid === DEFAULT_CAMPAIGN.uuid) {
-        throw new Error('Default campaign cannot be deleted.');
-    }
     const now = new Date().toISOString();
     await db.transaction('rw', [db.campaigns, db.registrations], async () => {
         const camp = await db.campaigns.where('uuid').equals(uuid).first();

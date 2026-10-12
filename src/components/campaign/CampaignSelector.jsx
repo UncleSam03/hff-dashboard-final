@@ -378,7 +378,6 @@ export default function CampaignSelector({ onSelectCampaign }) {
                         {/* PAST CAMPAIGNS LIST */}
                         {pastCampaigns.map((campaign) => {
                             const stats = campaignStats[campaign.uuid] || { total: 0, participants: 0, facilitators: 0 };
-                            const isDefault = campaign.uuid === DEFAULT_CAMPAIGN.uuid;
 
                             if (isMasterAdmin) {
                                 // Master Admin can inspect past campaigns and promote to current
@@ -396,18 +395,16 @@ export default function CampaignSelector({ onSelectCampaign }) {
                                                     Past Campaign
                                                 </span>
 
-                                                {!isDefault && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setDeleteModal({ open: true, campaign });
-                                                        }}
-                                                        className="p-1.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                                                        title="Delete Campaign"
-                                                    >
-                                                        <Trash2 size={15} />
-                                                    </button>
-                                                )}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDeleteModal({ open: true, campaign });
+                                                    }}
+                                                    className="p-1.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                                                    title="Delete Campaign"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
                                             </div>
 
                                             <h4 className="text-xl font-black text-gray-900 tracking-tight mb-2 group-hover:text-[#71167F] transition-colors line-clamp-1">

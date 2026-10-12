@@ -195,7 +195,7 @@ const LandingPage = ({ onStart, onSignIn }) => {
                         {[
                             { name: "Botswana Police Service", text: "Exceptional impact on community safety and family unity." },
                             { name: "Ministry of Gender Affairs", text: "HFF is a key partner in our mission to eliminate social ills." },
-                            { name: "Member of Parliament", text: "Transforming Mahalapye West through evidence-based family programs." }
+                            { name: "Member of Parliament", text: "Transforming communities across Botswana through evidence-based family programs." }
                         ].map((t, i) => (
                             <div key={i} className="p-8 rounded-[2.5rem] liquid-glass-elevated border border-white/75 relative overflow-hidden">
                                 <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
