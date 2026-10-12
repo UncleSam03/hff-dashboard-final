@@ -156,8 +156,23 @@ async function pullStoreUpdates(storeName, forceFull = false) {
     isPulling = true;
     try {
         let querySnapshot;
-        const lastPull = getLastPullTime(storeName);
+        let lastPull = getLastPullTime(storeName);
         const localCount = await db[storeName].count();
+
+        // Zero-Cost Guard: If lastPull is missing from localStorage but records exist in Dexie,
+        // recover lastPull from the latest local timestamp to avoid burning full collection read quota!
+        if (!lastPull && localCount > 0) {
+            try {
+                const latestLocal = await db[storeName].orderBy('updated_at').last();
+                if (latestLocal?.updated_at) {
+                    lastPull = latestLocal.updated_at;
+                    setLastPullTime(storeName, lastPull);
+                    console.log(`[FirebaseSync] Recovered lastPull anchor from local ${storeName}: ${lastPull}`);
+                }
+            } catch {
+                // fallback gracefully
+            }
+        }
 
         if (!forceFull && lastPull && localCount > 0) {
             try {

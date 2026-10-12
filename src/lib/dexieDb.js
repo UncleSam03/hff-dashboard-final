@@ -97,4 +97,12 @@ db.version(17).stores({
     campaigns: '++id, uuid, name, village, year, status, created_at, updated_at, sync_status, is_current'
 });
 
+// v18: Added is_daily_core for high-performance zero-cost attendance filtering
+db.version(18).stores({
+    participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation, campaign_id, form_number, group_form_number, teaching_group, contact, place, created_by_uid, created_by_email, created_by_name, submission_source, is_daily_core',
+    notices: '++id, uuid, title, type, priority, created_at',
+    campaigns: '++id, uuid, name, village, year, status, created_at, updated_at, sync_status, is_current'
+});
+
 export default db;

@@ -1,14 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { db as firestoreDb, isConfigured } from '../../lib/firebase';
 import { collection, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { useLiveQuery } from 'dexie-react-hooks';
+import db from '../../lib/dexieDb';
 import { 
     Shield, ShieldCheck, ShieldAlert, Crown, UserCheck, UserX, 
-    Clock, Mail, AlertCircle, Check, RefreshCw, UserPlus, Lock, Sparkles 
+    Clock, Mail, AlertCircle, Check, RefreshCw, UserPlus, Lock, Sparkles,
+    FileText, Hash, Layers, ArrowUpRight, ChevronRight, Sliders
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { 
+    compute200FormsAudit, 
+    getAdminRangeProgress, 
+    setAdminFormRange, 
+    TOTAL_CAMPAIGN_FORMS 
+} from '../../lib/formRangeManager';
 
-export default function AdminManagement() {
+export default function AdminManagement({ onOpenPaperForm }) {
     const { user, profile, isMasterAdmin, admitAdmin, revokeAdmin, masterAdminEmail } = useAuth();
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,6 +26,20 @@ export default function AdminManagement() {
     const [preAuthEmail, setPreAuthEmail] = useState('');
     const [preAuthName, setPreAuthName] = useState('');
     const [preAuthSubmitting, setPreAuthSubmitting] = useState(false);
+
+    // 200 Forms Tracker UI states
+    const [showMissingForms, setShowMissingForms] = useState(false);
+    const [showMatrixView, setShowMatrixView] = useState(false);
+    const [rangeEditing, setRangeEditing] = useState({}); // { [adminId]: { start, end } }
+
+    // Live registrations from Dexie for real-time 200-form audit
+    const registrations = useLiveQuery(async () => {
+        return await db.registrations.toArray();
+    }) || [];
+
+    const audit = useMemo(() => {
+        return compute200FormsAudit(registrations);
+    }, [registrations]);
 
     const loadProfiles = async () => {
         setLoading(true);
@@ -156,6 +179,68 @@ export default function AdminManagement() {
         }
     };
 
+    const handleRangeChange = (adminId, field, value) => {
+        const val = parseInt(value, 10) || 1;
+        setRangeEditing(prev => ({
+            ...prev,
+            [adminId]: {
+                ...(prev[adminId] || {
+                    start: profiles.find(p => p.id === adminId)?.form_range_start || 1,
+                    end: profiles.find(p => p.id === adminId)?.form_range_end || 50
+                }),
+                [field]: val
+            }
+        }));
+    };
+
+    const handleSaveRange = async (admin) => {
+        const currentEdit = rangeEditing[admin.id] || {
+            start: admin.form_range_start || 1,
+            end: admin.form_range_end || 50
+        };
+        setActionLoading(admin.id);
+        setStatusMessage(null);
+        try {
+            await setAdminFormRange(admin.id, currentEdit.start, currentEdit.end);
+            setStatusMessage({
+                type: 'success',
+                text: `Updated Form Range for ${admin.full_name || admin.email}: Forms ${currentEdit.start}–${currentEdit.end}`
+            });
+            await loadProfiles();
+        } catch (err) {
+            console.error('[AdminManagement] Failed to set range:', err);
+            setStatusMessage({ type: 'error', text: 'Failed to update range: ' + err.message });
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleQuickAdjustRange = async (admin, delta) => {
+        const currentEnd = rangeEditing[admin.id]?.end || admin.form_range_end || 50;
+        const currentStart = rangeEditing[admin.id]?.start || admin.form_range_start || 1;
+        const newEnd = Math.max(currentStart, Math.min(TOTAL_CAMPAIGN_FORMS, currentEnd + delta));
+        
+        setActionLoading(admin.id);
+        setStatusMessage(null);
+        try {
+            await setAdminFormRange(admin.id, currentStart, newEnd);
+            setRangeEditing(prev => ({
+                ...prev,
+                [admin.id]: { start: currentStart, end: newEnd }
+            }));
+            setStatusMessage({
+                type: 'success',
+                text: `Adjusted Form Range for ${admin.full_name || admin.email}: Forms ${currentStart}–${newEnd}`
+            });
+            await loadProfiles();
+        } catch (err) {
+            console.error('[AdminManagement] Failed to adjust range:', err);
+            setStatusMessage({ type: 'error', text: 'Failed to adjust range: ' + err.message });
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     if (!isMasterAdmin) {
         return (
             <div className="p-8 rounded-[2rem] bg-white border border-gray-100 shadow-sm text-center max-w-lg mx-auto my-12">
@@ -234,6 +319,190 @@ export default function AdminManagement() {
                     <span>{statusMessage.text}</span>
                 </div>
             )}
+
+            {/* SECTION 0: 200 Numbered Forms Live Field Audit */}
+            <div className="bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-[2rem] border border-white shadow-xl shadow-gray-200/40 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-[#71167F]/10 text-[#71167F] flex items-center justify-center shrink-0">
+                            <FileText size={24} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-100 text-[#71167F]">
+                                    Master Field Audit
+                                </span>
+                                <span className="text-xs font-bold text-gray-400">• Total Physical Forms: 200</span>
+                            </div>
+                            <h3 className="text-xl font-black text-gray-900 tracking-tight mt-0.5">
+                                200 Numbered Forms Intake & Progress Tracker
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowMatrixView(!showMatrixView)}
+                            className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-all flex items-center gap-1.5"
+                        >
+                            <Layers size={14} />
+                            <span>{showMatrixView ? "Hide Form Matrix" : "View 200 Form Matrix"}</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowMissingForms(!showMissingForms)}
+                            className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all flex items-center gap-1.5"
+                        >
+                            <AlertCircle size={14} className="text-amber-600" />
+                            <span>{audit.missingFormsCount} Missing Forms</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Metric Cards Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Completed Forms Card */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/30 border border-emerald-100/80 shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block mb-1">
+                            Completed Forms
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-emerald-900">{audit.completedFormsCount}</span>
+                            <span className="text-xs font-bold text-emerald-700">/ 200 Forms</span>
+                        </div>
+                        <div className="w-full bg-emerald-200/50 rounded-full h-2 mt-3 overflow-hidden">
+                            <div 
+                                className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
+                                style={{ width: `${audit.completionPercentage}%` }}
+                            />
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-600 mt-1.5 block">
+                            {audit.completionPercentage}% of total field forms fully captured
+                        </span>
+                    </div>
+
+                    {/* In-Progress Forms */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/30 border border-amber-100/80 shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block mb-1">
+                            In-Progress Forms
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-amber-900">{audit.inProgressFormsCount}</span>
+                            <span className="text-xs font-bold text-amber-700">Forms</span>
+                        </div>
+                        <p className="text-[11px] font-medium text-amber-800/80 mt-3">
+                            Facilitator registered on Day 1, awaiting participant transcription
+                        </p>
+                    </div>
+
+                    {/* Missing Forms */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50/30 border border-rose-100/80 shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 block mb-1">
+                            Missing / Unentered Forms
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-rose-900">{audit.missingFormsCount}</span>
+                            <span className="text-xs font-bold text-rose-700">/ 200 Forms</span>
+                        </div>
+                        <p className="text-[11px] font-medium text-rose-800/80 mt-3">
+                            Forms that have zero records logged in the database yet
+                        </p>
+                    </div>
+
+                    {/* Total Captured Participants */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50/30 border border-purple-100/80 shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#71167F] block mb-1">
+                            Mass Participants Logged
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-[#71167F]">{audit.totalParticipantsCaptured}</span>
+                            <span className="text-xs font-bold text-purple-700">People</span>
+                        </div>
+                        <p className="text-[11px] font-medium text-purple-900/80 mt-3">
+                            Transcribed across the active physical paper forms
+                        </p>
+                    </div>
+                </div>
+
+                {/* Missing Forms List Drawer */}
+                {showMissingForms && (
+                    <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                <AlertCircle size={15} className="text-amber-600" />
+                                <span>Exact Missing Form Numbers ({audit.missingFormNumbers.length} Forms)</span>
+                            </h4>
+                            <button
+                                onClick={() => setShowMissingForms(false)}
+                                className="text-xs font-bold text-amber-700 hover:text-amber-900"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <p className="text-xs text-amber-800 mb-3 font-medium">
+                            Click any missing form number below to open Paper Form Batch Entry and transcribe it:
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1">
+                            {audit.missingFormNumbers.map(num => (
+                                <button
+                                    key={num}
+                                    onClick={() => onOpenPaperForm?.(num)}
+                                    className="px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-xs font-mono font-bold text-amber-900 hover:bg-[#71167F] hover:text-white hover:border-[#71167F] transition-all shadow-sm"
+                                    title={`Transcribe Form #${num}`}
+                                >
+                                    #{num}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Interactive 200-Cell Matrix View */}
+                {showMatrixView && (
+                    <div className="p-5 rounded-2xl bg-gray-50 border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-wider text-gray-700">
+                                    Visual Matrix: Forms 1 to 200 Status
+                                </h4>
+                                <p className="text-[11px] text-gray-500 font-medium">
+                                    Click any cell to jump to that form in Paper Batch Entry
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 text-[10px] font-bold">
+                                <span className="flex items-center gap-1 text-emerald-700">
+                                    <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block" /> Completed
+                                </span>
+                                <span className="flex items-center gap-1 text-amber-700">
+                                    <span className="w-2.5 h-2.5 rounded bg-amber-400 inline-block" /> In-Progress
+                                </span>
+                                <span className="flex items-center gap-1 text-gray-400">
+                                    <span className="w-2.5 h-2.5 rounded bg-gray-200 inline-block" /> Missing
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-10 sm:grid-cols-20 gap-1.5">
+                            {audit.formMatrix.map(f => (
+                                <button
+                                    key={f.formNumber}
+                                    onClick={() => onOpenPaperForm?.(f.formNumber)}
+                                    className={cn(
+                                        "aspect-square rounded-md text-[10px] font-mono font-bold flex flex-col items-center justify-center transition-all hover:scale-110 shadow-sm",
+                                        f.status === 'completed' && "bg-emerald-500 text-white hover:bg-emerald-600",
+                                        f.status === 'in_progress' && "bg-amber-400 text-amber-950 hover:bg-amber-500",
+                                        f.status === 'missing' && "bg-gray-200 text-gray-500 hover:bg-gray-300"
+                                    )}
+                                    title={`Form #${f.formNumber} - ${f.status.toUpperCase()} (${f.participantsCount} participants)`}
+                                >
+                                    {f.formNumber}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* SECTION 1: Pending Admin Requests */}
             <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-8 rounded-[2rem] border border-white shadow-xl shadow-gray-200/40">
@@ -374,15 +643,124 @@ export default function AdminManagement() {
                                     </h4>
                                     <p className="text-xs text-gray-500 font-medium mt-0.5">{admin.email}</p>
 
+                                    {/* Form Range Allocation & Dynamic Adjustments */}
+                                    <div className="mt-3.5 p-3.5 rounded-2xl bg-purple-50/70 border border-purple-100/80 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-[#71167F] flex items-center gap-1">
+                                                <Sliders size={12} /> Assigned Range
+                                            </span>
+                                            <span className="text-[10px] font-bold text-purple-900">
+                                                Forms {admin.form_range_start || 1}–{admin.form_range_end || 50}
+                                            </span>
+                                        </div>
+
+                                        {/* Admin Progress in their Range */}
+                                        {(() => {
+                                            const prog = getAdminRangeProgress(
+                                                audit.formMatrix, 
+                                                admin.form_range_start || 1, 
+                                                admin.form_range_end || 50
+                                            );
+                                            return (
+                                                <div className="space-y-1.5">
+                                                    <div className="flex justify-between text-[11px] font-bold text-gray-700">
+                                                        <span>Progress: {prog.completedInRange} / {prog.totalInRange} forms</span>
+                                                        <span className="text-[#71167F]">{prog.percentage}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-purple-200/50 rounded-full h-1.5 overflow-hidden">
+                                                        <div 
+                                                            className="bg-[#71167F] h-1.5 rounded-full transition-all duration-300"
+                                                            style={{ width: `${prog.percentage}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-[9px] text-gray-500 font-medium block">
+                                                        {prog.participantsInRange} participants captured
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
+
+                                        {/* Form Range Inputs & Quick Adjust Buttons */}
+                                        <div className="pt-2 border-t border-purple-100/70 flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex items-center gap-1.5">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max={TOTAL_CAMPAIGN_FORMS}
+                                                    value={rangeEditing[admin.id]?.start ?? (admin.form_range_start || 1)}
+                                                    onChange={e => handleRangeChange(admin.id, 'start', e.target.value)}
+                                                    className="w-12 bg-white border border-gray-200 rounded-lg px-1 py-0.5 text-center font-bold text-xs"
+                                                    title="Start Form #"
+                                                />
+                                                <span className="text-xs text-gray-400 font-bold">–</span>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max={TOTAL_CAMPAIGN_FORMS}
+                                                    value={rangeEditing[admin.id]?.end ?? (admin.form_range_end || 50)}
+                                                    onChange={e => handleRangeChange(admin.id, 'end', e.target.value)}
+                                                    className="w-12 bg-white border border-gray-200 rounded-lg px-1 py-0.5 text-center font-bold text-xs"
+                                                    title="End Form #"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSaveRange(admin)}
+                                                    disabled={actionLoading === admin.id}
+                                                    className="px-2 py-1 rounded-lg bg-[#71167F] text-white text-[10px] font-black uppercase hover:bg-[#5a1166] transition-all shadow-sm"
+                                                >
+                                                    Set
+                                                </button>
+                                            </div>
+
+                                            {/* Dynamic Quick Adjust Buttons (+10, +25, -10) */}
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleQuickAdjustRange(admin, -10)}
+                                                    disabled={actionLoading === admin.id}
+                                                    className="px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-700 text-[10px] font-bold hover:bg-gray-100"
+                                                    title="Reduce range by 10 forms"
+                                                >
+                                                    -10
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleQuickAdjustRange(admin, 10)}
+                                                    disabled={actionLoading === admin.id}
+                                                    className="px-2 py-0.5 rounded-lg bg-white border border-purple-200 text-[#71167F] text-[10px] font-bold hover:bg-purple-100"
+                                                    title="Extend range by 10 forms"
+                                                >
+                                                    +10
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleQuickAdjustRange(admin, 25)}
+                                                    disabled={actionLoading === admin.id}
+                                                    className="px-2 py-0.5 rounded-lg bg-white border border-purple-200 text-[#71167F] text-[10px] font-bold hover:bg-purple-100"
+                                                    title="Extend range by 25 forms"
+                                                >
+                                                    +25
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="mt-3 p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-600 space-y-0.5">
                                         <span className="block text-gray-400 uppercase tracking-wider text-[9px]">Permissions:</span>
                                         <span className="block text-gray-700">✓ Current Campaign Dashboard</span>
-                                        <span className="block text-gray-700">✓ Form Entry & Attendance</span>
-                                        <span className="block text-amber-700">✗ Past Campaigns (Locked)</span>
+                                        <span className="block text-gray-700">✓ Paper Form Batch Entry</span>
                                     </div>
                                 </div>
 
-                                <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end">
+                                <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
+                                    <button
+                                        onClick={() => onOpenPaperForm?.(admin.form_range_start || 1)}
+                                        className="text-[10px] font-black uppercase tracking-wider text-[#71167F] hover:underline flex items-center gap-1"
+                                    >
+                                        <span>Open Form #{admin.form_range_start || 1}</span>
+                                        <ArrowUpRight size={12} />
+                                    </button>
+
                                     <button
                                         onClick={() => handleRevoke(admin)}
                                         disabled={actionLoading === admin.id}

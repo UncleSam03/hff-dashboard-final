@@ -202,6 +202,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
 
                 // Campaign Association
                 campaign_id: initialData?.campaign_id || activeCampId,
+                is_daily_core: type === 'facilitator',
 
                 // Metadata & Audit Attribution
                 sync_status: 'pending',

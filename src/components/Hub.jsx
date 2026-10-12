@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Users, CalendarCheck, ClipboardList, ArrowLeft, CloudUpload, RefreshCw, Check, AlertCircle, Layers, Crown } from 'lucide-react';
+import { Users, CalendarCheck, ClipboardList, ArrowLeft, CloudUpload, RefreshCw, Check, AlertCircle, Layers, Crown, FileText } from 'lucide-react';
 import PersonList from './hub/PersonList';
 import AttendanceSheet from './hub/AttendanceSheet';
 import NoticeBoard from './hub/NoticeBoard';
 import MaintenanceTool from './MaintenanceTool';
 import AdminManagement from './hub/AdminManagement';
+import PaperFormEntry from './hub/PaperFormEntry';
 import { pushPendingToFirebase, resetLocalFromFirebase } from '../lib/firebaseSync';
 import { isConfigured } from '../lib/firebase';
 import { useAuth } from '../auth/AuthContext';
@@ -13,7 +13,8 @@ import './hub/Hub.css';
 
 const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
     const { isMasterAdmin } = useAuth();
-    const [activeTab, setActiveTab] = useState(initialTab); // 'people', 'attendance', 'notice', 'admin_access'
+    const [activeTab, setActiveTab] = useState(initialTab); // 'people', 'attendance', 'paper_entry', 'notice', 'admin_access'
+    const [paperFormNumber, setPaperFormNumber] = useState(1);
 
     useEffect(() => {
         if (initialTab) {
@@ -165,12 +166,26 @@ const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
                         onBack={() => setActiveTab('people')}
                     />
                 );
+            case 'paper_entry':
+                return (
+                    <PaperFormEntry 
+                        initialFormNumber={paperFormNumber}
+                        onNavigateToAdminAudit={() => setActiveTab('admin_access')}
+                    />
+                );
             case 'notice':
                 return <NoticeBoard />;
             case 'maintenance':
                 return <MaintenanceTool activeCampaign={activeCampaign} />;
             case 'admin_access':
-                return <AdminManagement />;
+                return (
+                    <AdminManagement 
+                        onOpenPaperForm={(num) => {
+                            setPaperFormNumber(num);
+                            setActiveTab('paper_entry');
+                        }}
+                    />
+                );
             default:
                 return <PersonList />;
         }
@@ -244,6 +259,14 @@ const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
                         <span>Attendance</span>
                     </button>
                     <button
+                        onClick={() => setActiveTab('paper_entry')}
+                        className={`hub-nav-button flex items-center gap-2 ${activeTab === 'paper_entry' ? 'active' : ''}`}
+                        title="High-Speed Physical Paper Form Batch Entry"
+                    >
+                        <FileText className="h-5 w-5 text-[#71167F]" />
+                        <span>Paper Batch Entry</span>
+                    </button>
+                    <button
                         onClick={() => setActiveTab('notice')}
                         className={`hub-nav-button flex items-center gap-2 ${activeTab === 'notice' ? 'active' : ''}`}
                     >
@@ -261,7 +284,7 @@ const Hub = ({ onBack, initialTab = 'people', activeCampaign }) => {
                         <button
                             onClick={() => setActiveTab('admin_access')}
                             className={`hub-nav-button flex items-center gap-2 border border-amber-200/60 ${activeTab === 'admin_access' ? 'active !bg-[#71167F] !text-white' : 'text-gray-700 hover:bg-amber-50/50'}`}
-                            title="Admin Admission & Role Governance (Master Admin Only)"
+                            title="Admin Admission, Form Ranges & 200-Form Audit (Master Admin Only)"
                         >
                             <Crown className="h-4 w-4 text-amber-500" />
                             <span className="flex items-center gap-1.5">
