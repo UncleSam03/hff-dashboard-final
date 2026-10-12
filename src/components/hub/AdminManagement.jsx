@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { db as firestoreDb, isConfigured } from '../../lib/firebase';
-import { collection, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from '../../lib/dexieDb';
 import { 
@@ -18,7 +18,7 @@ import {
 } from '../../lib/formRangeManager';
 
 export default function AdminManagement({ onOpenPaperForm }) {
-    const { user, profile, isMasterAdmin, admitAdmin, revokeAdmin, masterAdminEmail } = useAuth();
+    const { user, isMasterAdmin, admitAdmin, revokeAdmin, masterAdminEmail } = useAuth();
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null); // uid currently being modified

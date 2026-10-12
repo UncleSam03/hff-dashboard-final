@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from '../../lib/dexieDb';
 import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../../lib/campaignManager';
@@ -328,7 +328,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     };
 
     // Keyboard navigation (Enter on row inputs)
-    const handleKeyDown = (e, index, field) => {
+    const handleKeyDown = (e, index) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             if (e.ctrlKey || e.metaKey) {
@@ -692,7 +692,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                                 type="text"
                                                 value={row.firstName}
                                                 onChange={e => handleFieldChange(index, 'firstName', e.target.value)}
-                                                onKeyDown={e => handleKeyDown(e, index, 'firstName')}
+                                                onKeyDown={e => handleKeyDown(e, index)}
                                                 placeholder="First name"
                                                 className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                             />
@@ -704,7 +704,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                                 type="text"
                                                 value={row.lastName}
                                                 onChange={e => handleFieldChange(index, 'lastName', e.target.value)}
-                                                onKeyDown={e => handleKeyDown(e, index, 'lastName')}
+                                                onKeyDown={e => handleKeyDown(e, index)}
                                                 placeholder="Last name"
                                                 className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                             />
@@ -728,7 +728,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                                 type="number"
                                                 value={row.age || ''}
                                                 onChange={e => handleFieldChange(index, 'age', e.target.value)}
-                                                onKeyDown={e => handleKeyDown(e, index, 'age')}
+                                                onKeyDown={e => handleKeyDown(e, index)}
                                                 placeholder="Age"
                                                 className="w-16 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-center text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                             />
@@ -740,7 +740,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                                 type="text"
                                                 value={row.contact || ''}
                                                 onChange={e => handleFieldChange(index, 'contact', e.target.value)}
-                                                onKeyDown={e => handleKeyDown(e, index, 'contact')}
+                                                onKeyDown={e => handleKeyDown(e, index)}
                                                 placeholder="71234567"
                                                 className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                             />
