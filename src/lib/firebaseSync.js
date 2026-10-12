@@ -1,11 +1,17 @@
-import { doc, getDocs, collection, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDocs, collection, setDoc, deleteDoc, writeBatch, query, where } from 'firebase/firestore';
 import { db as firestoreDb, isConfigured } from './firebase';
 import db from './dexieDb';
 import { checkConnectivity } from './syncManager';
 import { autoDeduplicateRegistrations } from './dataMaintenance';
+import { flushAttendanceSyncImmediately } from './attendanceSync';
+import { normalizeAttendance } from './analytics';
 
 let isSyncing = false;
 let isPulling = false;
+const lastPullTimes = {
+    registrations: null,
+    campaigns: null
+};
 
 /**
  * Recursively remove undefined values to avoid Firestore serialization errors
@@ -129,14 +135,34 @@ async function pushStorePending(storeName) {
 }
 
 /**
- * Pull updates from Firebase to IndexedDB for a specific store
+ * Pull updates from Firebase to IndexedDB for a specific store.
+ * Uses incremental querying when available to drastically reduce read quota.
  */
-async function pullStoreUpdates(storeName) {
+async function pullStoreUpdates(storeName, forceFull = false) {
     if (!isConfigured || !navigator.onLine || isPulling) return;
 
     isPulling = true;
     try {
-        const querySnapshot = await getDocs(collection(firestoreDb, storeName));
+        let querySnapshot;
+        const lastPull = lastPullTimes[storeName];
+
+        if (!forceFull && lastPull) {
+            try {
+                const incrementalQ = query(
+                    collection(firestoreDb, storeName),
+                    where('updated_at', '>', lastPull)
+                );
+                querySnapshot = await getDocs(incrementalQ);
+            } catch (queryErr) {
+                console.warn(`[FirebaseSync] Incremental query failed for ${storeName}, falling back to full query:`, queryErr.message);
+                querySnapshot = await getDocs(collection(firestoreDb, storeName));
+            }
+        } else {
+            querySnapshot = await getDocs(collection(firestoreDb, storeName));
+        }
+
+        lastPullTimes[storeName] = new Date().toISOString();
+
         const remoteRecords = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -232,6 +258,20 @@ async function pullStoreUpdates(storeName) {
                     sync_status: 'synced'
                 });
                 updatedCount++;
+            } else if (locData.record?.sync_status === 'pending') {
+                // PROTECT PENDING LOCAL ATTENDANCE EDITS:
+                // Do not overwrite local changes if user is actively editing attendance offline or pending push
+                if (storeName === 'registrations' && remoteRecord.attendance && locData.record.attendance) {
+                    const localAtt = normalizeAttendance(locData.record.attendance);
+                    const remoteAtt = normalizeAttendance(remoteRecord.attendance);
+                    // Non-destructive merge: union of attendance days
+                    const mergedAtt = localAtt.map((val, idx) => Boolean(val || remoteAtt[idx]));
+                    await db[storeName].update(locData.id, {
+                        ...remoteRecord,
+                        attendance: mergedAtt,
+                        sync_status: 'pending' // Preserve pending so local merge will sync upward
+                    });
+                }
             } else if (!locData.record?.uuid || locData.record.uuid === remoteRecord.uuid || new Date(remoteRecord.updated_at || 0) >= new Date(locData.updated_at || 0)) {
                 // Reconcile and update existing local record (preserves Dexie auto-increment ID and prevents duplicates)
                 await db[storeName].update(locData.id, {
@@ -298,15 +338,15 @@ export async function reconcileFirebaseDeletions(storeName) {
 }
 
 /**
- * Orchestrates push for registrations
+ * Orchestrates push for registrations and flushes any debounced attendance changes
  */
 export async function pushPendingToFirebase() {
     if (isSyncing) return;
     isSyncing = true;
     try {
+        await flushAttendanceSyncImmediately();
         await pushStorePending('campaigns');
         await pushStorePending('registrations');
-        // excluded notices/testimonies per plan
     } finally {
         isSyncing = false;
         window.dispatchEvent(new CustomEvent('hff-firebase-sync-complete'));
@@ -316,9 +356,9 @@ export async function pushPendingToFirebase() {
 /**
  * Orchestrates pull for registrations
  */
-export async function pullFromFirebase() {
-    await pullStoreUpdates('campaigns');
-    await pullStoreUpdates('registrations');
+export async function pullFromFirebase(forceFull = false) {
+    await pullStoreUpdates('campaigns', forceFull);
+    await pullStoreUpdates('registrations', forceFull);
 }
 
 /**

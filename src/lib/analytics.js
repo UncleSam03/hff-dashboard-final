@@ -6,19 +6,37 @@ import { TOTAL_CAMPAIGN_DAYS } from './constants.js';
 
 export function normalizeAttendance(attendance) {
     if (!attendance) return Array(TOTAL_CAMPAIGN_DAYS).fill(false);
-    if (Array.isArray(attendance)) return attendance.map(Boolean);
-    if (typeof attendance === 'string') {
+    
+    let arr = null;
+
+    if (Array.isArray(attendance)) {
+        arr = attendance.map(Boolean);
+    } else if (typeof attendance === 'string') {
         const trimmed = attendance.trim();
         if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
             try {
                 const parsed = JSON.parse(trimmed);
-                if (Array.isArray(parsed)) return parsed.map(Boolean);
+                if (Array.isArray(parsed)) arr = parsed.map(Boolean);
             } catch {
                 // ignore parse failure
             }
         }
+    } else if (typeof attendance === 'object') {
+        arr = Array(TOTAL_CAMPAIGN_DAYS).fill(false);
+        for (let i = 0; i < TOTAL_CAMPAIGN_DAYS; i++) {
+            const val = attendance[`D${i + 1}`] ?? attendance[`d${i + 1}`] ?? attendance[`Day ${i + 1}`] ?? attendance[i] ?? attendance[String(i)];
+            arr[i] = Boolean(val);
+        }
+        return arr;
     }
-    if (typeof attendance === 'object') return attendance;
+
+    if (Array.isArray(arr)) {
+        if (arr.length < TOTAL_CAMPAIGN_DAYS) {
+            return [...arr, ...Array(TOTAL_CAMPAIGN_DAYS - arr.length).fill(false)];
+        }
+        return arr.slice(0, TOTAL_CAMPAIGN_DAYS);
+    }
+
     return Array(TOTAL_CAMPAIGN_DAYS).fill(false);
 }
 

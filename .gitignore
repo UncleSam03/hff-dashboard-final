@@ -30,3 +30,5 @@ hff-dashboard-*.json
 .next
 .env.vercel
 .env*.local
+kdp_output/
+.agents/
