@@ -9,13 +9,15 @@ import { doc, deleteDoc } from 'firebase/firestore';
  * Functions to clean up and optimize the local database.
  */
 
-const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+/, '');
-const cleanStr = (s) => String(s || '').trim().toLowerCase();
+const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+(?=\d)/, '');
+const cleanStr = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const cleanPhone = (p) => String(p || '').replace(/\D/g, '').replace(/^0+/, '');
 
 /**
- * Merges duplicate registrations based on:
- * 1. Form Number + Type + Campaign (exact form duplicate)
- * 2. First Name + Last Name + Type + Campaign (person duplicate)
+ * Merges duplicate registrations safely within the same campaign:
+ * 1. Exact UUID match
+ * 2. Facilitator Form Number + Campaign (facilitators only — never participants!)
+ * 3. First Name + Last Name + Type + Campaign + corroborating group/contact match (without conflicting form/group/phone/age)
  * 
  * Information from all duplicates is combined into a single master record.
  * Redundant local records and cloud documents are permanently purged.
@@ -32,8 +34,8 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
     const registrations = allRegistrations.filter(reg => {
         if (reg.is_deleted) return false;
         if (campaignId) {
-            if (reg.campaign_id) return reg.campaign_id === campaignId;
-            return campaignId === DEFAULT_CAMPAIGN.uuid;
+            const regCamp = reg.campaign_id || DEFAULT_CAMPAIGN.uuid;
+            return regCamp === campaignId;
         }
         return true;
     });
@@ -42,50 +44,133 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         return { message: "No duplicates found.", duplicatesMerged: 0, recordsDeleted: 0, recordsUpdated: 0, results: [] };
     }
 
-    // Cluster registrations using Disjoint Set / Map clustering
-    const visited = new Set();
-    const clusters = [];
-
-    // Helper to test if two records are duplicate representations of the same person/form
+    // Helper to test if two records are true duplicate representations of the same person/facilitator
     const areDuplicates = (a, b) => {
-        if (a.id && b.id && a.id === b.id) return false;
+        if (a.id !== undefined && b.id !== undefined && a.id === b.id) return false;
+
+        // Must belong to the same campaign
+        const campA = a.campaign_id || DEFAULT_CAMPAIGN.uuid;
+        const campB = b.campaign_id || DEFAULT_CAMPAIGN.uuid;
+        if (campA !== campB) return false;
+
+        // Exact UUID match inside IndexedDB
         if (a.uuid && b.uuid && a.uuid === b.uuid) return true;
 
-        // Must match type if both are present
-        const typeA = cleanStr(a.type);
-        const typeB = cleanStr(b.type);
-        if (typeA && typeB && typeA !== typeB) return false;
+        // Must match type
+        const typeA = cleanStr(a.type) || 'participant';
+        const typeB = cleanStr(b.type) || 'participant';
+        if (typeA !== typeB) return false;
 
-        // Check 1: Matching Form Number
         const formA = cleanForm(a.form_number);
         const formB = cleanForm(b.form_number);
-        if (formA && formB && formA === formB) {
-            return true;
+        const gfA = cleanForm(a.group_form_number || (typeA === 'participant' ? a.form_number : ''));
+        const gfB = cleanForm(b.group_form_number || (typeB === 'participant' ? b.form_number : ''));
+        const phA = cleanPhone(a.contact);
+        const phB = cleanPhone(b.contact);
+        const facA = cleanStr(a.facilitator_uuid);
+        const facB = cleanStr(b.facilitator_uuid);
+
+        // Check 1: Matching Form Number — ONLY valid for facilitators (1 facilitator per form)
+        if (typeA === 'facilitator' && formA && formB && formA === formB) {
+            const fnA = cleanStr(a.first_name);
+            const fnB = cleanStr(b.first_name);
+            const lnA = cleanStr(a.last_name);
+            const lnB = cleanStr(b.last_name);
+            // Only auto-merge same-form facilitators if they share the same name or one is blank
+            if ((!fnA && !lnA) || (!fnB && !lnB) || (fnA === fnB && lnA === lnB)) {
+                return true;
+            }
         }
 
-        // Check 2: Matching First and Last Name
-        const fnA = cleanStr(a.first_name);
-        const fnB = cleanStr(b.first_name);
-        const lnA = cleanStr(a.last_name);
-        const lnB = cleanStr(b.last_name);
-
-        if (fnA && lnA && fnA === fnB && lnA === lnB) {
-            return true;
-        }
-
-        // Check 3: Matching full name string
+        // Check 2: Matching Full Name
         const fullA = cleanStr(`${a.first_name || ''} ${a.last_name || ''}`);
         const fullB = cleanStr(`${b.first_name || ''} ${b.last_name || ''}`);
-        if (fullA && fullB && fullA.length > 3 && fullA === fullB) {
+        if (!fullA || fullA.length <= 2 || fullA !== fullB) {
+            return false;
+        }
+
+        // Guard against merging distinct people who share a common name:
+        if (phA && phB && phA !== phB) return false;
+
+        if (typeA === 'facilitator') {
+            // Do not merge two facilitators assigned to two different form numbers
+            if (formA && formB && formA !== formB) return false;
             return true;
         }
 
-        return false;
+        // For participants: never merge across different group forms, different facilitators, or different ages
+        if (gfA && gfB && gfA !== gfB) return false;
+        if (facA && facB && facA !== facB) return false;
+        const ageA = a.age ? parseInt(a.age, 10) : null;
+        const ageB = b.age ? parseInt(b.age, 10) : null;
+        if (ageA && ageB && ageA !== ageB) return false;
+
+        // Require corroborating context for participants with the same name:
+        // same group form, same facilitator UUID, same phone number, or both unassigned
+        const sameGroupForm = Boolean(gfA && gfB && gfA === gfB);
+        const sameFacilitator = Boolean(facA && facB && facA === facB);
+        const samePhone = Boolean(phA && phB && phA === phB);
+        const bothUnassigned = !gfA && !gfB && !facA && !facB;
+
+        return sameGroupForm || sameFacilitator || samePhone || bothUnassigned;
     };
 
     const getRecKey = (r, idx) => (r.id !== undefined && r.id !== null ? `id_${r.id}` : (r.uuid ? `uuid_${r.uuid}` : `idx_${idx}`));
 
+    // O(N) Bucketing to avoid O(N^2) full-table comparisons on 3,000+ records
+    const buckets = new Map();
+    const addToBucket = (bucketKey, idx) => {
+        if (!bucketKey) return;
+        let list = buckets.get(bucketKey);
+        if (!list) {
+            list = [];
+            buckets.set(bucketKey, list);
+        }
+        list.push(idx);
+    };
+
     for (let i = 0; i < registrations.length; i++) {
+        const r = registrations[i];
+        const camp = r.campaign_id || DEFAULT_CAMPAIGN.uuid;
+        const type = cleanStr(r.type) || 'participant';
+        if (r.uuid) addToBucket(`uuid|${r.uuid}`, i);
+        if (type === 'facilitator') {
+            const cf = cleanForm(r.form_number);
+            if (cf) addToBucket(`facform|${camp}|${cf}`, i);
+        }
+        const full = cleanStr(`${r.first_name || ''} ${r.last_name || ''}`);
+        if (full && full.length > 2) {
+            addToBucket(`name|${camp}|${type}|${full}`, i);
+        }
+    }
+
+    const candidateAdj = new Map();
+    for (const indices of buckets.values()) {
+        if (indices.length < 2) continue;
+        for (let a = 0; a < indices.length; a++) {
+            const idxA = indices[a];
+            let setA = candidateAdj.get(idxA);
+            if (!setA) {
+                setA = new Set();
+                candidateAdj.set(idxA, setA);
+            }
+            for (let b = a + 1; b < indices.length; b++) {
+                const idxB = indices[b];
+                setA.add(idxB);
+                let setB = candidateAdj.get(idxB);
+                if (!setB) {
+                    setB = new Set();
+                    candidateAdj.set(idxB, setB);
+                }
+                setB.add(idxA);
+            }
+        }
+    }
+
+    const visited = new Set();
+    const clusters = [];
+
+    for (const [i, neighborSet] of candidateAdj.entries()) {
         const current = registrations[i];
         const currentKey = getRecKey(current, i);
         if (visited.has(currentKey)) continue;
@@ -93,7 +178,8 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         const cluster = [current];
         visited.add(currentKey);
 
-        for (let j = i + 1; j < registrations.length; j++) {
+        const candidates = Array.from(neighborSet);
+        for (const j of candidates) {
             const candidate = registrations[j];
             const candidateKey = getRecKey(candidate, j);
             if (visited.has(candidateKey)) continue;
@@ -125,6 +211,7 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
             let score = 0;
             if (r.sync_status === 'synced') score += 10;
             if (r.form_number) score += 5;
+            if (r.group_form_number) score += 5;
             if (r.contact) score += 3;
             if (r.place) score += 2;
             if (r.education) score += 1;
@@ -200,7 +287,7 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         results.push({
             masterUuid: master.uuid || `local-${master.id}`,
             masterName: `${master.first_name} ${master.last_name}`.trim(),
-            formNumber: master.form_number || '',
+            formNumber: master.form_number || master.group_form_number || '',
             othersUuids: others.map(o => o.uuid || `local-${o.id}`),
             othersIds: others.map(o => o.id),
             changesApplied: changed
@@ -259,11 +346,12 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
 }
 
 /**
- * Automatically runs a live deduplication pass on startup to clean up duplicates
+ * Automatically runs a live deduplication pass on startup/pull scoped to the active campaign
  */
 export async function autoDeduplicateRegistrations() {
     try {
-        const res = await mergeDuplicateRegistrations({ dryRun: false });
+        const activeCampaignId = getActiveCampaignId() || DEFAULT_CAMPAIGN.uuid;
+        const res = await mergeDuplicateRegistrations({ dryRun: false, campaignId: activeCampaignId });
         if (res.duplicatesMerged > 0) {
             console.log(`[AutoDeduplicate] Cleaned up ${res.duplicatesMerged} duplicate groups (${res.recordsDeleted} redundant records removed).`);
         }

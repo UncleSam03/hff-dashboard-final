@@ -112,6 +112,7 @@ export async function flushAttendanceSyncImmediately() {
                         last_attendance_mark: {
                             day_index: item.lastDayIndex,
                             day_label: `D${item.lastDayIndex + 1}`,
+                            value: Boolean(item.attendance?.[item.lastDayIndex]),
                             marked_at: item.updated_at,
                             marked_by: item.attribution?.name || 'Field Staff'
                         }
@@ -416,8 +417,16 @@ export function subscribeToAttendanceRoster({ aliasUuids, onRemoteUpdate }) {
                         const localTime = new Date(localRecord.updated_at || 0).getTime();
 
                         if (remoteTime > localTime) {
+                            const localAtt = normalizeAttendance(localRecord.attendance);
+                            const remoteAtt = normalizeAttendance(remoteData.attendance);
+                            const mergedAtt = localAtt.map((val, idx) => Boolean(val || remoteAtt[idx]));
+                            const lastMark = remoteData.last_attendance_mark;
+                            if (lastMark && typeof lastMark.day_index === 'number' && lastMark.value === false) {
+                                mergedAtt[lastMark.day_index] = false;
+                            }
+
                             await db.registrations.update(localRecord.id, {
-                                attendance: remoteData.attendance,
+                                attendance: mergedAtt,
                                 updated_at: remoteData.updated_at,
                                 updated_by_name: remoteData.updated_by_name || localRecord.updated_by_name,
                                 updated_by_email: remoteData.updated_by_email || localRecord.updated_by_email,
@@ -426,7 +435,7 @@ export function subscribeToAttendanceRoster({ aliasUuids, onRemoteUpdate }) {
                             });
 
                             if (onRemoteUpdate) {
-                                onRemoteUpdate(remoteData);
+                                onRemoteUpdate({ ...remoteData, attendance: mergedAtt });
                             }
                         }
                     }

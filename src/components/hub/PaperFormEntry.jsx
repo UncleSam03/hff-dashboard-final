@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from '../../lib/dexieDb';
 import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../../lib/campaignManager';
@@ -28,6 +28,7 @@ import {
 import { cn } from '../../lib/utils';
 import { TOTAL_CAMPAIGN_FORMS, normalizeFormNumber } from '../../lib/formRangeManager';
 import { TOTAL_CAMPAIGN_DAYS } from '../../lib/constants';
+import { getProfileBufferTabName, pushProfileBufferToSheets } from '../../lib/sheetsBufferSync';
 
 const SPRINTS = [
     { id: 'sprint1', label: 'Sprint 1 (Days 1–4)', days: [0, 1, 2, 3], dayLabels: ['D1', 'D2', 'D3', 'D4'] },
@@ -50,6 +51,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
 
     // New participant row being typed
     const [draftRows, setDraftRows] = useState([createEmptyRow()]);
+    const loadedFormRef = useRef(null);
 
     // Quick facilitator creation form
     const [showFacilitatorModal, setShowFacilitatorModal] = useState(false);
@@ -74,7 +76,9 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             gender: 'F',
             age: '',
             contact: '',
-            attendance: Array(TOTAL_CAMPAIGN_DAYS).fill(false)
+            attendance: Array(TOTAL_CAMPAIGN_DAYS).fill(false),
+            isExisting: false,
+            isDirty: false
         };
     }
 
@@ -102,26 +106,64 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         );
     }, [campaignRegistrations, formNumber]);
 
-    // When formNumber changes, preload any existing participants or prepare a fresh draft row
+    // Map a DB participant record to a draft row object
+    const mapParticipantToRow = (p) => ({
+        id: p.id,
+        uuid: p.uuid,
+        tempId: p.uuid || ('existing-' + p.id),
+        firstName: p.first_name || '',
+        lastName: p.last_name || '',
+        gender: p.gender || 'F',
+        age: p.age ?? '',
+        contact: p.contact || '',
+        facilitator_uuid: p.facilitator_uuid || null,
+        attendance: Array.isArray(p.attendance) ? [...p.attendance] : Array(TOTAL_CAMPAIGN_DAYS).fill(false),
+        isExisting: true,
+        isDirty: false
+    });
+
+    // When formNumber changes, preload any existing participants or prepare a fresh draft row.
+    // If existingParticipants updates in the background for the SAME formNumber, preserve unsaved drafts & dirty edits!
     useEffect(() => {
-        if (existingParticipants.length > 0) {
-            setDraftRows(existingParticipants.map(p => ({
-                id: p.id,
-                uuid: p.uuid,
-                tempId: p.uuid || ('existing-' + p.id),
-                firstName: p.first_name || '',
-                lastName: p.last_name || '',
-                gender: p.gender || 'F',
-                age: p.age || '',
-                contact: p.contact || '',
-                attendance: Array.isArray(p.attendance) ? [...p.attendance] : Array(TOTAL_CAMPAIGN_DAYS).fill(false),
-                isExisting: true
-            })));
-        } else {
-            setDraftRows([createEmptyRow()]);
+        const num = normalizeFormNumber(formNumber);
+        const formChanged = loadedFormRef.current !== num;
+        loadedFormRef.current = num;
+
+        if (formChanged) {
+            if (existingParticipants.length > 0) {
+                setDraftRows(existingParticipants.map(mapParticipantToRow));
+            } else {
+                setDraftRows([createEmptyRow()]);
+            }
+            setStatusMessage(null);
+            return;
         }
-        setStatusMessage(null);
-    }, [formNumber, existingParticipants.length]);
+
+        // Same formNumber, background update of existingParticipants:
+        setDraftRows(prev => {
+            const unsavedDrafts = prev.filter(r => !r.isExisting && (r.firstName.trim() || r.lastName.trim() || r.contact.trim() || String(r.age).trim()));
+            const dirtyByUuid = new Map();
+            const dirtyById = new Map();
+            prev.forEach(r => {
+                if (r.isExisting && r.isDirty) {
+                    if (r.uuid) dirtyByUuid.set(r.uuid, r);
+                    if (r.id) dirtyById.set(r.id, r);
+                }
+            });
+
+            const mergedExisting = existingParticipants.map(p => {
+                const dirty = (p.uuid && dirtyByUuid.get(p.uuid)) || (p.id && dirtyById.get(p.id));
+                return dirty ? dirty : mapParticipantToRow(p);
+            });
+
+            if (mergedExisting.length > 0 || unsavedDrafts.length > 0) {
+                return [...mergedExisting, ...unsavedDrafts];
+            }
+            // Keep current empty draft rows if user added blank rows
+            const blankDrafts = prev.filter(r => !r.isExisting);
+            return blankDrafts.length > 0 ? blankDrafts : [createEmptyRow()];
+        });
+    }, [formNumber, existingParticipants]);
 
     // Add a new row to draft
     const handleAddRow = () => {
@@ -153,7 +195,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     const handleFieldChange = (index, field, value) => {
         setDraftRows(prev => {
             const updated = [...prev];
-            updated[index] = { ...updated[index], [field]: value };
+            updated[index] = { ...updated[index], [field]: value, isDirty: true };
             return updated;
         });
     };
@@ -166,7 +208,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 ? [...updated[rowIndex].attendance] 
                 : Array(TOTAL_CAMPAIGN_DAYS).fill(false);
             currentAtt[dayIdx] = !currentAtt[dayIdx];
-            updated[rowIndex] = { ...updated[rowIndex], attendance: currentAtt };
+            updated[rowIndex] = { ...updated[rowIndex], attendance: currentAtt, isDirty: true };
             return updated;
         });
     };
@@ -186,7 +228,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             for (const d of activeSprint.days) {
                 currentAtt[d] = targetVal;
             }
-            updated[rowIndex] = { ...updated[rowIndex], attendance: currentAtt };
+            updated[rowIndex] = { ...updated[rowIndex], attendance: currentAtt, isDirty: true };
             return updated;
         });
     };
@@ -200,7 +242,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             for (const d of activeSprint.days) {
                 currentAtt[d] = true;
             }
-            return { ...row, attendance: currentAtt };
+            return { ...row, attendance: currentAtt, isDirty: true };
         }));
     };
 
@@ -253,7 +295,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     const handleSaveForm = async (andAdvance = false) => {
         const num = normalizeFormNumber(formNumber);
         if (!num) {
-            setStatusMessage({ type: 'error', text: 'Please enter a valid form number (1 to 200).' });
+            setStatusMessage({ type: 'error', text: `Please enter a valid form number (1 to ${TOTAL_CAMPAIGN_FORMS}).` });
             return;
         }
 
@@ -266,10 +308,12 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         setIsSaving(true);
         setStatusMessage(null);
         const now = new Date().toISOString();
+        let writtenCount = 0;
 
         try {
             await db.transaction('rw', db.registrations, async () => {
                 for (const row of validRows) {
+                    const targetFacUuid = currentFacilitator?.uuid || row.facilitator_uuid || null;
                     const recordData = {
                         first_name: row.firstName.trim(),
                         last_name: row.lastName.trim(),
@@ -278,7 +322,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                         contact: row.contact.trim() || null,
                         type: 'participant',
                         group_form_number: String(num),
-                        facilitator_uuid: currentFacilitator?.uuid || null,
+                        facilitator_uuid: targetFacUuid,
                         attendance: Array.isArray(row.attendance) ? row.attendance : Array(TOTAL_CAMPAIGN_DAYS).fill(false),
                         campaign_id: activeCampId,
                         is_daily_core: false,
@@ -290,7 +334,11 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                     };
 
                     if (row.isExisting && row.id) {
-                        await db.registrations.update(row.id, recordData);
+                        const facChanged = targetFacUuid && row.facilitator_uuid !== targetFacUuid;
+                        if (row.isDirty || facChanged) {
+                            await db.registrations.update(row.id, recordData);
+                            writtenCount++;
+                        }
                     } else {
                         const newUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('part-' + Math.random().toString(36).substring(2));
                         await db.registrations.add({
@@ -302,16 +350,26 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                             created_by_email: user?.email || null,
                             submission_source: 'paper_batch_entry'
                         });
+                        writtenCount++;
                     }
                 }
             });
 
-            // Trigger debounced sync to Firebase in background
-            window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+            // Clear dirty flags locally so subsequent saves don't re-push
+            setDraftRows(prev => prev.map(r => ({ ...r, isDirty: false })));
+
+            if (writtenCount > 0) {
+                // Trigger debounced sync to Firebase in background
+                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                // Mirror this profile's records to their isolated Google Sheet tab in background
+                pushProfileBufferToSheets({ profile, user }).catch(err => {
+                    console.warn('[PaperFormEntry] Background Google Sheets buffer push skipped:', err.message);
+                });
+            }
 
             setStatusMessage({ 
                 type: 'success', 
-                text: `Form #${num} saved successfully (${validRows.length} participants)!` 
+                text: `Form #${num} saved successfully (${validRows.length} participants) — synced to ${getProfileBufferTabName(profile, user)}!` 
             });
 
             if (andAdvance && num < TOTAL_CAMPAIGN_FORMS) {
@@ -352,13 +410,17 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                         <FileText size={26} />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <span className="text-[10px] font-black uppercase tracking-widest text-[#71167F]">
                                 Field Form Transcription
                             </span>
                             <span className="text-gray-300">•</span>
                             <span className="text-xs font-bold text-gray-500">
                                 Assigned Range: Forms <strong className="text-gray-900">{assignedStart}–{assignedEnd}</strong>
+                            </span>
+                            <span className="text-gray-300">•</span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black">
+                                Sheet Tab: {getProfileBufferTabName(profile, user)}
                             </span>
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 tracking-tight">

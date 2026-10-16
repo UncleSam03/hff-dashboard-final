@@ -138,17 +138,35 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             return true;
         });
 
-        // Compute aliases for each facilitator (grouped by contact phone number)
+        // Compute aliases for each facilitator in-memory (grouped by contact phone number, O(F) instead of N+1 IndexedDB queries)
+        const contactToUuids = new Map();
+        for (const r of allFacilitators) {
+            if (r.is_deleted || !r.contact || !r.uuid) continue;
+            let list = contactToUuids.get(r.contact);
+            if (!list) {
+                list = [];
+                contactToUuids.set(r.contact, list);
+            }
+            if (!list.includes(r.uuid)) list.push(r.uuid);
+        }
+
         const aliasesMap = {};
+        const aliasUuidToFacilitators = new Map();
         for (const f of facilitators) {
-            aliasesMap[f.uuid] = [f.uuid];
-            if (f.contact) {
-                const aliases = await db.registrations.where('type').equals('facilitator')
-                    .filter(r => r.contact === f.contact)
-                    .toArray();
-                aliases.forEach(a => {
-                    if (!aliasesMap[f.uuid].includes(a.uuid)) aliasesMap[f.uuid].push(a.uuid);
-                });
+            const list = [f.uuid];
+            if (f.contact && contactToUuids.has(f.contact)) {
+                for (const aliasUuid of contactToUuids.get(f.contact)) {
+                    if (!list.includes(aliasUuid)) list.push(aliasUuid);
+                }
+            }
+            aliasesMap[f.uuid] = list;
+            for (const aliasUuid of list) {
+                let owners = aliasUuidToFacilitators.get(aliasUuid);
+                if (!owners) {
+                    owners = [];
+                    aliasUuidToFacilitators.set(aliasUuid, owners);
+                }
+                owners.push(f.uuid);
             }
         }
 
@@ -163,7 +181,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             return true;
         });
 
-        // Count assigned and qualifying participants for each facilitator
+        // Count assigned and qualifying participants for each facilitator in O(P) time
         const counts = {};
         const qualifyingCounts = {};
         const facilitatorFormMap = new Map();
@@ -184,14 +202,15 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             }
 
             if (matchedFacUuid) {
-                facilitators.forEach(f => {
-                    if (aliasesMap[f.uuid] && aliasesMap[f.uuid].includes(matchedFacUuid)) {
-                        counts[f.uuid] = (counts[f.uuid] || 0) + 1;
+                const ownerFacUuids = aliasUuidToFacilitators.get(matchedFacUuid);
+                if (ownerFacUuids) {
+                    for (const ownerUuid of ownerFacUuids) {
+                        counts[ownerUuid] = (counts[ownerUuid] || 0) + 1;
                         if (isQualifying) {
-                            qualifyingCounts[f.uuid] = (qualifyingCounts[f.uuid] || 0) + 1;
+                            qualifyingCounts[ownerUuid] = (qualifyingCounts[ownerUuid] || 0) + 1;
                         }
                     }
-                });
+                }
             }
         });
 
@@ -240,9 +259,9 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             const freshFacilitator = await db.registrations.get(selectedFacilitator.id) || selectedFacilitator;
             contextFacilitator = freshFacilitator;
 
-            const aliases = await db.registrations.where('type').equals('facilitator')
-                .filter(r => !!(r.contact && freshFacilitator.contact && r.contact === freshFacilitator.contact))
-                .toArray();
+            const aliases = allFacilitators.filter(r =>
+                !r.is_deleted && r.contact && freshFacilitator.contact && r.contact === freshFacilitator.contact
+            );
             const aliasUuids = Array.from(new Set([freshFacilitator.uuid, ...aliases.map(a => a.uuid)]));
 
             if (freshFacilitator.linked_facilitators) {

@@ -1,7 +1,8 @@
 import { doc, updateDoc } from 'firebase/firestore';
 import { db as firestoreDb, isConfigured } from './firebase';
 
-export const TOTAL_CAMPAIGN_FORMS = 200;
+export const TOTAL_CAMPAIGN_FORMS = 400;
+export const MAX_SAFE_FORM_NUMBER = 2000;
 
 /**
  * Normalizes form numbers into clean positive integers (e.g. "001" -> 1, "Form 45" -> 45).
@@ -16,11 +17,13 @@ export function normalizeFormNumber(val) {
 }
 
 /**
- * Computes the 200-form status matrix, summary stats, and missing form numbers.
+ * Computes the campaign form status matrix, summary stats, and missing form numbers.
+ * Supports 400+ forms out of the box and dynamically expands if higher form numbers are logged.
  * @param {Array} registrations All registrations for the active campaign from Dexie.
- * @returns {Object} 200-form audit report.
+ * @param {number} [minTotalForms] Minimum total forms to audit (defaults to TOTAL_CAMPAIGN_FORMS = 400).
+ * @returns {Object} Form audit report.
  */
-export function compute200FormsAudit(registrations = []) {
+export function compute200FormsAudit(registrations = [], minTotalForms = TOTAL_CAMPAIGN_FORMS) {
     const active = (registrations || []).filter(r => !r.is_deleted);
 
     // Group facilitators by form number
@@ -28,10 +31,13 @@ export function compute200FormsAudit(registrations = []) {
     // Group participants by group form number
     const participantMap = new Map();
 
+    let maxObservedForm = minTotalForms;
+
     for (const r of active) {
         if (r.type === 'facilitator') {
             const num = normalizeFormNumber(r.form_number);
-            if (num && num >= 1 && num <= TOTAL_CAMPAIGN_FORMS) {
+            if (num && num >= 1 && num <= MAX_SAFE_FORM_NUMBER) {
+                if (num > maxObservedForm) maxObservedForm = num;
                 // If multiple facilitators share a form, keep first or list them
                 if (!facilitatorMap.has(num)) {
                     facilitatorMap.set(num, r);
@@ -39,7 +45,8 @@ export function compute200FormsAudit(registrations = []) {
             }
         } else if (r.type === 'participant') {
             const num = normalizeFormNumber(r.group_form_number || r.form_number);
-            if (num && num >= 1 && num <= TOTAL_CAMPAIGN_FORMS) {
+            if (num && num >= 1 && num <= MAX_SAFE_FORM_NUMBER) {
+                if (num > maxObservedForm) maxObservedForm = num;
                 if (!participantMap.has(num)) {
                     participantMap.set(num, []);
                 }
@@ -48,13 +55,15 @@ export function compute200FormsAudit(registrations = []) {
         }
     }
 
+    const effectiveTotalForms = Math.max(minTotalForms, maxObservedForm);
+
     const formMatrix = [];
     const missingFormNumbers = [];
     let completedFormsCount = 0;
     let inProgressFormsCount = 0;
     let totalParticipantsCaptured = 0;
 
-    for (let f = 1; f <= TOTAL_CAMPAIGN_FORMS; f++) {
+    for (let f = 1; f <= effectiveTotalForms; f++) {
         const fac = facilitatorMap.get(f) || null;
         const parts = participantMap.get(f) || [];
         const partCount = parts.length;
@@ -100,12 +109,12 @@ export function compute200FormsAudit(registrations = []) {
     }
 
     return {
-        totalForms: TOTAL_CAMPAIGN_FORMS,
+        totalForms: effectiveTotalForms,
         completedFormsCount,
         inProgressFormsCount,
         missingFormsCount: missingFormNumbers.length,
         missingFormNumbers,
-        completionPercentage: Math.round((completedFormsCount / TOTAL_CAMPAIGN_FORMS) * 100),
+        completionPercentage: effectiveTotalForms > 0 ? Math.round((completedFormsCount / effectiveTotalForms) * 100) : 0,
         totalParticipantsCaptured,
         formMatrix
     };
@@ -115,8 +124,9 @@ export function compute200FormsAudit(registrations = []) {
  * Calculates progress for an assigned form range (e.g. Forms 1 to 50).
  */
 export function getAdminRangeProgress(formMatrix = [], rangeStart = 1, rangeEnd = 50) {
-    const start = Math.max(1, Math.min(rangeStart, TOTAL_CAMPAIGN_FORMS));
-    const end = Math.max(start, Math.min(rangeEnd, TOTAL_CAMPAIGN_FORMS));
+    const maxBound = Math.max(TOTAL_CAMPAIGN_FORMS, formMatrix.length || TOTAL_CAMPAIGN_FORMS);
+    const start = Math.max(1, Math.min(rangeStart, maxBound));
+    const end = Math.max(start, Math.min(rangeEnd, maxBound));
     const totalInRange = end - start + 1;
 
     let completedInRange = 0;

@@ -5,6 +5,7 @@ import { checkConnectivity } from './syncManager';
 import { autoDeduplicateRegistrations } from './dataMaintenance';
 import { flushAttendanceSyncImmediately } from './attendanceSync';
 import { normalizeAttendance } from './analytics';
+import { DEFAULT_CAMPAIGN } from './campaignManager';
 
 let isSyncing = false;
 let isPulling = false;
@@ -90,7 +91,15 @@ async function pushStorePending(storeName) {
             const docRef = doc(firestoreDb, storeName, record.uuid);
 
             if (record.is_deleted) {
-                batch.delete(docRef);
+                // Write a lightweight tombstone so all other devices receive the deletion
+                // via 1-read incremental sync (where('updated_at', '>', lastPull)) instead of requiring
+                // a 4,000-read full collection scan in reconcileFirebaseDeletions!
+                batch.set(docRef, {
+                    uuid: record.uuid,
+                    campaign_id: record.campaign_id || DEFAULT_CAMPAIGN.uuid,
+                    is_deleted: true,
+                    updated_at: record.updated_at || new Date().toISOString()
+                });
                 deletedItems.push({ id, uuid: record.uuid });
             } else {
                 const recordToSync = sanitizeForFirestore({
@@ -125,7 +134,12 @@ async function pushStorePending(storeName) {
                     if (!item.uuid) continue;
                     const docRef = doc(firestoreDb, storeName, item.uuid);
                     if (item.is_deleted) {
-                        await deleteDoc(docRef);
+                        await setDoc(docRef, {
+                            uuid: item.uuid,
+                            campaign_id: item.campaign_id || DEFAULT_CAMPAIGN.uuid,
+                            is_deleted: true,
+                            updated_at: item.updated_at || new Date().toISOString()
+                        });
                         await db[storeName].delete(id);
                     } else {
                         const recordToSync = sanitizeForFirestore({
@@ -148,7 +162,7 @@ async function pushStorePending(storeName) {
 
 /**
  * Pull updates from Firebase to IndexedDB for a specific store.
- * Uses incremental querying when available to drastically reduce read quota.
+ * Uses incremental high-watermark querying when available to protect Firestore Free Tier (50,000 reads/day).
  */
 async function pullStoreUpdates(storeName, forceFull = false) {
     if (!isConfigured || !navigator.onLine || isPulling) return;
@@ -193,43 +207,65 @@ async function pullStoreUpdates(storeName, forceFull = false) {
             querySnapshot = await getDocs(collection(firestoreDb, storeName));
         }
 
-        setLastPullTime(storeName, new Date().toISOString());
-
         const remoteRecords = [];
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
+        let maxRemoteUpdatedAt = lastPull || '';
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.updated_at && (!maxRemoteUpdatedAt || data.updated_at > maxRemoteUpdatedAt)) {
+                maxRemoteUpdatedAt = data.updated_at;
+            }
             remoteRecords.push({
                 ...data,
-                uuid: data.uuid || doc.id
+                uuid: data.uuid || docSnap.id
             });
         });
 
+        // Advance lastPull using the remote high-watermark (not the local reader clock!)
+        // so client clock skew never skips another laptop's writes AND we never re-read the same batch twice!
+        if (maxRemoteUpdatedAt) {
+            setLastPullTime(storeName, maxRemoteUpdatedAt);
+        } else if (!lastPull) {
+            setLastPullTime(storeName, new Date().toISOString());
+        }
+
         if (remoteRecords.length === 0) return;
 
-        // Load local records to compare timestamps and match business keys
+        // Load local records to compare timestamps and match business keys safely
         const localRecords = await db[storeName].toArray();
         const localMetaMap = new Map();
         const localFormMap = new Map();
         const localNameMap = new Map();
 
         const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+(?=\d)/, '');
-        const cleanStr = (s) => String(s || '').trim().toLowerCase();
+        const cleanStr = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
         for (const loc of localRecords) {
             if (loc.uuid) {
                 localMetaMap.set(loc.uuid, { id: loc.id, updated_at: loc.updated_at, record: loc });
             }
             if (storeName === 'registrations' && !loc.is_deleted) {
+                const camp = loc.campaign_id || DEFAULT_CAMPAIGN.uuid;
+                const locType = cleanStr(loc.type) || 'participant';
                 const cf = cleanForm(loc.form_number);
-                if (cf) {
-                    const formKey = `${cleanStr(loc.type)}|${cf}`;
-                    if (!localFormMap.has(formKey)) localFormMap.set(formKey, { id: loc.id, updated_at: loc.updated_at, record: loc });
+                const gf = cleanForm(loc.group_form_number || (locType === 'participant' ? loc.form_number : ''));
+
+                // Only index facilitators by form_number (a single form has 1 facilitator, but 10-15 participants)
+                if (locType === 'facilitator' && cf) {
+                    const formKey = `${camp}|facilitator|${cf}`;
+                    if (!localFormMap.has(formKey)) {
+                        localFormMap.set(formKey, { id: loc.id, updated_at: loc.updated_at, record: loc });
+                    }
                 }
+
                 const fn = cleanStr(loc.first_name);
                 const ln = cleanStr(loc.last_name);
                 if (fn && ln) {
-                    const nameKey = `${cleanStr(loc.type)}|${fn}|${ln}`;
-                    if (!localNameMap.has(nameKey)) localNameMap.set(nameKey, { id: loc.id, updated_at: loc.updated_at, record: loc });
+                    const groupScope = locType === 'facilitator' ? (cf || 'noform') : (gf || cleanStr(loc.facilitator_uuid) || 'ungrouped');
+                    const nameKey = `${camp}|${locType}|${groupScope}|${fn}|${ln}`;
+                    if (!localNameMap.has(nameKey)) {
+                        localNameMap.set(nameKey, { id: loc.id, updated_at: loc.updated_at, record: loc });
+                    }
                 }
             }
         }
@@ -237,25 +273,37 @@ async function pullStoreUpdates(storeName, forceFull = false) {
         let updatedCount = 0;
 
         for (const remoteRecord of remoteRecords) {
-            // Find existing local record: first by exact UUID, then by business key
+            // Find existing local record: first by exact UUID, then by campaign+group-scoped business key
             let locData = localMetaMap.get(remoteRecord.uuid);
 
-            if (!locData && storeName === 'registrations') {
+            if (!locData && storeName === 'registrations' && !remoteRecord.is_deleted) {
+                const camp = remoteRecord.campaign_id || DEFAULT_CAMPAIGN.uuid;
+                const remType = cleanStr(remoteRecord.type) || 'participant';
                 const cf = cleanForm(remoteRecord.form_number);
-                if (cf) {
-                    locData = localFormMap.get(`${cleanStr(remoteRecord.type)}|${cf}`);
-                }
-                if (!locData) {
-                    const fn = cleanStr(remoteRecord.first_name);
-                    const ln = cleanStr(remoteRecord.last_name);
-                    if (fn && ln) {
-                        locData = localNameMap.get(`${cleanStr(remoteRecord.type)}|${fn}|${ln}`);
+                const gf = cleanForm(remoteRecord.group_form_number || (remType === 'participant' ? remoteRecord.form_number : ''));
+                const fn = cleanStr(remoteRecord.first_name);
+                const ln = cleanStr(remoteRecord.last_name);
+
+                if (remType === 'facilitator' && cf) {
+                    const candidate = localFormMap.get(`${camp}|facilitator|${cf}`);
+                    // Only match by facilitator form number if names also match or one is blank
+                    if (candidate) {
+                        const locFn = cleanStr(candidate.record?.first_name);
+                        const locLn = cleanStr(candidate.record?.last_name);
+                        if ((!fn && !ln) || (!locFn && !locLn) || (fn === locFn && ln === locLn)) {
+                            locData = candidate;
+                        }
                     }
+                }
+                if (!locData && fn && ln) {
+                    const groupScope = remType === 'facilitator' ? (cf || 'noform') : (gf || cleanStr(remoteRecord.facilitator_uuid) || 'ungrouped');
+                    locData = localNameMap.get(`${camp}|${remType}|${groupScope}|${fn}|${ln}`);
                 }
             }
 
-            // If matched locally but remoteRecord has a different UUID, remote is a redundant cloud duplicate
-            if (locData && locData.record?.uuid && remoteRecord.uuid && locData.record.uuid !== remoteRecord.uuid) {
+            // If matched locally by strict campaign+group+name key and local is already synced with a different UUID,
+            // purge the redundant duplicate document from Firestore
+            if (!remoteRecord.is_deleted && locData && locData.record?.uuid && remoteRecord.uuid && locData.record.uuid !== remoteRecord.uuid && locData.record.sync_status === 'synced') {
                 try {
                     const dupRef = doc(firestoreDb, storeName, remoteRecord.uuid);
                     deleteDoc(dupRef).catch(() => {});
@@ -265,20 +313,11 @@ async function pullStoreUpdates(storeName, forceFull = false) {
                 }
             }
             
-            // Handle soft deletions if they exist
+            // Handle tombstone soft deletions incrementally (1 read instead of 4,000-read full scan)
             if (remoteRecord.is_deleted) {
                 if (locData) {
                     await db[storeName].delete(locData.id);
-                }
-                // Clean up soft-deleted doc from Firestore backend
-                if (remoteRecord.uuid) {
-                    try {
-                        const docRef = doc(firestoreDb, storeName, remoteRecord.uuid);
-                        await deleteDoc(docRef);
-                        console.log(`[FirebaseSync] Purged legacy soft-deleted doc ${remoteRecord.uuid} from Firestore ${storeName}`);
-                    } catch (delErr) {
-                        console.warn(`[FirebaseSync] Could not purge legacy doc ${remoteRecord.uuid} from Firestore:`, delErr.message);
-                    }
+                    updatedCount++;
                 }
                 continue;
             }
@@ -300,21 +339,41 @@ async function pullStoreUpdates(storeName, forceFull = false) {
                     const mergedAtt = localAtt.map((val, idx) => Boolean(val || remoteAtt[idx]));
                     await db[storeName].update(locData.id, {
                         ...remoteRecord,
+                        ...locData.record,
                         attendance: mergedAtt,
                         sync_status: 'pending' // Preserve pending so local merge will sync upward
                     });
                 }
             } else if (!locData.record?.uuid || locData.record.uuid === remoteRecord.uuid || new Date(remoteRecord.updated_at || 0) >= new Date(locData.updated_at || 0)) {
-                // Reconcile and update existing local record (preserves Dexie auto-increment ID and prevents duplicates)
-                await db[storeName].update(locData.id, {
+                // Skip no-op writes if record timestamp is identical
+                if (locData.record?.uuid === remoteRecord.uuid && locData.updated_at && remoteRecord.updated_at && locData.updated_at === remoteRecord.updated_at && locData.record?.sync_status === 'synced') {
+                    continue;
+                }
+
+                let mergedPayload = {
                     ...remoteRecord,
                     sync_status: 'synced'
-                });
+                };
+
+                // Non-destructive day-by-day attendance merge across devices while honoring explicit single-day unchecks
+                if (storeName === 'registrations' && locData.record?.attendance && remoteRecord.attendance) {
+                    const localAtt = normalizeAttendance(locData.record.attendance);
+                    const remoteAtt = normalizeAttendance(remoteRecord.attendance);
+                    const mergedAtt = localAtt.map((val, idx) => Boolean(val || remoteAtt[idx]));
+                    const lastMark = remoteRecord.last_attendance_mark;
+                    if (lastMark && typeof lastMark.day_index === 'number' && lastMark.value === false) {
+                        mergedAtt[lastMark.day_index] = false;
+                    }
+                    mergedPayload.attendance = mergedAtt;
+                }
+
+                // Reconcile and update existing local record (preserves Dexie auto-increment ID and prevents duplicates)
+                await db[storeName].update(locData.id, mergedPayload);
                 updatedCount++;
             }
         }
 
-        if (storeName === 'registrations') {
+        if (storeName === 'registrations' && updatedCount > 0) {
             await autoDeduplicateRegistrations();
         }
 
@@ -331,28 +390,25 @@ async function pullStoreUpdates(storeName, forceFull = false) {
 }
 
 /**
- * Reconciliation: Fetches all UUIDs from Firebase and deletes local records that aren't in that list.
+ * Deep Reconciliation: Only runs when explicitly forced (e.g. manual admin maintenance),
+ * because normal deletions now sync incrementally as lightweight tombstones in 1 read.
  */
 export async function reconcileFirebaseDeletions(storeName, force = false) {
-    if (!isConfigured) return;
+    if (!isConfigured || !force) return;
     
     const online = await checkConnectivity();
     if (!online) return;
 
     const LAST_REC_KEY = `hff_last_rec_${storeName}`;
-    const lastRec = localStorage.getItem(LAST_REC_KEY);
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-    if (!force && lastRec && (Date.now() - Number(lastRec)) < ONE_DAY) {
-        return; // Throttled to prevent daily quota exhaustion
-    }
-
     console.log(`[FirebaseSync] Reconciling deletions for ${storeName}...`);
     
     try {
         const querySnapshot = await getDocs(collection(firestoreDb, storeName));
         const remoteUuidSet = new Set();
-        querySnapshot.forEach((doc) => {
-            const u = doc.data().uuid || doc.id;
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.is_deleted) return;
+            const u = data.uuid || docSnap.id;
             if (u) remoteUuidSet.add(u);
         });
 

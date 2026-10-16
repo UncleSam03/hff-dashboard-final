@@ -7,7 +7,7 @@ import db from '../../lib/dexieDb';
 import { 
     Shield, ShieldCheck, ShieldAlert, Crown, UserCheck, UserX, 
     Clock, Mail, AlertCircle, Check, RefreshCw, UserPlus, Lock, Sparkles,
-    FileText, Hash, Layers, ArrowUpRight, ChevronRight, Sliders
+    FileText, Hash, Layers, ArrowUpRight, ChevronRight, Sliders, FileSpreadsheet, Download, CloudUpload
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { 
@@ -16,9 +16,17 @@ import {
     setAdminFormRange, 
     TOTAL_CAMPAIGN_FORMS 
 } from '../../lib/formRangeManager';
+import {
+    getProfileBufferTabName,
+    loadSharedSheetsBufferConfig,
+    saveSharedSheetsBufferConfig,
+    pushProfileBufferToSheets,
+    reconcileSheetsBufferIntoUniformSystem,
+    exportMultiTabBufferWorkbook
+} from '../../lib/sheetsBufferSync';
 
 export default function AdminManagement({ onOpenPaperForm }) {
-    const { user, isMasterAdmin, admitAdmin, revokeAdmin, masterAdminEmail } = useAuth();
+    const { user, profile, isMasterAdmin, admitAdmin, revokeAdmin, masterAdminEmail } = useAuth();
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null); // uid currently being modified
@@ -27,12 +35,22 @@ export default function AdminManagement({ onOpenPaperForm }) {
     const [preAuthName, setPreAuthName] = useState('');
     const [preAuthSubmitting, setPreAuthSubmitting] = useState(false);
 
-    // 200 Forms Tracker UI states
+    // 200/400 Forms Tracker UI states
     const [showMissingForms, setShowMissingForms] = useState(false);
     const [showMatrixView, setShowMatrixView] = useState(false);
     const [rangeEditing, setRangeEditing] = useState({}); // { [adminId]: { start, end } }
 
-    // Live registrations from Dexie for real-time 200-form audit
+    // Per-Profile Google Sheets Buffer states
+    const [sheetsConfig, setSheetsConfig] = useState({
+        spreadsheetUrl: '',
+        webAppUrl: '',
+        autoSyncOnSave: true,
+        lastReconciledAt: null,
+        lastReconcileSummary: null
+    });
+    const [sheetsActionLoading, setSheetsActionLoading] = useState(null);
+
+    // Live registrations from Dexie for real-time form audit
     const registrations = useLiveQuery(async () => {
         return await db.registrations.toArray();
     }) || [];
@@ -40,6 +58,10 @@ export default function AdminManagement({ onOpenPaperForm }) {
     const audit = useMemo(() => {
         return compute200FormsAudit(registrations);
     }, [registrations]);
+
+    useEffect(() => {
+        loadSharedSheetsBufferConfig().then(cfg => setSheetsConfig(cfg));
+    }, []);
 
     const loadProfiles = async () => {
         setLoading(true);
@@ -320,7 +342,7 @@ export default function AdminManagement({ onOpenPaperForm }) {
                 </div>
             )}
 
-            {/* SECTION 0: 200 Numbered Forms Live Field Audit */}
+            {/* SECTION 0: Numbered Forms Live Field Audit */}
             <div className="bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-[2rem] border border-white shadow-xl shadow-gray-200/40 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start sm:items-center gap-3">
@@ -332,10 +354,10 @@ export default function AdminManagement({ onOpenPaperForm }) {
                                 <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-100 text-[#71167F]">
                                     Master Field Audit
                                 </span>
-                                <span className="text-xs font-bold text-gray-400">• Total Physical Forms: 200</span>
+                                <span className="text-xs font-bold text-gray-400">• Total Physical Forms: {audit.totalForms}</span>
                             </div>
                             <h3 className="text-xl font-black text-gray-900 tracking-tight mt-0.5">
-                                200 Numbered Forms Intake & Progress Tracker
+                                {audit.totalForms} Numbered Forms Intake & Progress Tracker
                             </h3>
                         </div>
                     </div>
@@ -347,7 +369,7 @@ export default function AdminManagement({ onOpenPaperForm }) {
                             className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-all flex items-center gap-1.5"
                         >
                             <Layers size={14} />
-                            <span>{showMatrixView ? "Hide Form Matrix" : "View 200 Form Matrix"}</span>
+                            <span>{showMatrixView ? "Hide Form Matrix" : `View ${audit.totalForms} Form Matrix`}</span>
                         </button>
                         <button
                             type="button"
@@ -369,7 +391,7 @@ export default function AdminManagement({ onOpenPaperForm }) {
                         </span>
                         <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-black text-emerald-900">{audit.completedFormsCount}</span>
-                            <span className="text-xs font-bold text-emerald-700">/ 200 Forms</span>
+                            <span className="text-xs font-bold text-emerald-700">/ {audit.totalForms} Forms</span>
                         </div>
                         <div className="w-full bg-emerald-200/50 rounded-full h-2 mt-3 overflow-hidden">
                             <div 
@@ -403,7 +425,7 @@ export default function AdminManagement({ onOpenPaperForm }) {
                         </span>
                         <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-black text-rose-900">{audit.missingFormsCount}</span>
-                            <span className="text-xs font-bold text-rose-700">/ 200 Forms</span>
+                            <span className="text-xs font-bold text-rose-700">/ {audit.totalForms} Forms</span>
                         </div>
                         <p className="text-[11px] font-medium text-rose-800/80 mt-3">
                             Forms that have zero records logged in the database yet
@@ -458,13 +480,13 @@ export default function AdminManagement({ onOpenPaperForm }) {
                     </div>
                 )}
 
-                {/* Interactive 200-Cell Matrix View */}
+                {/* Interactive Matrix View */}
                 {showMatrixView && (
                     <div className="p-5 rounded-2xl bg-gray-50 border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                             <div>
                                 <h4 className="text-xs font-black uppercase tracking-wider text-gray-700">
-                                    Visual Matrix: Forms 1 to 200 Status
+                                    Visual Matrix: Forms 1 to {audit.totalForms} Status
                                 </h4>
                                 <p className="text-[11px] text-gray-500 font-medium">
                                     Click any cell to jump to that form in Paper Batch Entry
@@ -746,8 +768,8 @@ export default function AdminManagement({ onOpenPaperForm }) {
                                     </div>
 
                                     <div className="mt-3 p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-600 space-y-0.5">
-                                        <span className="block text-gray-400 uppercase tracking-wider text-[9px]">Permissions:</span>
-                                        <span className="block text-gray-700">✓ Current Campaign Dashboard</span>
+                                        <span className="block text-gray-400 uppercase tracking-wider text-[9px]">Google Sheet Buffer Tab:</span>
+                                        <span className="block text-emerald-700 font-black truncate">{getProfileBufferTabName(admin, null)}</span>
                                         <span className="block text-gray-700">✓ Paper Form Batch Entry</span>
                                     </div>
                                 </div>
@@ -774,6 +796,170 @@ export default function AdminManagement({ onOpenPaperForm }) {
                         );
                     })}
                 </div>
+            </div>
+
+            {/* SECTION 2B: Per-Profile Google Sheets Buffer & Uniform Reconciliation Engine */}
+            <div className="bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-[2rem] border-2 border-emerald-500/20 shadow-xl shadow-gray-200/40 space-y-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black shadow-lg shadow-emerald-600/20 shrink-0">
+                            <FileSpreadsheet size={24} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-800">
+                                    Weekend Mass Entry Buffer
+                                </span>
+                                <span className="text-[11px] font-bold text-gray-400">
+                                    My Tab: <strong className="text-gray-800">{getProfileBufferTabName(profile, user)}</strong>
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-black text-gray-900 tracking-tight mt-0.5">
+                                Per-Profile Google Sheets Buffer & Uniform Reconciliation
+                            </h3>
+                            <p className="text-xs text-gray-500 font-medium">
+                                Each Admin writes to their own isolated Google Sheet tab (<code className="text-emerald-700 font-bold">PROFILE_Name_Range</code>), which reconciles into <code className="text-[#71167F] font-bold">MASTER_UNIFORM_REGISTER</code>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                            type="button"
+                            disabled={sheetsActionLoading !== null}
+                            onClick={async () => {
+                                setSheetsActionLoading('push');
+                                setStatusMessage(null);
+                                try {
+                                    const res = await pushProfileBufferToSheets({ profile, user });
+                                    if (res.skipped) {
+                                        setStatusMessage({ type: 'error', text: res.reason });
+                                    } else {
+                                        setStatusMessage({
+                                            type: 'success',
+                                            text: `Pushed ${res.pushedCount} records to tab "${res.tabName}"!`
+                                        });
+                                    }
+                                } catch (err) {
+                                    setStatusMessage({ type: 'error', text: err.message });
+                                } finally {
+                                    setSheetsActionLoading(null);
+                                }
+                            }}
+                            className="px-4 py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all"
+                        >
+                            <CloudUpload size={15} />
+                            <span>{sheetsActionLoading === 'push' ? 'Pushing Tab...' : 'Push My Profile Tab'}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            disabled={sheetsActionLoading !== null}
+                            onClick={async () => {
+                                setSheetsActionLoading('reconcile');
+                                setStatusMessage(null);
+                                try {
+                                    const summary = await reconcileSheetsBufferIntoUniformSystem();
+                                    setSheetsConfig(prev => ({
+                                        ...prev,
+                                        lastReconciledAt: summary.reconciledAt,
+                                        lastReconcileSummary: summary
+                                    }));
+                                    setStatusMessage({
+                                        type: 'success',
+                                        text: `Uniform Reconciliation Complete: ${summary.profileTabsScanned} profile tabs merged into ${summary.uniformMasterTotal} uniform records (${summary.duplicatesMerged} duplicates merged)!`
+                                    });
+                                } catch (err) {
+                                    setStatusMessage({ type: 'error', text: err.message });
+                                } finally {
+                                    setSheetsActionLoading(null);
+                                }
+                            }}
+                            className="px-4 py-2.5 rounded-2xl bg-[#71167F] hover:bg-[#5a1166] text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-[#71167F]/20 flex items-center gap-2 transition-all"
+                        >
+                            <RefreshCw size={15} className={sheetsActionLoading === 'reconcile' ? 'animate-spin' : ''} />
+                            <span>{sheetsActionLoading === 'reconcile' ? 'Reconciling Tabs...' : 'Reconcile All Tabs → Uniform System'}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const fileName = exportMultiTabBufferWorkbook(registrations, profiles);
+                                setStatusMessage({
+                                    type: 'success',
+                                    text: `Exported multi-tab workbook "${fileName}" with MASTER_UNIFORM_REGISTER + all Profile Tabs!`
+                                });
+                            }}
+                            className="px-4 py-2.5 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all"
+                        >
+                            <Download size={15} />
+                            <span>Download Multi-Tab .xlsx</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Configuration Inputs (Shared across all Vercel Admins via Firestore) */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-4 border-t border-gray-100">
+                    <div className="md:col-span-5">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">
+                            Google Sheet URL (Shared Across All Vercel Profiles)
+                        </label>
+                        <input
+                            type="url"
+                            placeholder="https://docs.google.com/spreadsheets/d/..."
+                            value={sheetsConfig.spreadsheetUrl || ''}
+                            onChange={e => setSheetsConfig(prev => ({ ...prev, spreadsheetUrl: e.target.value }))}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                        />
+                    </div>
+                    <div className="md:col-span-5">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">
+                            Apps Script Web App URL (<code className="text-emerald-700">.../exec</code> for Vercel Browser Sync)
+                        </label>
+                        <input
+                            type="url"
+                            placeholder="https://script.google.com/macros/s/.../exec"
+                            value={sheetsConfig.webAppUrl || ''}
+                            onChange={e => setSheetsConfig(prev => ({ ...prev, webAppUrl: e.target.value }))}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
+                        />
+                    </div>
+                    <div className="md:col-span-2 flex items-end gap-2">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const saved = await saveSharedSheetsBufferConfig(sheetsConfig);
+                                setSheetsConfig(saved);
+                                setStatusMessage({
+                                    type: 'success',
+                                    text: 'Saved Google Sheet Buffer configuration for all Vercel Admin profiles!'
+                                });
+                            }}
+                            className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all"
+                        >
+                            Save Config
+                        </button>
+                    </div>
+                </div>
+
+                {sheetsConfig.spreadsheetUrl && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-xs">
+                        <a
+                            href={sheetsConfig.spreadsheetUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-black text-emerald-700 hover:underline flex items-center gap-1"
+                        >
+                            <span>Open Live Google Sheet Workbook</span>
+                            <ArrowUpRight size={14} />
+                        </a>
+                        {sheetsConfig.lastReconcileSummary && (
+                            <span className="text-gray-500 font-bold">
+                                Last Reconciled: <strong className="text-gray-800">{sheetsConfig.lastReconcileSummary.uniformMasterTotal} uniform records</strong> across <strong className="text-gray-800">{sheetsConfig.lastReconcileSummary.profileTabsScanned} profile tabs</strong>
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* SECTION 3: Pre-Authorize Admin by Email */}

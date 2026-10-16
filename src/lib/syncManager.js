@@ -59,7 +59,9 @@ export async function syncSubmissions() {
 
         // 2. Sync Native Dashboard data via Firebase client
         await pushPendingToFirebase();
-        await pullFromFirebase();
+        if (typeof document === 'undefined' || document.visibilityState !== 'hidden') {
+            await pullFromFirebase();
+        }
 
     } finally {
         isSyncing = false;
@@ -77,14 +79,12 @@ export async function reconcileWithCloud() {
         const online = await checkConnectivity();
         if (!online) return;
 
-        console.log("[SyncManager] Starting Full Cloud Reconciliation...");
+        console.log("[SyncManager] Starting Cloud Sync...");
 
         await pushPendingToFirebase();
         await pullFromFirebase();
 
-        await reconcileFirebaseDeletions('registrations');
-
-        console.log("[SyncManager] Reconciliation Complete.");
+        console.log("[SyncManager] Cloud Sync Complete.");
 
         window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
 
@@ -112,10 +112,19 @@ export function startAutoSync(syncIntervalMs = 90 * 1000, heartbeatIntervalMs = 
         window.dispatchEvent(new CustomEvent('hff-connectivity-status', { detail: { online: false } }));
     });
 
+    // When a user saves a form or edits a record locally, push immediately without burning extra pull reads
     window.addEventListener('hff-firebase-sync-request', () => {
-        console.log('[SyncManager] Received instant sync request event, triggering syncSubmissions...');
-        syncSubmissions().catch(e => console.warn('[SyncManager] Instant sync error:', e));
+        console.log('[SyncManager] Received instant sync request event, pushing pending records...');
+        pushPendingToFirebase().catch(e => console.warn('[SyncManager] Instant push error:', e));
     });
+
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                syncSubmissions().catch(() => {});
+            }
+        });
+    }
 
     setInterval(checkConnectivity, heartbeatIntervalMs);
     setInterval(syncSubmissions, syncIntervalMs);
