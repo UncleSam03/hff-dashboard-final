@@ -24,9 +24,15 @@ function AppContent() {
   const [activeCampaign, setActiveCampaign] = useState(() => {
     try {
       const cached = localStorage.getItem('hff_active_campaign_meta');
-      return cached ? JSON.parse(cached) : null;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.uuid !== 'campaign-default-national' && parsed.name !== 'National Campaign') {
+          return parsed;
+        }
+      }
+      return DEFAULT_CAMPAIGN;
     } catch {
-      return null;
+      return DEFAULT_CAMPAIGN;
     }
   });
   const [campaignRestoring, setCampaignRestoring] = useState(true);
@@ -52,7 +58,7 @@ function AppContent() {
         }
 
         const savedId = getActiveCampaignId();
-        if (savedId) {
+        if (savedId && savedId !== 'campaign-default-national') {
           const found = campaigns.find(c => c.uuid === savedId);
           if (found) {
             setActiveCampaign(found);
@@ -71,6 +77,18 @@ function AppContent() {
       }
     }
     restoreCampaign();
+
+    const handleCampaignSync = () => {
+      restoreCampaign();
+    };
+    window.addEventListener('hff-firebase-campaigns-updated', handleCampaignSync);
+    window.addEventListener('hff-firebase-data-updated', handleCampaignSync);
+    window.addEventListener('hff-campaign-changed', handleCampaignSync);
+    return () => {
+      window.removeEventListener('hff-firebase-campaigns-updated', handleCampaignSync);
+      window.removeEventListener('hff-firebase-data-updated', handleCampaignSync);
+      window.removeEventListener('hff-campaign-changed', handleCampaignSync);
+    };
   }, [isMasterAdmin, role]);
 
   console.log("[AppContent] Status:", { role, onboarding_completed: profile?.onboarding_completed, loading });
@@ -83,7 +101,11 @@ function AppContent() {
     if (!activeCampaign) return [];
     return allRegistrations.filter(r => {
       if (r.is_deleted) return false;
-      if (r.campaign_id) return r.campaign_id === activeCampaign.uuid;
+      if (r.campaign_id) {
+        if (r.campaign_id === activeCampaign.uuid) return true;
+        if (activeCampaign.uuid === DEFAULT_CAMPAIGN.uuid && r.campaign_id === 'campaign-default-national') return true;
+        return false;
+      }
       // If record has no campaign_id, associate with default campaign
       return activeCampaign.uuid === DEFAULT_CAMPAIGN.uuid;
     });

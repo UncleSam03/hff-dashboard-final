@@ -5,38 +5,45 @@ import { db as firestoreDb, isConfigured as isFirestoreConfigured } from './fire
 import { doc, deleteDoc } from 'firebase/firestore';
 
 export const DEFAULT_CAMPAIGN = {
-    uuid: 'campaign-default-national',
-    name: 'National Campaign',
-    village: 'National',
+    uuid: 'campaign-b016fdbd-9dda-4ec3-a316-9e1027d52e22',
+    name: 'Mochudi Family Building Campaign',
+    village: 'Mochudi',
     year: '2026',
     status: 'active',
     is_current: true,
     description: 'Evidence-based community and family strengthening program in Botswana.',
     targetAttendees: 500,
-    created_at: '2026-01-15T08:00:00.000Z',
+    created_at: '2026-09-21T10:29:54.053Z',
     sync_status: 'synced'
 };
 
 const STORAGE_KEY = 'hff_active_campaign_id';
+const LEGACY_PLACEHOLDER_UUIDS = new Set([
+    'campaign-default-mahalapye',
+    'campaign-default-national'
+]);
+const LEGACY_PLACEHOLDER_NAMES = new Set([
+    'Mahalapye West Campaign',
+    'National Campaign'
+]);
 
 /**
- * Automatically purge legacy/placeholder Mahalapye campaign records
+ * Automatically purge legacy/placeholder Mahalapye or National campaign records
  */
 export async function purgeMahalapyePlaceholder() {
     try {
         const matches = await db.campaigns
-            .filter(c => c.uuid === 'campaign-default-mahalapye' || c.name === 'Mahalapye West Campaign')
+            .filter(c => LEGACY_PLACEHOLDER_UUIDS.has(c.uuid) || LEGACY_PLACEHOLDER_NAMES.has(c.name))
             .toArray();
 
-        if (matches.length > 0) {
-            console.log(`[CampaignManager] Purging ${matches.length} placeholder Mahalapye campaign(s)...`);
+        const realCampaign = (await db.campaigns
+            .filter(c => !LEGACY_PLACEHOLDER_UUIDS.has(c.uuid) && !LEGACY_PLACEHOLDER_NAMES.has(c.name) && !c.is_deleted)
+            .first()) || DEFAULT_CAMPAIGN;
 
-            const realCampaign = await db.campaigns
-                .filter(c => c.uuid !== 'campaign-default-mahalapye' && c.name !== 'Mahalapye West Campaign' && !c.is_deleted)
-                .first();
+        if (matches.length > 0) {
+            console.log(`[CampaignManager] Purging ${matches.length} legacy placeholder campaign(s)...`);
 
             for (const camp of matches) {
-                // If any registrations were linked to it, reassign to active real campaign
                 const linkedRegs = await db.registrations.where('campaign_id').equals(camp.uuid).toArray();
                 if (linkedRegs.length > 0 && realCampaign) {
                     await db.transaction('rw', db.registrations, async () => {
@@ -46,30 +53,36 @@ export async function purgeMahalapyePlaceholder() {
                     });
                 }
 
-                // Delete permanently from local Dexie DB
                 await db.campaigns.delete(camp.id);
 
-                // Delete from remote Firestore so it never re-syncs back down
                 try {
                     if (isFirestoreConfigured && firestoreDb) {
                         const docRef = doc(firestoreDb, 'campaigns', camp.uuid);
                         await deleteDoc(docRef);
-                        console.log(`[CampaignManager] Purged ${camp.uuid} from Firestore campaigns.`);
                     }
                 } catch (fsErr) {
                     console.warn('[CampaignManager] Firestore purge error (non-fatal):', fsErr);
                 }
             }
+        }
 
-            // If active campaign in localStorage was the placeholder, update to realCampaign
-            if (getActiveCampaignId() === 'campaign-default-mahalapye') {
-                setActiveCampaignId(realCampaign ? realCampaign.uuid : null);
-                if (realCampaign) {
-                    try { localStorage.setItem('hff_active_campaign_meta', JSON.stringify(realCampaign)); } catch {}
-                } else {
-                    try { localStorage.removeItem('hff_active_campaign_meta'); } catch {}
+        // Also migrate any registrations tagged with legacy placeholder UUIDs
+        const legacyRegs = await db.registrations
+            .filter(r => r.campaign_id && LEGACY_PLACEHOLDER_UUIDS.has(r.campaign_id))
+            .toArray();
+        if (legacyRegs.length > 0 && realCampaign) {
+            await db.transaction('rw', db.registrations, async () => {
+                for (const r of legacyRegs) {
+                    await db.registrations.update(r.id, { campaign_id: realCampaign.uuid });
                 }
-            }
+            });
+        }
+
+        // Ensure localStorage never stays stuck on a legacy placeholder campaign
+        const savedActiveId = getActiveCampaignId();
+        if (savedActiveId && LEGACY_PLACEHOLDER_UUIDS.has(savedActiveId)) {
+            setActiveCampaignId(realCampaign.uuid);
+            try { localStorage.setItem('hff_active_campaign_meta', JSON.stringify(realCampaign)); } catch {}
         }
     } catch (err) {
         console.warn('[CampaignManager] purgeMahalapyePlaceholder error:', err);
@@ -83,10 +96,15 @@ export async function seedDefaultCampaignIfEmpty() {
     try {
         await purgeMahalapyePlaceholder();
 
+        const count = await db.campaigns.filter(c => !c.is_deleted).count();
+        if (count === 0) {
+            await db.campaigns.add({ ...DEFAULT_CAMPAIGN });
+        }
+
         // Backfill any existing records without a campaign_id to first active campaign
         const unassigned = await db.registrations.filter(r => !r.campaign_id).toArray();
         if (unassigned.length > 0) {
-            const active = await db.campaigns.filter(c => !c.is_deleted).first();
+            const active = (await db.campaigns.filter(c => !c.is_deleted).first()) || DEFAULT_CAMPAIGN;
             if (active) {
                 console.log(`[CampaignManager] Backfilling ${unassigned.length} records to campaign ${active.name}`);
                 await db.transaction('rw', db.registrations, async () => {
@@ -108,7 +126,7 @@ export async function getAllCampaigns() {
     await purgeMahalapyePlaceholder();
     await seedDefaultCampaignIfEmpty();
     const all = await db.campaigns.toArray();
-    return all.filter(c => !c.is_deleted && c.uuid !== 'campaign-default-mahalapye' && c.name !== 'Mahalapye West Campaign');
+    return all.filter(c => !c.is_deleted && !LEGACY_PLACEHOLDER_UUIDS.has(c.uuid) && !LEGACY_PLACEHOLDER_NAMES.has(c.name));
 }
 
 /**

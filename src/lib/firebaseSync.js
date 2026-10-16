@@ -8,7 +8,7 @@ import { normalizeAttendance } from './analytics';
 import { DEFAULT_CAMPAIGN } from './campaignManager';
 
 let isSyncing = false;
-let isPulling = false;
+const pullingStores = new Set();
 
 const STORAGE_PREFIX = 'hff_last_pull_';
 
@@ -165,9 +165,9 @@ async function pushStorePending(storeName) {
  * Uses incremental high-watermark querying when available to protect Firestore Free Tier (50,000 reads/day).
  */
 async function pullStoreUpdates(storeName, forceFull = false) {
-    if (!isConfigured || !navigator.onLine || isPulling) return;
+    if (!isConfigured || !navigator.onLine || pullingStores.has(storeName)) return;
 
-    isPulling = true;
+    pullingStores.add(storeName);
     try {
         let querySnapshot;
         let lastPull = getLastPullTime(storeName);
@@ -385,7 +385,7 @@ async function pullStoreUpdates(storeName, forceFull = false) {
     } catch (error) {
         console.error(`[FirebaseSync] Error pulling ${storeName}:`, error.message);
     } finally {
-        isPulling = false;
+        pullingStores.delete(storeName);
     }
 }
 
