@@ -17,8 +17,7 @@ const Sidebar = ({
   onSignOut,
   userProfile,
   userRole,
-  isCollapsed = false,
-  onToggleCollapse
+  isCollapsed = true
 }) => {
   const navItems = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -52,17 +51,6 @@ const Sidebar = ({
             </div>
           )}
         </div>
-
-        {/* Collapse Toggle - Desktop Only */}
-        <button
-          onClick={onToggleCollapse}
-          className={cn(
-            "hidden lg:flex p-1.5 rounded-full liquid-glass-pill border border-white/80 text-gray-400 hover:text-[#71167F] transition-all",
-            isCollapsed && "absolute -right-3.5 top-7 shadow-md z-50 bg-white"
-          )}
-        >
-          <ChevronRight size={14} className={cn("transition-transform duration-300", !isCollapsed && "rotate-180")} />
-        </button>
       </div>
 
       {/* Navigation Links */}

@@ -737,27 +737,6 @@ export default function AuthPage() {
               )}
             </form>
           )}
-
-          {/* Master Admin Notice */}
-          <div className="mt-8 pt-5 border-t border-gray-100 text-center space-y-1 relative z-10">
-            <p className="text-[11px] font-semibold text-gray-500">
-              Master Admin:{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("samukeliso.mayabane@thehealthyfamilies.net");
-                  setAuthMethod("email");
-                }}
-                title="Click to auto-fill email"
-                className="text-[#71167F] hover:underline font-bold transition-all cursor-pointer inline-block"
-              >
-                samukeliso.mayabane@thehealthyfamilies.net
-              </button>
-            </p>
-            <p className="text-[10px] text-gray-400 font-medium">
-              Administrators will access the active ongoing campaign workspace upon sign-in.
-            </p>
-          </div>
         </div>
       </div>
     </div >

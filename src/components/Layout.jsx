@@ -14,7 +14,6 @@ const ROLE_BADGES = {
 const Layout = ({ children, activeTab, onTabChange, activeCampaign, onSwitchCampaign }) => {
   const { profile, role, signOut, isMasterAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
 
   const handleRefresh = async () => {
@@ -32,18 +31,14 @@ const Layout = ({ children, activeTab, onTabChange, activeCampaign, onSwitchCamp
   return (
     <div className="min-h-screen flex bg-transparent">
       {/* Sidebar - Desktop */}
-      <div className={cn(
-        "hidden lg:block ui-transition",
-        isCollapsed ? "w-24" : "w-72"
-      )}>
+      <div className="hidden lg:block w-24 ui-transition">
         <Sidebar
           activeTab={activeTab}
           onTabChange={onTabChange}
           onSignOut={signOut}
           userProfile={profile}
           userRole={role}
-          isCollapsed={isCollapsed}
-          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+          isCollapsed={true}
         />
       </div>
 
