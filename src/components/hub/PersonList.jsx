@@ -267,6 +267,7 @@ const PersonList = ({
 
             // Trigger instant sync to delete records on Firestore backend
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+            pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
 
             setDeleteModal({ open: false, person: null, loading: false });
             if (selectedFacilitator?.id === person.id) {

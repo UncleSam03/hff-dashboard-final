@@ -52,10 +52,20 @@ async function pushStorePending(storeName) {
     const online = await checkConnectivity();
     if (!online) return;
 
-    const pending = await db[storeName]
-        .where('sync_status')
-        .equals('pending')
-        .toArray();
+    if (!db[storeName]) return;
+
+    let pending = [];
+    const hasSyncStatusIndex = db[storeName]?.schema?.indexes?.some(idx => idx.name === 'sync_status');
+    if (hasSyncStatusIndex) {
+        pending = await db[storeName]
+            .where('sync_status')
+            .equals('pending')
+            .toArray();
+    } else {
+        pending = await db[storeName]
+            .filter(r => r.sync_status === 'pending')
+            .toArray();
+    }
 
     // Also pick up any local records marked is_deleted: true that might have been marked synced previously
     const legacyDeleted = await db[storeName]
@@ -440,10 +450,26 @@ export async function pushPendingToFirebase() {
     if (isSyncing) return;
     isSyncing = true;
     try {
-        await flushAttendanceSyncImmediately();
-        await pushStorePending('campaigns');
-        await pushStorePending('notices');
-        await pushStorePending('registrations');
+        await flushAttendanceSyncImmediately().catch(err => console.warn('[FirebaseSync] Attendance flush error:', err));
+        
+        // Push core registrations first so records and deletions are guaranteed to sync
+        try {
+            await pushStorePending('registrations');
+        } catch (err) {
+            console.error('[FirebaseSync] Failed pushing registrations:', err);
+        }
+
+        try {
+            await pushStorePending('campaigns');
+        } catch (err) {
+            console.error('[FirebaseSync] Failed pushing campaigns:', err);
+        }
+
+        try {
+            await pushStorePending('notices');
+        } catch (err) {
+            console.error('[FirebaseSync] Failed pushing notices:', err);
+        }
     } finally {
         isSyncing = false;
         window.dispatchEvent(new CustomEvent('hff-firebase-sync-complete'));
@@ -451,12 +477,26 @@ export async function pushPendingToFirebase() {
 }
 
 /**
- * Orchestrates pull for registrations
+ * Orchestrates pull for registrations, campaigns, and notices
  */
 export async function pullFromFirebase(forceFull = false) {
-    await pullStoreUpdates('campaigns', forceFull);
-    await pullStoreUpdates('notices', forceFull);
-    await pullStoreUpdates('registrations', forceFull);
+    try {
+        await pullStoreUpdates('registrations', forceFull);
+    } catch (err) {
+        console.error('[FirebaseSync] Error pulling registrations:', err);
+    }
+
+    try {
+        await pullStoreUpdates('campaigns', forceFull);
+    } catch (err) {
+        console.error('[FirebaseSync] Error pulling campaigns:', err);
+    }
+
+    try {
+        await pullStoreUpdates('notices', forceFull);
+    } catch (err) {
+        console.error('[FirebaseSync] Error pulling notices:', err);
+    }
 }
 
 /**
