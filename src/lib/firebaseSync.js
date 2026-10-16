@@ -442,6 +442,7 @@ export async function pushPendingToFirebase() {
     try {
         await flushAttendanceSyncImmediately();
         await pushStorePending('campaigns');
+        await pushStorePending('notices');
         await pushStorePending('registrations');
     } finally {
         isSyncing = false;
@@ -454,6 +455,7 @@ export async function pushPendingToFirebase() {
  */
 export async function pullFromFirebase(forceFull = false) {
     await pullStoreUpdates('campaigns', forceFull);
+    await pullStoreUpdates('notices', forceFull);
     await pullStoreUpdates('registrations', forceFull);
 }
 

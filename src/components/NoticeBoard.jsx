@@ -124,15 +124,16 @@ export const NoticeBoard = ({
 
     // Query Dexie with Live Updates (no forced seeding — respects empty state)
     const queryData = useLiveQuery(async () => {
-        const notices = await db.notices.orderBy('created_at').reverse().toArray() || [];
+        const rawNoticesList = await db.notices.orderBy('created_at').reverse().toArray() || [];
+        const notices = rawNoticesList.filter(n => !n.is_deleted);
 
         const facilitators = await db.registrations.where('type').equals('facilitator').toArray();
         const participants = await db.registrations.where('type').equals('participant').toArray();
 
         // Calculate Smart Alerts
         const alerts = [];
-        facilitators.forEach(fac => {
-            const linked = participants.filter(p => p.facilitator_uuid === fac.uuid);
+        facilitators.filter(f => !f.is_deleted).forEach(fac => {
+            const linked = participants.filter(p => !p.is_deleted && (p.facilitator_uuid === fac.uuid || (fac.form_number && p.group_form_number === fac.form_number)));
             if (linked.length === 0) {
                 alerts.push({
                     id: `alert-zero-${fac.uuid}`,
@@ -144,7 +145,7 @@ export const NoticeBoard = ({
             }
         });
 
-        const totalPending = participants.filter(p => p.sync_status === 'pending').length;
+        const totalPending = participants.filter(p => !p.is_deleted && p.sync_status === 'pending').length;
         if (totalPending > 15) {
             alerts.push({
                 id: 'alert-high-pending',
@@ -182,6 +183,7 @@ export const NoticeBoard = ({
 
         setIsSubmitting(true);
         try {
+            const now = new Date().toISOString();
             const noticeRecord = {
                 uuid: crypto.randomUUID(),
                 title: newTitle.trim(),
@@ -189,7 +191,9 @@ export const NoticeBoard = ({
                 type: newType,
                 priority: newPriority,
                 audience: newAudience,
-                created_at: new Date().toISOString(),
+                created_at: now,
+                updated_at: now,
+                is_deleted: false,
                 sync_status: 'pending'
             };
 
@@ -219,7 +223,17 @@ export const NoticeBoard = ({
         if (!window.confirm("Are you sure you want to remove this announcement?")) return;
 
         try {
-            await db.notices.where('uuid').equals(uuid).delete();
+            const existing = await db.notices.where('uuid').equals(uuid).first();
+            if (existing?.id) {
+                await db.notices.update(existing.id, {
+                    is_deleted: true,
+                    sync_status: 'pending',
+                    updated_at: new Date().toISOString()
+                });
+                if (isConfigured && navigator.onLine) {
+                    pushPendingToFirebase().catch(() => {});
+                }
+            }
             setSelectedNotice(null);
         } catch (err) {
             console.error('[NoticeBoard] Error deleting notice:', err);

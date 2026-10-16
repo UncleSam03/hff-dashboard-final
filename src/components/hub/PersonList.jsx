@@ -14,6 +14,7 @@ import { normalizeAttendance } from '../../lib/analytics';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
 import { useAuth } from '../../auth/AuthContext';
+import { pushProfileBufferToSheets } from '../../lib/sheetsBufferSync';
 
 const SEARCH_CRITERIA = [
     { id: 'all', label: 'All Criteria' },
@@ -85,6 +86,7 @@ const PersonList = ({
                 email: user?.email || null,
                 role: role || 'admin'
             });
+            pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
             setImportFeedback({ success: true, message: `Successfully imported ${res.count} records!` });
             setTimeout(() => setImportFeedback(null), 5000);
         } catch (err) {
@@ -492,6 +494,7 @@ const PersonList = ({
                         };
                         await db.registrations.update(existingByName.id, editPayload);
                         window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                        pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
                         closeEditor();
                         return;
                     } else {
@@ -513,6 +516,7 @@ const PersonList = ({
                 });
             }
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+            pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
             closeEditor();
         } catch (err) {
             console.error('Save failed:', err);

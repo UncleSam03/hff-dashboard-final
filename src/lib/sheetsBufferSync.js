@@ -140,7 +140,7 @@ export async function pushProfileBufferToSheets({
     profile,
     user,
     records = null,
-    autoReconcile = false
+    autoReconcile = true
 } = {}) {
     const config = await loadSharedSheetsBufferConfig();
     if (!config.webAppUrl) {
@@ -158,7 +158,9 @@ export async function pushProfileBufferToSheets({
     if (!recordsToPush) {
         const allLocal = await db.registrations.toArray();
         const myEmail = (profile?.email || user?.email || '').toLowerCase();
+        const myEmailPrefix = myEmail.split('@')[0] || '';
         const myUid = user?.uid || profile?.id || '';
+        const myName = (profile?.full_name || user?.displayName || '').trim().toLowerCase();
         const rangeStart = Number(profile?.form_range_start) || 0;
         const rangeEnd = Number(profile?.form_range_end) || 0;
 
@@ -170,7 +172,13 @@ export async function pushProfileBufferToSheets({
             // Include records created/updated by this profile OR falling inside their assigned form range
             const byEmail = (r.updated_by_email || r.created_by_email || '').toLowerCase();
             const byUid = r.updated_by_uid || r.created_by_uid || '';
-            if ((myEmail && byEmail === myEmail) || (myUid && byUid === myUid)) {
+            const byName = (r.updated_by_name || r.created_by_name || '').trim().toLowerCase();
+            if (
+                (myEmail && byEmail === myEmail) ||
+                (myUid && byUid === myUid) ||
+                (myName && byName === myName) ||
+                (myEmailPrefix && (byName === myEmailPrefix || byName === myEmail))
+            ) {
                 return true;
             }
 
