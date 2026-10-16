@@ -73,7 +73,7 @@ const SatDashboard = ({ analytics, onBack }) => {
         try {
             setIsExportingZip(true);
             const zip = new JSZip();
-            const url = '/certificate_blank.pdf';
+            const url = '/certificate_blank.pdf?v=mochudi-2026';
             const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
 
             for (const person of list) {
@@ -129,7 +129,7 @@ const SatDashboard = ({ analytics, onBack }) => {
         if (!person) return;
         try {
             setIsGenerating(true);
-            const url = '/certificate_blank.pdf';
+            const url = '/certificate_blank.pdf?v=mochudi-2026';
             const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
 
             const pdfDoc = await PDFDocument.load(existingPdfBytes);
