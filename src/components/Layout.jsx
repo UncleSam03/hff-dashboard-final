@@ -159,14 +159,6 @@ const Layout = ({ children, activeTab, onTabChange, activeCampaign, onSwitchCamp
                 </span>
               </button>
             )}
-
-            {/* Live Indicator */}
-            <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-full liquid-glass-pill bg-emerald-500/10 text-emerald-700 border-emerald-400/30 shadow-sm">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.7)]" />
-              <span className="text-[11px] font-semibold tracking-wide">
-                Live Sync: {activeCampaign?.village && activeCampaign.village !== 'National' ? activeCampaign.village : 'Mochudi'}
-              </span>
-            </div>
           </div>
         </header>
 

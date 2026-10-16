@@ -53,22 +53,29 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     const [draftRows, setDraftRows] = useState([createEmptyRow()]);
     const loadedFormRef = useRef(null);
 
-    // Quick facilitator creation form
+    // Quick facilitator creation/edit form
     const [showFacilitatorModal, setShowFacilitatorModal] = useState(false);
     const [facForm, setFacForm] = useState({
         firstName: '',
         lastName: '',
+        age: '',
         gender: 'F',
         contact: '',
         place: '',
-        participantsCount: 10
+        affiliation: '',
+        meetingTime: '',
+        education: '',
+        maritalStatus: '',
+        occupation: '',
+        participantsCount: 10,
+        booksDistributed: 0
     });
 
     const activeSprint = useMemo(() => 
         SPRINTS.find(s => s.id === selectedSprintId) || SPRINTS[0]
     , [selectedSprintId]);
 
-    function createEmptyRow() {
+    function createEmptyRow(defaultPlace = '', defaultAffiliation = '') {
         return {
             tempId: 'draft-' + Math.random().toString(36).substring(2, 9),
             firstName: '',
@@ -76,6 +83,12 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             gender: 'F',
             age: '',
             contact: '',
+            place: defaultPlace || '',
+            education: '',
+            maritalStatus: '',
+            occupation: '',
+            affiliation: defaultAffiliation || '',
+            booksReceived: false,
             attendance: Array(TOTAL_CAMPAIGN_DAYS).fill(false),
             isExisting: false,
             isDirty: false
@@ -87,6 +100,15 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         const all = await db.registrations.toArray();
         return all.filter(r => !r.is_deleted && (r.campaign_id === activeCampId || !r.campaign_id));
     }, [activeCampId]) || [];
+
+    // Known places for quick autocomplete datalist
+    const knownPlaces = useMemo(() => {
+        const set = new Set();
+        campaignRegistrations.forEach(p => {
+            if (p.place && p.place.trim()) set.add(p.place.trim());
+        });
+        return Array.from(set).sort();
+    }, [campaignRegistrations]);
 
     // Identify facilitator for the current form
     const currentFacilitator = useMemo(() => {
@@ -116,6 +138,12 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         gender: p.gender || 'F',
         age: p.age ?? '',
         contact: p.contact || '',
+        place: p.place || '',
+        education: p.education || '',
+        maritalStatus: p.marital_status || '',
+        occupation: p.occupation || '',
+        affiliation: p.affiliation || '',
+        booksReceived: Boolean(p.books_received),
         facilitator_uuid: p.facilitator_uuid || null,
         attendance: Array.isArray(p.attendance) ? [...p.attendance] : Array(TOTAL_CAMPAIGN_DAYS).fill(false),
         isExisting: true,
@@ -133,7 +161,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             if (existingParticipants.length > 0) {
                 setDraftRows(existingParticipants.map(mapParticipantToRow));
             } else {
-                setDraftRows([createEmptyRow()]);
+                setDraftRows([createEmptyRow(currentFacilitator?.place, currentFacilitator?.affiliation)]);
             }
             setStatusMessage(null);
             return;
@@ -141,7 +169,10 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
 
         // Same formNumber, background update of existingParticipants:
         setDraftRows(prev => {
-            const unsavedDrafts = prev.filter(r => !r.isExisting && (r.firstName.trim() || r.lastName.trim() || r.contact.trim() || String(r.age).trim()));
+            const unsavedDrafts = prev.filter(r => !r.isExisting && (
+                r.firstName.trim() || r.lastName.trim() || r.contact.trim() || String(r.age).trim() ||
+                r.place?.trim() || r.education || r.maritalStatus || r.occupation?.trim() || r.affiliation?.trim()
+            ));
             const dirtyByUuid = new Map();
             const dirtyById = new Map();
             prev.forEach(r => {
@@ -161,13 +192,13 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             }
             // Keep current empty draft rows if user added blank rows
             const blankDrafts = prev.filter(r => !r.isExisting);
-            return blankDrafts.length > 0 ? blankDrafts : [createEmptyRow()];
+            return blankDrafts.length > 0 ? blankDrafts : [createEmptyRow(currentFacilitator?.place, currentFacilitator?.affiliation)];
         });
-    }, [formNumber, existingParticipants]);
+    }, [formNumber, existingParticipants, currentFacilitator]);
 
     // Add a new row to draft
     const handleAddRow = () => {
-        setDraftRows(prev => [...prev, createEmptyRow()]);
+        setDraftRows(prev => [...prev, createEmptyRow(currentFacilitator?.place, currentFacilitator?.affiliation)]);
     };
 
     // Remove row
@@ -187,7 +218,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         }
         setDraftRows(prev => {
             const next = prev.filter((_, i) => i !== index);
-            return next.length > 0 ? next : [createEmptyRow()];
+            return next.length > 0 ? next : [createEmptyRow(currentFacilitator?.place, currentFacilitator?.affiliation)];
         });
     };
 
@@ -197,6 +228,14 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             const updated = [...prev];
             updated[index] = { ...updated[index], [field]: value, isDirty: true };
             return updated;
+        });
+    };
+
+    // Toggle all books received for all rows
+    const handleToggleAllBooks = () => {
+        setDraftRows(prev => {
+            const allHaveBooks = prev.every(r => r.booksReceived);
+            return prev.map(row => ({ ...row, booksReceived: !allHaveBooks, isDirty: true }));
         });
     };
 
@@ -246,7 +285,44 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         }));
     };
 
-    // Handle Quick Facilitator Creation
+    const openFacilitatorModal = () => {
+        if (currentFacilitator) {
+            setFacForm({
+                firstName: currentFacilitator.first_name || '',
+                lastName: currentFacilitator.last_name || '',
+                age: currentFacilitator.age ?? '',
+                gender: currentFacilitator.gender || 'F',
+                contact: currentFacilitator.contact || '',
+                place: currentFacilitator.place || '',
+                affiliation: currentFacilitator.affiliation || '',
+                meetingTime: currentFacilitator.meeting_time || '',
+                education: currentFacilitator.education || '',
+                maritalStatus: currentFacilitator.marital_status || '',
+                occupation: currentFacilitator.occupation || '',
+                participantsCount: currentFacilitator.participants_count ?? 10,
+                booksDistributed: currentFacilitator.books_distributed ?? 0
+            });
+        } else {
+            setFacForm({
+                firstName: '',
+                lastName: '',
+                age: '',
+                gender: 'F',
+                contact: '',
+                place: '',
+                affiliation: '',
+                meetingTime: '',
+                education: '',
+                maritalStatus: '',
+                occupation: '',
+                participantsCount: 10,
+                booksDistributed: 0
+            });
+        }
+        setShowFacilitatorModal(true);
+    };
+
+    // Handle Quick Facilitator Creation or Update
     const handleCreateFacilitator = async (e) => {
         e.preventDefault();
         const num = normalizeFormNumber(formNumber);
@@ -257,36 +333,56 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         }
 
         const now = new Date().toISOString();
-        const facUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36));
+        const payload = {
+            first_name: facForm.firstName.trim(),
+            last_name: facForm.lastName.trim(),
+            age: facForm.age ? (parseInt(facForm.age, 10) || null) : null,
+            gender: facForm.gender || 'F',
+            contact: facForm.contact.trim() || '',
+            place: facForm.place.trim() || '',
+            affiliation: facForm.affiliation.trim() || '',
+            meeting_time: facForm.meetingTime.trim() || '',
+            education: facForm.education || '',
+            marital_status: facForm.maritalStatus || '',
+            occupation: facForm.occupation.trim() || '',
+            participants_count: parseInt(facForm.participantsCount, 10) || 10,
+            books_distributed: parseInt(facForm.booksDistributed, 10) || 0,
+            teaching_group: true,
+            type: 'facilitator',
+            form_number: String(num),
+            campaign_id: activeCampId,
+            is_daily_core: true,
+            sync_status: 'pending',
+            updated_at: now,
+        };
 
         try {
-            await db.registrations.add({
-                uuid: facUuid,
-                first_name: facForm.firstName.trim(),
-                last_name: facForm.lastName.trim(),
-                gender: facForm.gender || 'F',
-                contact: facForm.contact.trim() || '',
-                place: facForm.place.trim() || '',
-                participants_count: parseInt(facForm.participantsCount, 10) || 10,
-                type: 'facilitator',
-                form_number: String(num),
-                campaign_id: activeCampId,
-                is_daily_core: true,
-                sync_status: 'pending',
-                created_at: now,
-                updated_at: now,
-                created_by_uid: user?.uid || null,
-                created_by_name: profile?.full_name || user?.displayName || user?.email || 'Admin',
-                created_by_email: user?.email || null,
-                submission_source: 'paper_batch_entry'
-            });
+            if (currentFacilitator?.id) {
+                await db.registrations.update(currentFacilitator.id, {
+                    ...payload,
+                    updated_by_uid: user?.uid || null,
+                    updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Admin',
+                    updated_by_email: user?.email || null,
+                });
+            } else {
+                const facUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36));
+                await db.registrations.add({
+                    ...payload,
+                    uuid: facUuid,
+                    created_at: now,
+                    created_by_uid: user?.uid || null,
+                    created_by_name: profile?.full_name || user?.displayName || user?.email || 'Admin',
+                    created_by_email: user?.email || null,
+                    submission_source: 'paper_batch_entry'
+                });
+            }
 
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+            pushProfileBufferToSheets({ profile, user }).catch(() => {});
             setShowFacilitatorModal(false);
-            setFacForm({ firstName: '', lastName: '', gender: 'F', contact: '', place: '', participantsCount: 10 });
-            setStatusMessage({ type: 'success', text: `Facilitator assigned to Form #${num}!` });
+            setStatusMessage({ type: 'success', text: `Facilitator saved for Form #${num}!` });
         } catch (err) {
-            console.error('[PaperFormEntry] Error creating facilitator:', err);
+            console.error('[PaperFormEntry] Error saving facilitator:', err);
             alert('Failed to save facilitator: ' + err.message);
         }
     };
@@ -319,7 +415,13 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                         last_name: row.lastName.trim(),
                         gender: row.gender || 'F',
                         age: row.age ? parseInt(row.age, 10) || row.age : null,
-                        contact: row.contact.trim() || null,
+                        contact: row.contact?.trim() || null,
+                        place: row.place?.trim() || currentFacilitator?.place || null,
+                        education: row.education || null,
+                        marital_status: row.maritalStatus || null,
+                        occupation: row.occupation?.trim() || null,
+                        affiliation: row.affiliation?.trim() || currentFacilitator?.affiliation || null,
+                        books_received: Boolean(row.booksReceived),
                         type: 'participant',
                         group_form_number: String(num),
                         facilitator_uuid: targetFacUuid,
@@ -402,7 +504,13 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
+        <div className="space-y-6 max-w-[1600px] mx-auto pb-12 animate-in fade-in duration-300">
+            <datalist id="paper-known-places-list">
+                {knownPlaces.map((pl) => (
+                    <option key={pl} value={pl} />
+                ))}
+            </datalist>
+
             {/* Top Control Bar */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
@@ -532,6 +640,18 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                                 {currentFacilitator.place}
                                             </span>
                                         )}
+                                        {currentFacilitator.affiliation && (
+                                            <span className="flex items-center gap-1">
+                                                <Sparkles size={13} className="text-gray-400" />
+                                                Meeting: {currentFacilitator.affiliation}
+                                            </span>
+                                        )}
+                                        {currentFacilitator.meeting_time && (
+                                            <span className="flex items-center gap-1">
+                                                <Clock size={13} className="text-gray-400" />
+                                                {currentFacilitator.meeting_time}
+                                            </span>
+                                        )}
                                         <span className="flex items-center gap-1">
                                             <Users size={13} className="text-gray-400" />
                                             Target: {currentFacilitator.participants_count || '10'} participants
@@ -557,26 +677,29 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                         </div>
                     </div>
 
-                    {!currentFacilitator && (
-                        <button
-                            onClick={() => setShowFacilitatorModal(true)}
-                            className="px-4 py-2.5 rounded-2xl bg-[#71167F] text-white hover:bg-[#5a1166] text-xs font-black uppercase tracking-wider shadow-md shadow-[#71167F]/20 flex items-center gap-2 shrink-0 self-start md:self-auto"
-                        >
-                            <UserPlus size={16} />
-                            <span>Assign Facilitator to Form #{formNumber}</span>
-                        </button>
-                    )}
+                    <button
+                        onClick={openFacilitatorModal}
+                        className={cn(
+                            "px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 self-start md:self-auto transition-all",
+                            currentFacilitator
+                                ? "bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50 shadow-xs"
+                                : "bg-[#71167F] text-white hover:bg-[#5a1166] shadow-md shadow-[#71167F]/20"
+                        )}
+                    >
+                        <UserPlus size={16} />
+                        <span>{currentFacilitator ? `Edit Facilitator (Form #${formNumber})` : `Assign Facilitator to Form #${formNumber}`}</span>
+                    </button>
                 </div>
             </div>
 
-            {/* Quick Facilitator Registration Inline Modal */}
+            {/* Quick Facilitator Registration / Edit Inline Modal */}
             {showFacilitatorModal && (
                 <div className="bg-white rounded-3xl p-6 border-2 border-[#71167F]/30 shadow-xl animate-in zoom-in-95 duration-200">
                     <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
                         <div className="flex items-center gap-2">
                             <UserPlus className="text-[#71167F]" size={20} />
                             <h4 className="text-base font-black text-gray-900">
-                                Register Facilitator for Form #{formNumber}
+                                {currentFacilitator ? `Edit Facilitator for Form #${formNumber}` : `Register Facilitator for Form #${formNumber}`}
                             </h4>
                         </div>
                         <button 
@@ -589,7 +712,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
 
                     <form onSubmit={handleCreateFacilitator} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">First Name</label>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">First Name *</label>
                             <input
                                 type="text"
                                 required
@@ -600,7 +723,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Last Name</label>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Last Name *</label>
                             <input
                                 type="text"
                                 required
@@ -622,6 +745,16 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                             </select>
                         </div>
                         <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Age</label>
+                            <input
+                                type="number"
+                                value={facForm.age}
+                                onChange={e => setFacForm(f => ({ ...f, age: e.target.value }))}
+                                placeholder="e.g. 34"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                            />
+                        </div>
+                        <div>
                             <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Phone / Contact</label>
                             <input
                                 type="text"
@@ -631,29 +764,102 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                             />
                         </div>
-                        <div className="sm:col-span-2">
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">WDC / Ward / Village</label>
+                        <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Village / Ward</label>
                             <input
                                 type="text"
+                                list="paper-known-places-list"
                                 value={facForm.place}
                                 onChange={e => setFacForm(f => ({ ...f, place: e.target.value }))}
-                                placeholder="e.g. Phikwe Central / Ikageleng"
+                                placeholder="e.g. Mochudi / Boseja"
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Expected Group Size</label>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Education Level</label>
+                            <select
+                                value={facForm.education}
+                                onChange={e => setFacForm(f => ({ ...f, education: e.target.value }))}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                            >
+                                <option value="">Select Education</option>
+                                <option value="Primary">Primary</option>
+                                <option value="Junior Secondary">Junior Secondary</option>
+                                <option value="Senior Secondary">Senior Secondary</option>
+                                <option value="Vocational">Vocational</option>
+                                <option value="Tertiary">Tertiary</option>
+                                <option value="None">None</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Marital Status</label>
+                            <select
+                                value={facForm.maritalStatus}
+                                onChange={e => setFacForm(f => ({ ...f, maritalStatus: e.target.value }))}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                            >
+                                <option value="">Select Status</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Divorced">Divorced</option>
+                                <option value="Widowed">Widowed</option>
+                                <option value="Cohabiting">Cohabiting</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Occupation</label>
                             <input
-                                type="number"
-                                value={facForm.participantsCount}
-                                onChange={e => setFacForm(f => ({ ...f, participantsCount: e.target.value }))}
+                                type="text"
+                                value={facForm.occupation}
+                                onChange={e => setFacForm(f => ({ ...f, occupation: e.target.value }))}
+                                placeholder="e.g. Teacher, Self-employed"
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                             />
                         </div>
-                        <div className="flex items-end">
+                        <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Place / Affiliation</label>
+                            <input
+                                type="text"
+                                value={facForm.affiliation}
+                                onChange={e => setFacForm(f => ({ ...f, affiliation: e.target.value }))}
+                                placeholder="e.g. Community Hall / Church"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Time</label>
+                            <input
+                                type="text"
+                                value={facForm.meetingTime}
+                                onChange={e => setFacForm(f => ({ ...f, meetingTime: e.target.value }))}
+                                placeholder="e.g. Tuesdays 14:00"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Group Size</label>
+                                <input
+                                    type="number"
+                                    value={facForm.participantsCount}
+                                    onChange={e => setFacForm(f => ({ ...f, participantsCount: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Books Given</label>
+                                <input
+                                    type="number"
+                                    value={facForm.booksDistributed}
+                                    onChange={e => setFacForm(f => ({ ...f, booksDistributed: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                        </div>
+                        <div className="sm:col-span-2 md:col-span-4 flex justify-end pt-2">
                             <button
                                 type="submit"
-                                className="w-full py-2.5 rounded-xl bg-[#71167F] text-white hover:bg-[#5a1166] text-xs font-black uppercase tracking-wider shadow-md"
+                                className="px-6 py-2.5 rounded-xl bg-[#71167F] text-white hover:bg-[#5a1166] text-xs font-black uppercase tracking-wider shadow-md"
                             >
                                 Save Facilitator
                             </button>
@@ -691,11 +897,21 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                             </span>
                         </h4>
                         <p className="text-xs text-gray-500 mt-0.5">
-                            Type names directly. Press <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-mono">Enter</kbd> to add rows.
+                            Enter full participant details directly. Press <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-mono">Enter</kbd> to add rows.
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={handleToggleAllBooks}
+                            className="px-3 py-2 rounded-xl bg-purple-50 text-[#71167F] border border-purple-200 hover:bg-purple-100 text-xs font-bold flex items-center gap-1.5 transition-all"
+                            title="Toggle book received for all participants on this form"
+                        >
+                            <Check size={14} />
+                            <span>Toggle All Books</span>
+                        </button>
+
                         <button
                             type="button"
                             onClick={handleMarkAllRowsPresent}
@@ -721,20 +937,26 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50/80 text-[10px] font-black uppercase tracking-wider text-gray-400 border-b border-gray-100">
                             <tr>
-                                <th className="py-3 px-3 w-12 text-center">#</th>
-                                <th className="py-3 px-3 min-w-[140px]">First Name</th>
-                                <th className="py-3 px-3 min-w-[140px]">Last Name</th>
-                                <th className="py-3 px-2 w-20 text-center">Gender</th>
-                                <th className="py-3 px-2 w-20 text-center">Age</th>
-                                <th className="py-3 px-3 min-w-[120px]">Phone</th>
+                                <th className="py-3 px-2 w-10 text-center">#</th>
+                                <th className="py-3 px-2 min-w-[130px]">First Name</th>
+                                <th className="py-3 px-2 min-w-[130px]">Last Name</th>
+                                <th className="py-3 px-1.5 w-16 text-center">Gender</th>
+                                <th className="py-3 px-1.5 w-16 text-center">Age</th>
+                                <th className="py-3 px-2 min-w-[110px]">Phone</th>
+                                <th className="py-3 px-2 min-w-[125px]">Village / Site</th>
+                                <th className="py-3 px-2 min-w-[135px]">Education</th>
+                                <th className="py-3 px-2 min-w-[120px]">Marital Status</th>
+                                <th className="py-3 px-2 min-w-[125px]">Occupation</th>
+                                <th className="py-3 px-2 min-w-[125px]">Affiliation / Group</th>
+                                <th className="py-3 px-1.5 w-16 text-center">Book</th>
                                 
                                 {/* Sprint Attendance Columns */}
-                                <th className="py-3 px-3 text-center min-w-[180px]">
+                                <th className="py-3 px-2 text-center min-w-[175px]">
                                     <div className="flex items-center justify-center gap-2">
                                         <span>Attendance ({activeSprint.label})</span>
                                     </div>
                                 </th>
-                                <th className="py-3 px-2 w-12 text-center">Del</th>
+                                <th className="py-3 px-2 w-10 text-center">Del</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -744,12 +966,12 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
 
                                 return (
                                     <tr key={row.tempId || index} className="hover:bg-gray-50/60 transition-colors">
-                                        <td className="py-2.5 px-3 text-center text-xs font-mono font-bold text-gray-400">
+                                        <td className="py-2.5 px-2 text-center text-xs font-mono font-bold text-gray-400">
                                             {index + 1}
                                         </td>
                                         
                                         {/* First Name */}
-                                        <td className="py-2 px-3">
+                                        <td className="py-2 px-2">
                                             <input
                                                 type="text"
                                                 value={row.firstName}
@@ -761,7 +983,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                         </td>
 
                                         {/* Last Name */}
-                                        <td className="py-2 px-3">
+                                        <td className="py-2 px-2">
                                             <input
                                                 type="text"
                                                 value={row.lastName}
@@ -773,11 +995,11 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                         </td>
 
                                         {/* Gender */}
-                                        <td className="py-2 px-2 text-center">
+                                        <td className="py-2 px-1.5 text-center">
                                             <select
                                                 value={row.gender || 'F'}
                                                 onChange={e => handleFieldChange(index, 'gender', e.target.value)}
-                                                className="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                                className="bg-white border border-gray-200 rounded-lg px-1.5 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                             >
                                                 <option value="F">F</option>
                                                 <option value="M">M</option>
@@ -785,31 +1007,118 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                         </td>
 
                                         {/* Age */}
-                                        <td className="py-2 px-2 text-center">
+                                        <td className="py-2 px-1.5 text-center">
                                             <input
                                                 type="number"
                                                 value={row.age || ''}
                                                 onChange={e => handleFieldChange(index, 'age', e.target.value)}
                                                 onKeyDown={e => handleKeyDown(e, index)}
                                                 placeholder="Age"
-                                                className="w-16 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-center text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                                className="w-14 bg-white border border-gray-200 rounded-lg px-1.5 py-1.5 text-xs font-bold text-center text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                             />
                                         </td>
 
                                         {/* Phone */}
-                                        <td className="py-2 px-3">
+                                        <td className="py-2 px-2">
                                             <input
                                                 type="text"
                                                 value={row.contact || ''}
                                                 onChange={e => handleFieldChange(index, 'contact', e.target.value)}
                                                 onKeyDown={e => handleKeyDown(e, index)}
                                                 placeholder="71234567"
-                                                className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                             />
                                         </td>
 
+                                        {/* Village / Site */}
+                                        <td className="py-2 px-2">
+                                            <input
+                                                type="text"
+                                                list="paper-known-places-list"
+                                                value={row.place || ''}
+                                                onChange={e => handleFieldChange(index, 'place', e.target.value)}
+                                                onKeyDown={e => handleKeyDown(e, index)}
+                                                placeholder={currentFacilitator?.place || "Village / Ward"}
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                            />
+                                        </td>
+
+                                        {/* Education */}
+                                        <td className="py-2 px-2">
+                                            <select
+                                                value={row.education || ''}
+                                                onChange={e => handleFieldChange(index, 'education', e.target.value)}
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                            >
+                                                <option value="">Education...</option>
+                                                <option value="Primary">Primary</option>
+                                                <option value="Junior Secondary">Junior Sec</option>
+                                                <option value="Senior Secondary">Senior Sec</option>
+                                                <option value="Vocational">Vocational</option>
+                                                <option value="Tertiary">Tertiary</option>
+                                                <option value="None">None</option>
+                                            </select>
+                                        </td>
+
+                                        {/* Marital Status */}
+                                        <td className="py-2 px-2">
+                                            <select
+                                                value={row.maritalStatus || ''}
+                                                onChange={e => handleFieldChange(index, 'maritalStatus', e.target.value)}
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                            >
+                                                <option value="">Status...</option>
+                                                <option value="Single">Single</option>
+                                                <option value="Married">Married</option>
+                                                <option value="Divorced">Divorced</option>
+                                                <option value="Widowed">Widowed</option>
+                                                <option value="Cohabiting">Cohabiting</option>
+                                            </select>
+                                        </td>
+
+                                        {/* Occupation */}
+                                        <td className="py-2 px-2">
+                                            <input
+                                                type="text"
+                                                value={row.occupation || ''}
+                                                onChange={e => handleFieldChange(index, 'occupation', e.target.value)}
+                                                onKeyDown={e => handleKeyDown(e, index)}
+                                                placeholder="Occupation"
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                            />
+                                        </td>
+
+                                        {/* Affiliation / Group */}
+                                        <td className="py-2 px-2">
+                                            <input
+                                                type="text"
+                                                value={row.affiliation || ''}
+                                                onChange={e => handleFieldChange(index, 'affiliation', e.target.value)}
+                                                onKeyDown={e => handleKeyDown(e, index)}
+                                                placeholder={currentFacilitator?.affiliation || "Group / Church"}
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                            />
+                                        </td>
+
+                                        {/* Book Received */}
+                                        <td className="py-2 px-1.5 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleFieldChange(index, 'booksReceived', !row.booksReceived)}
+                                                className={cn(
+                                                    "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all border",
+                                                    row.booksReceived
+                                                        ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
+                                                        : "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100"
+                                                )}
+                                                title="Toggle whether participant received curriculum book"
+                                            >
+                                                {row.booksReceived ? 'Yes' : 'No'}
+                                            </button>
+                                        </td>
+
                                         {/* Sprint Attendance Checkboxes */}
-                                        <td className="py-2 px-3">
+                                        <td className="py-2 px-2">
                                             <div className="flex items-center justify-center gap-1.5">
                                                 {/* All Sprint Quick Toggle */}
                                                 <button
