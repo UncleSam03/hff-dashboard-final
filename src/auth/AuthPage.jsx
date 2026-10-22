@@ -205,21 +205,38 @@ export default function AuthPage() {
         let loginEmail = trimmedEmail;
         const isEmail = trimmedEmail.includes("@");
 
-        // If not an email, lookup in profiles by full_name
+        // If not an email, lookup in profiles by full_name (exact first, then case-insensitive fallback)
         if (!isEmail) {
           const profilesRef = collection(db, "profiles");
           const q = query(profilesRef, where("full_name", "==", trimmedEmail), limit(5));
           const querySnapshot = await getDocs(q);
 
-          if (querySnapshot.empty) {
+          let matchedProfiles = querySnapshot.docs
+            .map((d) => d.data())
+            .filter((p) => p && p.email && p.admin_status !== "revoked");
+
+          if (matchedProfiles.length === 0) {
+            const allSnap = await getDocs(profilesRef);
+            const normalizedTarget = trimmedEmail.toLowerCase().replace(/\s+/g, " ").trim();
+            matchedProfiles = allSnap.docs
+              .map((d) => d.data())
+              .filter((p) => {
+                if (!p || !p.email || p.admin_status === "revoked") return false;
+                const candidateName = (p.full_name || "").toLowerCase().replace(/\s+/g, " ").trim();
+                const candidatePrefix = (p.email.split("@")[0] || "").toLowerCase().trim();
+                return candidateName === normalizedTarget || candidatePrefix === normalizedTarget;
+              });
+          }
+
+          if (matchedProfiles.length === 0) {
             throw new Error("Could not find a user with that name. Please check and try again.");
           }
 
-          if (querySnapshot.size > 1) {
+          if (matchedProfiles.length > 1) {
             throw new Error("Multiple accounts found with that name. Please sign in with your email address instead.");
           }
 
-          throw new Error("Name-based login is not fully supported in Firebase yet. Please sign in with your email address.");
+          loginEmail = matchedProfiles[0].email;
         }
 
         const userCredential = await signInWithEmailAndPassword(auth, loginEmail, trimmedPassword);
