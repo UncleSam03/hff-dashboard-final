@@ -126,33 +126,73 @@ function rowToRecord(row) {
 }
 
 /**
- * Upsert a batch of records into a specific profile's buffer tab (PROFILE_<Name>_<Range>)
+ * Upsert or replace a batch of records into a specific profile's buffer tab (PROFILE_<Name>_<Range>)
  */
-function upsertProfileTab(ss, tabName, records) {
+function upsertProfileTab(ss, tabName, records, deletedUuids, replaceTab) {
   const safeTabName = String(tabName || 'PROFILE_Default').substring(0, 95);
   const sheet = getOrCreateSheet(ss, safeTabName, '#4A154B');
   const lastRow = sheet.getLastRow();
 
+  const deletedSet = new Set(Array.isArray(deletedUuids) ? deletedUuids.map(u => String(u || '').trim()) : []);
+  for (let i = 0; i < records.length; i++) {
+    if (records[i] && records[i].is_deleted && records[i].uuid) {
+      deletedSet.add(String(records[i].uuid).trim());
+    }
+  }
+
+  const activeRecords = records.filter(r => r && r.uuid && !r.is_deleted);
+
   const existingByUuid = new Map();
   let allRows = [];
 
-  if (lastRow > 1) {
-    allRows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
-    for (let i = 0; i < allRows.length; i++) {
-      const u = String(allRows[i][0] || '').trim();
-      if (u) existingByUuid.set(u, i);
+  if (lastRow > 1 && !replaceTab) {
+    const rawRows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
+    for (let i = 0; i < rawRows.length; i++) {
+      const u = String(rawRows[i][0] || '').trim();
+      if (!u || deletedSet.has(u)) continue;
+      existingByUuid.set(u, allRows.length);
+      allRows.push(rawRows[i]);
+    }
+  } else if (lastRow > 1 && replaceTab) {
+    // Even when replacing tab, preserve existing attendance bits for matching UUIDs
+    const rawRows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
+    for (let i = 0; i < rawRows.length; i++) {
+      const u = String(rawRows[i][0] || '').trim();
+      if (u && !deletedSet.has(u)) {
+        existingByUuid.set(u, rawRows[i]);
+      }
     }
   }
 
   let inserted = 0;
   let updated = 0;
 
-  for (let rIdx = 0; rIdx < records.length; rIdx++) {
-    const rec = records[rIdx];
-    if (!rec || !rec.uuid) continue;
+  for (let rIdx = 0; rIdx < activeRecords.length; rIdx++) {
+    const rec = activeRecords[rIdx];
     const newRow = recordToRow(rec, safeTabName);
 
-    if (existingByUuid.has(rec.uuid)) {
+    if (replaceTab) {
+      const oldRow = existingByUuid.get(rec.uuid);
+      if (oldRow) {
+        let totalDays = 0;
+        for (let d = 12; d < 24; d++) {
+          const oldPresent = String(oldRow[d] || '').toUpperCase() === 'TRUE';
+          const newPresent = String(newRow[d] || '').toUpperCase() === 'TRUE';
+          const merged = oldPresent || newPresent;
+          if (rec.last_attendance_mark && rec.last_attendance_mark.day_index === (d - 12) && rec.last_attendance_mark.value === false) {
+            newRow[d] = 'FALSE';
+          } else {
+            newRow[d] = merged ? 'TRUE' : 'FALSE';
+          }
+          if (newRow[d] === 'TRUE') totalDays++;
+        }
+        newRow[24] = totalDays;
+        updated++;
+      } else {
+        inserted++;
+      }
+      allRows.push(newRow);
+    } else if (existingByUuid.has(rec.uuid)) {
       const idx = existingByUuid.get(rec.uuid);
       const oldRow = allRows[idx];
       // Merge attendance non-destructively across days D1..D12 (columns 12..23)
@@ -179,6 +219,9 @@ function upsertProfileTab(ss, tabName, records) {
     }
   }
 
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, HEADERS.length).clearContent();
+  }
   if (allRows.length > 0) {
     sheet.getRange(2, 1, allRows.length, HEADERS.length).setValues(allRows);
   }
@@ -361,7 +404,9 @@ function doPost(e) {
     if (action === 'push_profile_buffer') {
       const tabName = payload.tabName || 'PROFILE_Admin_Default';
       const records = Array.isArray(payload.records) ? payload.records : [];
-      const upsertRes = upsertProfileTab(ss, tabName, records);
+      const deletedUuids = Array.isArray(payload.deletedUuids) ? payload.deletedUuids : [];
+      const replaceTab = Boolean(payload.replaceTab);
+      const upsertRes = upsertProfileTab(ss, tabName, records, deletedUuids, replaceTab);
       let reconcileRes = null;
       if (payload.autoReconcile) {
         reconcileRes = reconcileAllProfileTabs(ss);

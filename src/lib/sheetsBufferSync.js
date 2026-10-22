@@ -155,6 +155,7 @@ export async function pushProfileBufferToSheets({
     const activeCampId = getActiveCampaignId() || DEFAULT_CAMPAIGN.uuid;
 
     let recordsToPush = records;
+    let deletedUuids = [];
     if (!recordsToPush) {
         const allLocal = await db.registrations.toArray();
         const myEmail = (profile?.email || user?.email || '').toLowerCase();
@@ -164,12 +165,10 @@ export async function pushProfileBufferToSheets({
         const rangeStart = Number(profile?.form_range_start) || 0;
         const rangeEnd = Number(profile?.form_range_end) || 0;
 
-        recordsToPush = allLocal.filter(r => {
-            if (r.is_deleted) return false;
+        const belongsToProfile = (r) => {
             const recCamp = r.campaign_id || DEFAULT_CAMPAIGN.uuid;
             if (recCamp !== activeCampId) return false;
 
-            // Include records created/updated by this profile OR falling inside their assigned form range
             const byEmail = (r.updated_by_email || r.created_by_email || '').toLowerCase();
             const byUid = r.updated_by_uid || r.created_by_uid || '';
             const byName = (r.updated_by_name || r.created_by_name || '').trim().toLowerCase();
@@ -189,16 +188,17 @@ export async function pushProfileBufferToSheets({
                 }
             }
             return false;
-        });
-    }
-
-    if (recordsToPush.length === 0) {
-        return {
-            ok: true,
-            tabName,
-            pushedCount: 0,
-            message: `No records found yet for ${tabName}.`
         };
+
+        recordsToPush = [];
+        for (const r of allLocal) {
+            if (!belongsToProfile(r)) continue;
+            if (r.is_deleted) {
+                if (r.uuid) deletedUuids.push(r.uuid);
+            } else {
+                recordsToPush.push(r);
+            }
+        }
     }
 
     // Use text/plain to avoid CORS preflight OPTIONS failure on Google Apps Script Web Apps from Vercel
@@ -211,6 +211,8 @@ export async function pushProfileBufferToSheets({
             action: 'push_profile_buffer',
             tabName,
             autoReconcile,
+            replaceTab: true,
+            deletedUuids,
             records: recordsToPush
         })
     });
@@ -265,6 +267,7 @@ export async function reconcileSheetsBufferIntoUniformSystem() {
                 action: 'push_profile_buffer',
                 tabName,
                 autoReconcile: false,
+                replaceTab: true,
                 records: recs
             })
         });
@@ -283,7 +286,9 @@ export async function reconcileSheetsBufferIntoUniformSystem() {
     }
 
     // 3. Reconcile unified records back into local Dexie & mark any new/merged rows for Firestore sync
-    const remoteUnified = Array.isArray(result.records) ? result.records : [];
+    const remoteUnified = (Array.isArray(result.records) ? result.records : []).filter(
+        rem => rem && rem.uuid && !rem.is_deleted && (!rem.campaign_id || rem.campaign_id === activeCampId)
+    );
     let importedOrUpdated = 0;
 
     if (remoteUnified.length > 0) {
@@ -297,6 +302,7 @@ export async function reconcileSheetsBufferIntoUniformSystem() {
             for (const rem of remoteUnified) {
                 if (!rem.uuid) continue;
                 const loc = localByUuid.get(rem.uuid);
+                if (loc && loc.is_deleted) continue;
                 const remAtt = normalizeAttendance(rem.attendance);
 
                 if (!loc) {
