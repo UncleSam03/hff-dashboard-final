@@ -82,7 +82,8 @@ export async function reconcileWithCloud() {
         console.log("[SyncManager] Starting Cloud Sync...");
 
         await pushPendingToFirebase();
-        await pullFromFirebase();
+        await pullFromFirebase(true);
+        await reconcileFirebaseDeletions('registrations', true);
 
         console.log("[SyncManager] Cloud Sync Complete.");
 

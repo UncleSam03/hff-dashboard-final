@@ -140,6 +140,7 @@ export async function pushProfileBufferToSheets({
     profile,
     user,
     records = null,
+    deletedUuids: explicitDeletedUuids = [],
     autoReconcile = true
 } = {}) {
     const config = await loadSharedSheetsBufferConfig();
@@ -155,7 +156,7 @@ export async function pushProfileBufferToSheets({
     const activeCampId = getActiveCampaignId() || DEFAULT_CAMPAIGN.uuid;
 
     let recordsToPush = records;
-    let deletedUuids = [];
+    let deletedUuids = Array.isArray(explicitDeletedUuids) ? [...explicitDeletedUuids] : [];
     if (!recordsToPush) {
         const allLocal = await db.registrations.toArray();
         const myEmail = (profile?.email || user?.email || '').toLowerCase();

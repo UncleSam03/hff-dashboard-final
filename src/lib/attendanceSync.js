@@ -5,6 +5,7 @@ import { checkConnectivity } from './syncManager';
 import { normalizeAttendance } from './analytics';
 import { TOTAL_CAMPAIGN_DAYS } from './constants';
 import { useState, useEffect, useCallback } from 'react';
+import { pushProfileBufferToSheets } from './sheetsBufferSync';
 
 /**
  * In-memory queue of pending attendance modifications
@@ -143,6 +144,14 @@ export async function flushAttendanceSyncImmediately() {
         }
 
         console.log(`[AttendanceSync] Successfully pushed ${itemsToSync.length} attendance updates to Firestore.`);
+        const attr = itemsToSync[0]?.attribution;
+        if (attr && (attr.email || attr.name || attr.uid)) {
+            pushProfileBufferToSheets({
+                profile: { full_name: attr.name, email: attr.email, id: attr.uid },
+                user: { uid: attr.uid, displayName: attr.name, email: attr.email },
+                autoReconcile: true
+            }).catch(() => {});
+        }
         broadcastSyncState('synced', { count: itemsToSync.length });
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-complete'));

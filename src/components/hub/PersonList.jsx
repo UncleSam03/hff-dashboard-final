@@ -248,6 +248,7 @@ const PersonList = ({
                 updated_at: now
             };
 
+            const deletedUuids = person.uuid ? [person.uuid] : [];
             await db.transaction('rw', db.registrations, async () => {
                 // Delete the target person
                 await db.registrations.update(person.id, updates);
@@ -260,6 +261,7 @@ const PersonList = ({
                         .toArray();
                     
                     for (const p of participants) {
+                        if (p.uuid) deletedUuids.push(p.uuid);
                         await db.registrations.update(p.id, updates);
                     }
                 }
@@ -267,7 +269,7 @@ const PersonList = ({
 
             // Trigger instant sync to delete records on Firestore backend
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
-            pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
+            pushProfileBufferToSheets({ profile, user, deletedUuids, autoReconcile: true }).catch(() => {});
 
             setDeleteModal({ open: false, person: null, loading: false });
             if (selectedFacilitator?.id === person.id) {
@@ -903,8 +905,13 @@ const PersonList = ({
                                                 await db.registrations.update(person.id, {
                                                     books_received: !person.books_received,
                                                     sync_status: 'pending',
-                                                    updated_at: new Date().toISOString()
+                                                    updated_at: new Date().toISOString(),
+                                                    updated_by_uid: user?.uid || null,
+                                                    updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Administrator',
+                                                    updated_by_email: user?.email || null
                                                 });
+                                                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                                                pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
                                             } catch (err) {
                                                 console.error("Book toggle failed:", err);
                                             }

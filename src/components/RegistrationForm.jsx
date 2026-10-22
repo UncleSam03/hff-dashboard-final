@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/dexieDb';
 import { getActiveCampaignId, DEFAULT_CAMPAIGN } from '../lib/campaignManager';
+import { pushProfileBufferToSheets } from '../lib/sheetsBufferSync';
 import { useAuth } from '../auth/AuthContext';
 
 import { Save, Search, User, Check, AlertCircle, FileText, Hash, Clock, Users, MapPin, Phone, X } from 'lucide-react';
@@ -216,6 +217,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 // Update existing record
                 await db.registrations.update(initialData.id, recordData);
                 window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
                 setMessage({ type: 'success', text: 'Update Saved & Syncing to Cloud.' });
             } else {
                 const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().replace(/^0+/, '');
@@ -252,6 +254,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                             updated_by_email: user?.email || null,
                         });
                         window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                        pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
                         setMessage({ type: 'success', text: 'Existing record updated & Syncing to Cloud.' });
                         return;
                     } else {
@@ -275,6 +278,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 };
                 await db.registrations.add(newRecord);
                 window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                pushProfileBufferToSheets({ profile, user, autoReconcile: true }).catch(() => {});
                 setMessage({ type: 'success', text: 'Saved & Syncing to Cloud.' });
             }
 

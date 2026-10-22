@@ -476,12 +476,39 @@ export async function pushPendingToFirebase() {
     }
 }
 
+const RETIRED_CAMPAIGN_IDS = new Set([
+    'campaign-e8d8587a-f452-4d61-bf9c-3b6d60687e19',
+    'campaign-e1d93920-a3d4-4b92-b027-3053253a0ece'
+]);
+
+async function purgeRetiredCampaignRecordsLocally() {
+    try {
+        const allRegs = await db.registrations.toArray();
+        const staleIds = allRegs
+            .filter(r => r.campaign_id && RETIRED_CAMPAIGN_IDS.has(r.campaign_id))
+            .map(r => r.id);
+        if (staleIds.length > 0) {
+            await db.registrations.bulkDelete(staleIds);
+            console.log(`[FirebaseSync] Purged ${staleIds.length} retired campaign records from local IndexedDB.`);
+            window.dispatchEvent(new CustomEvent('hff-firebase-registrations-updated'));
+            window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
+        }
+    } catch (err) {
+        console.warn('[FirebaseSync] Error purging retired campaign records:', err.message);
+    }
+}
+
 /**
  * Orchestrates pull for registrations, campaigns, and notices
  */
 export async function pullFromFirebase(forceFull = false) {
+    await purgeRetiredCampaignRecordsLocally();
+
     try {
         await pullStoreUpdates('registrations', forceFull);
+        if (forceFull) {
+            await reconcileFirebaseDeletions('registrations', true);
+        }
     } catch (err) {
         console.error('[FirebaseSync] Error pulling registrations:', err);
     }
@@ -519,7 +546,7 @@ export async function resetLocalFromFirebase() {
 
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (data.is_deleted) {
+            if (data.is_deleted || (data.campaign_id && RETIRED_CAMPAIGN_IDS.has(data.campaign_id))) {
                 deleteDoc(docSnap.ref).catch(() => {});
                 return;
             }
@@ -535,7 +562,7 @@ export async function resetLocalFromFirebase() {
         const campaignRows = [];
         campaignSnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (data.is_deleted) {
+            if (data.is_deleted || (data.uuid && RETIRED_CAMPAIGN_IDS.has(data.uuid))) {
                 deleteDoc(docSnap.ref).catch(() => {});
                 return;
             }
@@ -565,7 +592,9 @@ export async function resetLocalFromFirebase() {
  */
 export async function initFirebaseSync() {
     try {
-        await pullFromFirebase();
+        await purgeRetiredCampaignRecordsLocally();
+        await pullFromFirebase(false);
+        await reconcileFirebaseDeletions('registrations', true);
     } catch {
         // no-op
     }
