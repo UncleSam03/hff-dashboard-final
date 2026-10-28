@@ -283,6 +283,8 @@ async function pullStoreUpdates(storeName, forceFull = false) {
         let updatedCount = 0;
 
         for (const remoteRecord of remoteRecords) {
+            const { id: _remoteId, ...cleanRemote } = remoteRecord;
+
             // Find existing local record: first by exact UUID, then by campaign+group-scoped business key
             let locData = localMetaMap.get(remoteRecord.uuid);
 
@@ -335,20 +337,20 @@ async function pullStoreUpdates(storeName, forceFull = false) {
             if (!locData) {
                 // Truly new record from server
                 await db[storeName].add({
-                    ...remoteRecord,
+                    ...cleanRemote,
                     sync_status: 'synced'
                 });
                 updatedCount++;
             } else if (locData.record?.sync_status === 'pending') {
                 // PROTECT PENDING LOCAL ATTENDANCE EDITS:
                 // Do not overwrite local changes if user is actively editing attendance offline or pending push
-                if (storeName === 'registrations' && remoteRecord.attendance && locData.record.attendance) {
+                if (storeName === 'registrations' && cleanRemote.attendance && locData.record.attendance) {
                     const localAtt = normalizeAttendance(locData.record.attendance);
-                    const remoteAtt = normalizeAttendance(remoteRecord.attendance);
+                    const remoteAtt = normalizeAttendance(cleanRemote.attendance);
                     // Non-destructive merge: union of attendance days
                     const mergedAtt = localAtt.map((val, idx) => Boolean(val || remoteAtt[idx]));
                     await db[storeName].update(locData.id, {
-                        ...remoteRecord,
+                        ...cleanRemote,
                         ...locData.record,
                         attendance: mergedAtt,
                         sync_status: 'pending' // Preserve pending so local merge will sync upward
@@ -361,7 +363,7 @@ async function pullStoreUpdates(storeName, forceFull = false) {
                 }
 
                 let mergedPayload = {
-                    ...remoteRecord,
+                    ...cleanRemote,
                     sync_status: 'synced'
                 };
 
@@ -541,7 +543,7 @@ export async function resetLocalFromFirebase() {
 
     try {
         const querySnapshot = await getDocs(collection(firestoreDb, 'registrations'));
-        const regRows = [];
+        const regMap = new Map();
         const now = new Date().toISOString();
 
         querySnapshot.forEach((docSnap) => {
@@ -550,8 +552,12 @@ export async function resetLocalFromFirebase() {
                 deleteDoc(docSnap.ref).catch(() => {});
                 return;
             }
-            regRows.push({
-                ...data,
+            const uuid = data.uuid || docSnap.id;
+            // Strip any device-specific local ID from Firestore to let Dexie cleanly auto-increment
+            const { id: _remoteId, ...cleanData } = data;
+            regMap.set(uuid, {
+                ...cleanData,
+                uuid,
                 is_deleted: false,
                 sync_status: 'synced',
                 synced_at: now,
@@ -559,29 +565,44 @@ export async function resetLocalFromFirebase() {
         });
 
         const campaignSnapshot = await getDocs(collection(firestoreDb, 'campaigns'));
-        const campaignRows = [];
+        const campMap = new Map();
         campaignSnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             if (data.is_deleted || (data.uuid && RETIRED_CAMPAIGN_IDS.has(data.uuid))) {
                 deleteDoc(docSnap.ref).catch(() => {});
                 return;
             }
-            campaignRows.push({
-                ...data,
+            const uuid = data.uuid || docSnap.id;
+            const { id: _remoteId, ...cleanData } = data;
+            campMap.set(uuid, {
+                ...cleanData,
+                uuid,
                 sync_status: 'synced',
                 synced_at: now,
             });
         });
 
+        const finalRegRows = Array.from(regMap.values());
+        const finalCampRows = Array.from(campMap.values());
+
         await db.transaction('rw', [db.registrations, db.campaigns], async () => {
             await db.registrations.clear();
-            if (regRows.length) await db.registrations.bulkAdd(regRows);
+            if (finalRegRows.length) {
+                const CHUNK = 500;
+                for (let i = 0; i < finalRegRows.length; i += CHUNK) {
+                    await db.registrations.bulkAdd(finalRegRows.slice(i, i + CHUNK));
+                }
+            }
 
             await db.campaigns.clear();
-            if (campaignRows.length) await db.campaigns.bulkAdd(campaignRows);
+            if (finalCampRows.length) {
+                await db.campaigns.bulkAdd(finalCampRows);
+            }
         });
 
         window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
+        window.dispatchEvent(new CustomEvent('hff-firebase-registrations-updated'));
+        window.dispatchEvent(new CustomEvent('hff-firebase-campaigns-updated'));
     } catch (error) {
         throw new Error(`resetLocalFromFirebase failed: ${error.message}`);
     }
