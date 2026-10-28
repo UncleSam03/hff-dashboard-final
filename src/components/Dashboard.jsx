@@ -23,7 +23,7 @@ const Dashboard = ({ analytics, onNavigate }) => {
 
     // Automatically pull fresh data whenever dashboard is viewed
     useEffect(() => {
-        pullFromFirebase().catch(e => console.warn('Silent auto-pull failed:', e));
+        pullFromFirebase(true).catch(e => console.warn('Silent auto-pull failed:', e));
     }, []);
 
     const handleManualSync = async () => {

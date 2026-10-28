@@ -180,7 +180,7 @@ async function pullStoreUpdates(storeName, forceFull = false) {
     pullingStores.add(storeName);
     try {
         let querySnapshot;
-        let lastPull = getLastPullTime(storeName);
+        let lastPull = forceFull ? null : getLastPullTime(storeName);
         const localCount = await db[storeName].count();
 
         // Zero-Cost Guard: If lastPull is missing from localStorage but records exist in Dexie,
