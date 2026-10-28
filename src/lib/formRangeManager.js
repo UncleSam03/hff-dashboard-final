@@ -28,6 +28,7 @@ export function compute200FormsAudit(registrations = [], minTotalForms = TOTAL_C
 
     // Group facilitators by form number
     const facilitatorMap = new Map();
+    const facUuidToFormNum = new Map();
     // Group participants by group form number
     const participantMap = new Map();
 
@@ -38,13 +39,22 @@ export function compute200FormsAudit(registrations = [], minTotalForms = TOTAL_C
             const num = normalizeFormNumber(r.form_number);
             if (num && num >= 1 && num <= MAX_SAFE_FORM_NUMBER) {
                 if (num > maxObservedForm) maxObservedForm = num;
+                if (r.uuid) {
+                    facUuidToFormNum.set(r.uuid, num);
+                }
                 // If multiple facilitators share a form, keep first or list them
                 if (!facilitatorMap.has(num)) {
                     facilitatorMap.set(num, r);
                 }
             }
-        } else if (r.type === 'participant') {
-            const num = normalizeFormNumber(r.group_form_number || r.form_number);
+        }
+    }
+
+    for (const r of active) {
+        if (r.type === 'participant') {
+            const directNum = normalizeFormNumber(r.group_form_number || r.form_number);
+            const inheritedNum = r.facilitator_uuid ? facUuidToFormNum.get(r.facilitator_uuid) : null;
+            const num = directNum || inheritedNum;
             if (num && num >= 1 && num <= MAX_SAFE_FORM_NUMBER) {
                 if (num > maxObservedForm) maxObservedForm = num;
                 if (!participantMap.has(num)) {

@@ -23,12 +23,18 @@ import {
     Search,
     Shield,
     Zap,
-    RotateCcw
+    RotateCcw,
+    Pencil,
+    Link2,
+    Unlink,
+    X,
+    Hash
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { TOTAL_CAMPAIGN_FORMS, normalizeFormNumber } from '../../lib/formRangeManager';
 import { TOTAL_CAMPAIGN_DAYS } from '../../lib/constants';
 import { getProfileBufferTabName, pushProfileBufferToSheets } from '../../lib/sheetsBufferSync';
+import { matchesPerson } from '../../lib/searchUtils';
 
 const SPRINTS = [
     { id: 'sprint1', label: 'Sprint 1 (Days 1–4)', days: [0, 1, 2, 3], dayLabels: ['D1', 'D2', 'D3', 'D4'] },
@@ -53,8 +59,11 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     const [draftRows, setDraftRows] = useState([createEmptyRow()]);
     const loadedFormRef = useRef(null);
 
-    // Quick facilitator creation/edit form
+    // Quick facilitator selection / creation / edit modal
     const [showFacilitatorModal, setShowFacilitatorModal] = useState(false);
+    const [facilitatorModalMode, setFacilitatorModalMode] = useState('select'); // 'select' | 'create' | 'edit'
+    const [facSearchQuery, setFacSearchQuery] = useState('');
+    const [includeParticipantsInFacSearch, setIncludeParticipantsInFacSearch] = useState(false);
     const [facForm, setFacForm] = useState({
         firstName: '',
         lastName: '',
@@ -119,14 +128,65 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         ) || null;
     }, [campaignRegistrations, formNumber]);
 
-    // Existing participants already in DB for this form
+    // Existing participants already in DB for this form (either by group_form_number or linked facilitator_uuid)
     const existingParticipants = useMemo(() => {
         const num = normalizeFormNumber(formNumber);
         if (!num) return [];
+        return campaignRegistrations.filter(r => {
+            if (r.type !== 'participant') return false;
+            const directNum = normalizeFormNumber(r.group_form_number || r.form_number);
+            if (directNum === num) return true;
+            if (!directNum && currentFacilitator?.uuid && r.facilitator_uuid === currentFacilitator.uuid) {
+                return true;
+            }
+            return false;
+        });
+    }, [campaignRegistrations, formNumber, currentFacilitator]);
+
+    // Count linked participants per facilitator UUID for display in existing facilitator selector
+    const linkedParticipantsByFacUuid = useMemo(() => {
+        const counts = new Map();
+        campaignRegistrations.forEach(r => {
+            if (r.type === 'participant' && r.facilitator_uuid) {
+                counts.set(r.facilitator_uuid, (counts.get(r.facilitator_uuid) || 0) + 1);
+            }
+        });
+        return counts;
+    }, [campaignRegistrations]);
+
+    // Count how many facilitators in the campaign do not have a form number assigned yet
+    const unassignedFacilitatorsCount = useMemo(() => {
         return campaignRegistrations.filter(r => 
-            r.type === 'participant' && normalizeFormNumber(r.group_form_number || r.form_number) === num
-        );
-    }, [campaignRegistrations, formNumber]);
+            r.type === 'facilitator' && !normalizeFormNumber(r.form_number)
+        ).length;
+    }, [campaignRegistrations]);
+
+    // Filtered & sorted existing facilitators (and optionally participants) for assigning Form #
+    const facilitatorCandidates = useMemo(() => {
+        const candidates = campaignRegistrations.filter(r => {
+            if (currentFacilitator && r.id === currentFacilitator.id) return false;
+            if (r.type === 'facilitator') return true;
+            if (includeParticipantsInFacSearch && r.type === 'participant') return true;
+            return false;
+        });
+
+        const filtered = facSearchQuery.trim()
+            ? candidates.filter(r => matchesPerson(r, facSearchQuery, 'all'))
+            : candidates;
+
+        return [...filtered].sort((a, b) => {
+            // 1. Facilitators before participants
+            if (a.type !== b.type) return a.type === 'facilitator' ? -1 : 1;
+            // 2. Unassigned form numbers first
+            const aHasForm = Boolean(normalizeFormNumber(a.form_number));
+            const bHasForm = Boolean(normalizeFormNumber(b.form_number));
+            if (aHasForm !== bHasForm) return aHasForm ? 1 : -1;
+            // 3. Alphabetical by name
+            const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+            const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
+            return aName.localeCompare(bName);
+        });
+    }, [campaignRegistrations, currentFacilitator, includeParticipantsInFacSearch, facSearchQuery]);
 
     // Map a DB participant record to a draft row object
     const mapParticipantToRow = (p) => ({
@@ -164,6 +224,8 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 setDraftRows([createEmptyRow(currentFacilitator?.place, currentFacilitator?.affiliation)]);
             }
             setStatusMessage(null);
+            setShowFacilitatorModal(false);
+            setFacSearchQuery('');
             return;
         }
 
@@ -285,7 +347,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         }));
     };
 
-    const openFacilitatorModal = () => {
+    const populateFacFormFromCurrent = () => {
         if (currentFacilitator) {
             setFacForm({
                 firstName: currentFacilitator.first_name || '',
@@ -302,24 +364,188 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 participantsCount: currentFacilitator.participants_count ?? 10,
                 booksDistributed: currentFacilitator.books_distributed ?? 0
             });
-        } else {
-            setFacForm({
-                firstName: '',
-                lastName: '',
-                age: '',
-                gender: 'F',
-                contact: '',
-                place: '',
-                affiliation: '',
-                meetingTime: '',
-                education: '',
-                maritalStatus: '',
-                occupation: '',
-                participantsCount: 10,
-                booksDistributed: 0
-            });
         }
+    };
+
+    const resetBlankFacForm = () => {
+        setFacForm({
+            firstName: '',
+            lastName: '',
+            age: '',
+            gender: 'F',
+            contact: '',
+            place: '',
+            affiliation: '',
+            meetingTime: '',
+            education: '',
+            maritalStatus: '',
+            occupation: '',
+            participantsCount: 10,
+            booksDistributed: 0
+        });
+    };
+
+    const openFacilitatorModal = (mode = 'select') => {
+        if (mode === 'edit' && currentFacilitator) {
+            populateFacFormFromCurrent();
+            setFacilitatorModalMode('edit');
+        } else if (mode === 'create') {
+            resetBlankFacForm();
+            setFacilitatorModalMode('create');
+        } else {
+            resetBlankFacForm();
+            setFacilitatorModalMode('select');
+        }
+        setFacSearchQuery('');
         setShowFacilitatorModal(true);
+    };
+
+    const handleSwitchFacilitatorModalMode = (mode) => {
+        if (mode === 'edit' && currentFacilitator) {
+            populateFacFormFromCurrent();
+        } else if (mode === 'create') {
+            resetBlankFacForm();
+        }
+        setFacilitatorModalMode(mode);
+    };
+
+    // Assign Form # to an existing facilitator (or promote participant to facilitator)
+    const handleAssignExistingFacilitator = async (selectedFac) => {
+        const num = normalizeFormNumber(formNumber);
+        if (!num || !selectedFac?.id) return;
+
+        const existingFacNum = normalizeFormNumber(selectedFac.form_number);
+        if (existingFacNum && existingFacNum !== num) {
+            const ok = window.confirm(
+                `${selectedFac.first_name} ${selectedFac.last_name} is currently assigned to Form #${selectedFac.form_number}.\n\nDo you want to reassign them to Form #${num}?`
+            );
+            if (!ok) return;
+        }
+
+        const now = new Date().toISOString();
+        const adminName = profile?.full_name || user?.displayName || user?.email || 'Admin';
+        const targetFacUuid = selectedFac.uuid || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36)));
+
+        try {
+            let linkedPartCount = 0;
+            await db.transaction('rw', db.registrations, async () => {
+                // 1. If a different facilitator was previously on this form, clear their form_number
+                if (currentFacilitator && currentFacilitator.id !== selectedFac.id) {
+                    await db.registrations.update(currentFacilitator.id, {
+                        form_number: '',
+                        sync_status: 'pending',
+                        updated_at: now,
+                        updated_by_uid: user?.uid || null,
+                        updated_by_name: adminName,
+                        updated_by_email: user?.email || null,
+                    });
+                }
+
+                // 2. Assign Form #num to the selected existing facilitator
+                await db.registrations.update(selectedFac.id, {
+                    uuid: targetFacUuid,
+                    form_number: String(num),
+                    type: 'facilitator',
+                    teaching_group: true,
+                    is_daily_core: true,
+                    sync_status: 'pending',
+                    updated_at: now,
+                    updated_by_uid: user?.uid || null,
+                    updated_by_name: adminName,
+                    updated_by_email: user?.email || null,
+                });
+
+                // 3. Sync participants in both directions:
+                // - Participants already linked to selectedFac.uuid get group_form_number = String(num)
+                // - Participants already entered on Form #num get facilitator_uuid = targetFacUuid
+                for (const r of campaignRegistrations) {
+                    if (r.type !== 'participant' || !r.id || r.id === selectedFac.id) continue;
+                    const rFormNum = normalizeFormNumber(r.group_form_number || r.form_number);
+                    const isLinkedToFac = Boolean(targetFacUuid && r.facilitator_uuid === targetFacUuid);
+                    const isOnThisForm = rFormNum === num;
+
+                    if (isLinkedToFac && rFormNum !== num) {
+                        await db.registrations.update(r.id, {
+                            group_form_number: String(num),
+                            sync_status: 'pending',
+                            updated_at: now,
+                            updated_by_uid: user?.uid || null,
+                            updated_by_name: adminName,
+                            updated_by_email: user?.email || null,
+                        });
+                        linkedPartCount++;
+                    } else if (isOnThisForm && r.facilitator_uuid !== targetFacUuid) {
+                        await db.registrations.update(r.id, {
+                            facilitator_uuid: targetFacUuid,
+                            place: r.place || selectedFac.place || null,
+                            affiliation: r.affiliation || selectedFac.affiliation || null,
+                            sync_status: 'pending',
+                            updated_at: now,
+                            updated_by_uid: user?.uid || null,
+                            updated_by_name: adminName,
+                            updated_by_email: user?.email || null,
+                        });
+                        linkedPartCount++;
+                    }
+                }
+            });
+
+            // Update default place/affiliation on any blank draft rows
+            setDraftRows(prev => prev.map(r => {
+                if (!r.isExisting && !r.firstName.trim() && !r.lastName.trim()) {
+                    return {
+                        ...r,
+                        place: r.place || selectedFac.place || '',
+                        affiliation: r.affiliation || selectedFac.affiliation || ''
+                    };
+                }
+                return r;
+            }));
+
+            window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+            pushProfileBufferToSheets({ profile, user }).catch(() => {});
+            setShowFacilitatorModal(false);
+            setFacSearchQuery('');
+            setStatusMessage({
+                type: 'success',
+                text: `Assigned Form #${num} to ${selectedFac.first_name} ${selectedFac.last_name}${linkedPartCount > 0 ? ` (${linkedPartCount} participant record(s) linked to Form #${num})` : ''}!`
+            });
+        } catch (err) {
+            console.error('[PaperFormEntry] Error assigning existing facilitator:', err);
+            alert('Failed to assign facilitator: ' + err.message);
+        }
+    };
+
+    // Unlink current facilitator from this form number without deleting their record
+    const handleUnlinkFacilitator = async () => {
+        const num = normalizeFormNumber(formNumber);
+        if (!num || !currentFacilitator?.id) return;
+        const ok = window.confirm(
+            `Unlink ${currentFacilitator.first_name} ${currentFacilitator.last_name} from Form #${num}?\n\nTheir facilitator record will remain in the database without a form number.`
+        );
+        if (!ok) return;
+
+        const now = new Date().toISOString();
+        try {
+            await db.registrations.update(currentFacilitator.id, {
+                form_number: '',
+                sync_status: 'pending',
+                updated_at: now,
+                updated_by_uid: user?.uid || null,
+                updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Admin',
+                updated_by_email: user?.email || null,
+            });
+            window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+            pushProfileBufferToSheets({ profile, user }).catch(() => {});
+            setShowFacilitatorModal(false);
+            setStatusMessage({
+                type: 'warning',
+                text: `Unlinked ${currentFacilitator.first_name} ${currentFacilitator.last_name} from Form #${num}.`
+            });
+        } catch (err) {
+            console.error('[PaperFormEntry] Error unlinking facilitator:', err);
+            alert('Failed to unlink facilitator: ' + err.message);
+        }
     };
 
     // Handle Quick Facilitator Creation or Update
@@ -333,6 +559,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         }
 
         const now = new Date().toISOString();
+        const adminName = profile?.full_name || user?.displayName || user?.email || 'Admin';
         const payload = {
             first_name: facForm.firstName.trim(),
             last_name: facForm.lastName.trim(),
@@ -357,25 +584,52 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         };
 
         try {
-            if (currentFacilitator?.id) {
-                await db.registrations.update(currentFacilitator.id, {
-                    ...payload,
-                    updated_by_uid: user?.uid || null,
-                    updated_by_name: profile?.full_name || user?.displayName || user?.email || 'Admin',
-                    updated_by_email: user?.email || null,
-                });
-            } else {
-                const facUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36));
-                await db.registrations.add({
-                    ...payload,
-                    uuid: facUuid,
-                    created_at: now,
-                    created_by_uid: user?.uid || null,
-                    created_by_name: profile?.full_name || user?.displayName || user?.email || 'Admin',
-                    created_by_email: user?.email || null,
-                    submission_source: 'paper_batch_entry'
-                });
-            }
+            await db.transaction('rw', db.registrations, async () => {
+                let targetFacUuid = currentFacilitator?.uuid;
+
+                if (facilitatorModalMode === 'edit' && currentFacilitator?.id) {
+                    await db.registrations.update(currentFacilitator.id, {
+                        ...payload,
+                        updated_by_uid: user?.uid || null,
+                        updated_by_name: adminName,
+                        updated_by_email: user?.email || null,
+                    });
+                } else {
+                    if (currentFacilitator?.id) {
+                        await db.registrations.update(currentFacilitator.id, {
+                            form_number: '',
+                            sync_status: 'pending',
+                            updated_at: now,
+                            updated_by_uid: user?.uid || null,
+                            updated_by_name: adminName,
+                            updated_by_email: user?.email || null,
+                        });
+                    }
+                    targetFacUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36));
+                    await db.registrations.add({
+                        ...payload,
+                        uuid: targetFacUuid,
+                        created_at: now,
+                        created_by_uid: user?.uid || null,
+                        created_by_name: adminName,
+                        created_by_email: user?.email || null,
+                        submission_source: 'paper_batch_entry'
+                    });
+                }
+
+                // Link any participants already on Form #num to this facilitator
+                if (targetFacUuid) {
+                    for (const r of campaignRegistrations) {
+                        if (r.type === 'participant' && r.id && normalizeFormNumber(r.group_form_number || r.form_number) === num && r.facilitator_uuid !== targetFacUuid) {
+                            await db.registrations.update(r.id, {
+                                facilitator_uuid: targetFacUuid,
+                                sync_status: 'pending',
+                                updated_at: now,
+                            });
+                        }
+                    }
+                }
+            });
 
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
             pushProfileBufferToSheets({ profile, user }).catch(() => {});
@@ -670,201 +924,460 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                         Form #{formNumber} is not yet attached to a facilitator record.
                                     </h3>
                                     <p className="text-xs text-gray-600 mt-0.5">
-                                        You can still transcribe participants now, or register the facilitator right here.
+                                        Assign Form #{formNumber} to an existing facilitator from the database, or register a new facilitator.
                                     </p>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    <button
-                        onClick={openFacilitatorModal}
-                        className={cn(
-                            "px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 self-start md:self-auto transition-all",
-                            currentFacilitator
-                                ? "bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50 shadow-xs"
-                                : "bg-[#71167F] text-white hover:bg-[#5a1166] shadow-md shadow-[#71167F]/20"
+                    <div className="flex flex-wrap items-center gap-2 shrink-0 self-start md:self-auto">
+                        {currentFacilitator ? (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => openFacilitatorModal('select')}
+                                    className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50 shadow-xs transition-all"
+                                >
+                                    <Link2 size={15} />
+                                    <span>Change Facilitator</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => openFacilitatorModal('edit')}
+                                    className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-xs transition-all"
+                                >
+                                    <Pencil size={15} />
+                                    <span>Edit Details</span>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => openFacilitatorModal('select')}
+                                    className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 bg-[#71167F] text-white hover:bg-[#5a1166] shadow-md shadow-[#71167F]/20 transition-all"
+                                >
+                                    <Link2 size={16} />
+                                    <span>Assign Existing Facilitator</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => openFacilitatorModal('create')}
+                                    className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100/70 transition-all"
+                                >
+                                    <UserPlus size={16} />
+                                    <span>New Facilitator</span>
+                                </button>
+                            </>
                         )}
-                    >
-                        <UserPlus size={16} />
-                        <span>{currentFacilitator ? `Edit Facilitator (Form #${formNumber})` : `Assign Facilitator to Form #${formNumber}`}</span>
-                    </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Quick Facilitator Registration / Edit Inline Modal */}
+            {/* Facilitator Selection / Registration / Edit Inline Panel */}
             {showFacilitatorModal && (
-                <div className="bg-white rounded-3xl p-6 border-2 border-[#71167F]/30 shadow-xl animate-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
-                        <div className="flex items-center gap-2">
-                            <UserPlus className="text-[#71167F]" size={20} />
-                            <h4 className="text-base font-black text-gray-900">
-                                {currentFacilitator ? `Edit Facilitator for Form #${formNumber}` : `Register Facilitator for Form #${formNumber}`}
-                            </h4>
+                <div className="bg-white rounded-3xl p-6 border-2 border-[#71167F]/30 shadow-xl animate-in zoom-in-95 duration-200 space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => handleSwitchFacilitatorModalMode('select')}
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all",
+                                    facilitatorModalMode === 'select'
+                                        ? "bg-[#71167F] text-white shadow-sm"
+                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                )}
+                            >
+                                <Search size={14} />
+                                <span>Select Existing Facilitator</span>
+                                {unassignedFacilitatorsCount > 0 && (
+                                    <span className={cn(
+                                        "px-2 py-0.5 rounded-full text-[10px] font-black",
+                                        facilitatorModalMode === 'select'
+                                            ? "bg-white/20 text-white"
+                                            : "bg-[#71167F]/10 text-[#71167F]"
+                                    )}>
+                                        {unassignedFacilitatorsCount} Unassigned
+                                    </span>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleSwitchFacilitatorModalMode('create')}
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all",
+                                    facilitatorModalMode === 'create'
+                                        ? "bg-[#71167F] text-white shadow-sm"
+                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                )}
+                            >
+                                <UserPlus size={14} />
+                                <span>Register New Facilitator</span>
+                            </button>
+
+                            {currentFacilitator && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleSwitchFacilitatorModalMode('edit')}
+                                    className={cn(
+                                        "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all",
+                                        facilitatorModalMode === 'edit'
+                                            ? "bg-[#71167F] text-white shadow-sm"
+                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    )}
+                                >
+                                    <Pencil size={14} />
+                                    <span>Edit Linked ({currentFacilitator.first_name})</span>
+                                </button>
+                            )}
                         </div>
+
                         <button 
+                            type="button"
                             onClick={() => setShowFacilitatorModal(false)}
-                            className="text-gray-400 hover:text-gray-600 font-bold text-xs"
+                            className="text-gray-400 hover:text-gray-600 font-bold text-xs self-end sm:self-auto"
                         >
-                            Cancel
+                            Cancel ✕
                         </button>
                     </div>
 
-                    <form onSubmit={handleCreateFacilitator} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">First Name *</label>
-                            <input
-                                type="text"
-                                required
-                                value={facForm.firstName}
-                                onChange={e => setFacForm(f => ({ ...f, firstName: e.target.value }))}
-                                placeholder="e.g. Neo"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
+                    {facilitatorModalMode === 'select' ? (
+                        <div className="space-y-4">
+                            {currentFacilitator && (
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
+                                    <div className="text-xs text-emerald-900 font-semibold">
+                                        Currently linked to <strong>Form #{formNumber}</strong>:{' '}
+                                        <span className="font-black">{currentFacilitator.first_name} {currentFacilitator.last_name}</span>
+                                        {currentFacilitator.place ? ` (${currentFacilitator.place})` : ''}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleUnlinkFacilitator}
+                                        className="px-3 py-1.5 rounded-xl bg-white border border-red-200 text-red-700 hover:bg-red-50 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 self-start sm:self-auto transition-all"
+                                    >
+                                        <Unlink size={13} />
+                                        <span>Unlink from Form #{formNumber}</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        value={facSearchQuery}
+                                        onChange={e => setFacSearchQuery(e.target.value)}
+                                        placeholder="Search existing facilitator by name, phone, village/ward, meeting place, or form #..."
+                                        className="w-full pl-10 pr-9 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#71167F] focus:bg-white transition-all"
+                                    />
+                                    {facSearchQuery && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setFacSearchQuery('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
+                                            title="Clear search"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer select-none px-3 py-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100">
+                                    <input
+                                        type="checkbox"
+                                        checked={includeParticipantsInFacSearch}
+                                        onChange={e => setIncludeParticipantsInFacSearch(e.target.checked)}
+                                        className="rounded border-gray-300 text-[#71167F] focus:ring-[#71167F]"
+                                    />
+                                    <span>Include participant records (promote to facilitator)</span>
+                                </label>
+                            </div>
+
+                            {facilitatorCandidates.length === 0 ? (
+                                <div className="text-center py-8 px-4 rounded-2xl bg-gray-50 border border-dashed border-gray-200">
+                                    <p className="text-sm font-bold text-gray-600">
+                                        {facSearchQuery.trim()
+                                            ? `No existing facilitators found matching "${facSearchQuery}".`
+                                            : 'No other facilitators found in this campaign.'}
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        You can switch to "Register New Facilitator" if they are not in the database yet.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const parts = facSearchQuery.trim().split(/\s+/);
+                                            setFacForm(prev => ({
+                                                ...prev,
+                                                firstName: parts[0] || '',
+                                                lastName: parts.slice(1).join(' ') || ''
+                                            }));
+                                            setFacilitatorModalMode('create');
+                                        }}
+                                        className="mt-3 px-4 py-2 rounded-xl bg-[#71167F] text-white text-xs font-black uppercase tracking-wider hover:bg-[#5a1166] inline-flex items-center gap-1.5"
+                                    >
+                                        <UserPlus size={14} />
+                                        <span>Register New Facilitator Instead</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-2xl bg-gray-50/40">
+                                    {facilitatorCandidates.slice(0, 60).map(fac => {
+                                        const existingNum = normalizeFormNumber(fac.form_number);
+                                        const linkedCount = fac.uuid ? (linkedParticipantsByFacUuid.get(fac.uuid) || 0) : 0;
+
+                                        return (
+                                            <div
+                                                key={fac.uuid || fac.id}
+                                                className="p-3.5 hover:bg-purple-50/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/80"
+                                            >
+                                                <div className="flex items-start gap-3 min-w-0">
+                                                    <div className={cn(
+                                                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-xs",
+                                                        existingNum
+                                                            ? "bg-gray-100 text-gray-600"
+                                                            : "bg-[#71167F]/10 text-[#71167F]"
+                                                    )}>
+                                                        <User size={18} />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="font-black text-gray-900 text-sm">
+                                                                {fac.first_name} {fac.last_name}
+                                                            </span>
+                                                            {existingNum ? (
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-200">
+                                                                    Form #{existingNum}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                                                                    No Form # Assigned
+                                                                </span>
+                                                            )}
+                                                            {fac.type === 'participant' && (
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                                                    Participant Record
+                                                                </span>
+                                                            )}
+                                                            {linkedCount > 0 && (
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-[#71167F] border border-purple-200">
+                                                                    {linkedCount} linked participant{linkedCount === 1 ? '' : 's'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
+                                                            {fac.contact && (
+                                                                <span className="flex items-center gap-1">
+                                                                    <Phone size={11} className="text-gray-400" />
+                                                                    {fac.contact}
+                                                                </span>
+                                                            )}
+                                                            {fac.place && (
+                                                                <span className="flex items-center gap-1">
+                                                                    <MapPin size={11} className="text-gray-400" />
+                                                                    {fac.place}
+                                                                </span>
+                                                            )}
+                                                            {fac.affiliation && (
+                                                                <span className="flex items-center gap-1 text-[#71167F]">
+                                                                    <Sparkles size={11} />
+                                                                    {fac.affiliation}
+                                                                </span>
+                                                            )}
+                                                            {fac.meeting_time && (
+                                                                <span className="flex items-center gap-1">
+                                                                    <Clock size={11} className="text-gray-400" />
+                                                                    {fac.meeting_time}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAssignExistingFacilitator(fac)}
+                                                    className={cn(
+                                                        "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5 transition-all self-start sm:self-center",
+                                                        existingNum
+                                                            ? "bg-white border border-gray-200 text-gray-700 hover:bg-[#71167F] hover:text-white hover:border-[#71167F]"
+                                                            : "bg-[#71167F] text-white hover:bg-[#5a1166] shadow-sm"
+                                                    )}
+                                                >
+                                                    <Hash size={13} />
+                                                    <span>
+                                                        {existingNum ? `Reassign to Form #${formNumber}` : `Assign Form #${formNumber}`}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Last Name *</label>
-                            <input
-                                type="text"
-                                required
-                                value={facForm.lastName}
-                                onChange={e => setFacForm(f => ({ ...f, lastName: e.target.value }))}
-                                placeholder="e.g. Kgosi"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Gender</label>
-                            <select
-                                value={facForm.gender}
-                                onChange={e => setFacForm(f => ({ ...f, gender: e.target.value }))}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            >
-                                <option value="F">Female (F)</option>
-                                <option value="M">Male (M)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Age</label>
-                            <input
-                                type="number"
-                                value={facForm.age}
-                                onChange={e => setFacForm(f => ({ ...f, age: e.target.value }))}
-                                placeholder="e.g. 34"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Phone / Contact</label>
-                            <input
-                                type="text"
-                                value={facForm.contact}
-                                onChange={e => setFacForm(f => ({ ...f, contact: e.target.value }))}
-                                placeholder="e.g. 71234567"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Village / Ward</label>
-                            <input
-                                type="text"
-                                list="paper-known-places-list"
-                                value={facForm.place}
-                                onChange={e => setFacForm(f => ({ ...f, place: e.target.value }))}
-                                placeholder="e.g. Mochudi / Boseja"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Education Level</label>
-                            <select
-                                value={facForm.education}
-                                onChange={e => setFacForm(f => ({ ...f, education: e.target.value }))}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            >
-                                <option value="">Select Education</option>
-                                <option value="Primary">Primary</option>
-                                <option value="Junior Secondary">Junior Secondary</option>
-                                <option value="Senior Secondary">Senior Secondary</option>
-                                <option value="Vocational">Vocational</option>
-                                <option value="Tertiary">Tertiary</option>
-                                <option value="None">None</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Marital Status</label>
-                            <select
-                                value={facForm.maritalStatus}
-                                onChange={e => setFacForm(f => ({ ...f, maritalStatus: e.target.value }))}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            >
-                                <option value="">Select Status</option>
-                                <option value="Single">Single</option>
-                                <option value="Married">Married</option>
-                                <option value="Divorced">Divorced</option>
-                                <option value="Widowed">Widowed</option>
-                                <option value="Cohabiting">Cohabiting</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Occupation</label>
-                            <input
-                                type="text"
-                                value={facForm.occupation}
-                                onChange={e => setFacForm(f => ({ ...f, occupation: e.target.value }))}
-                                placeholder="e.g. Teacher, Self-employed"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Place / Affiliation</label>
-                            <input
-                                type="text"
-                                value={facForm.affiliation}
-                                onChange={e => setFacForm(f => ({ ...f, affiliation: e.target.value }))}
-                                placeholder="e.g. Community Hall / Church"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Time</label>
-                            <input
-                                type="text"
-                                value={facForm.meetingTime}
-                                onChange={e => setFacForm(f => ({ ...f, meetingTime: e.target.value }))}
-                                placeholder="e.g. Tuesdays 14:00"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
+                    ) : (
+                        <form onSubmit={handleCreateFacilitator} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Group Size</label>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">First Name *</label>
                                 <input
-                                    type="number"
-                                    value={facForm.participantsCount}
-                                    onChange={e => setFacForm(f => ({ ...f, participantsCount: e.target.value }))}
+                                    type="text"
+                                    required
+                                    value={facForm.firstName}
+                                    onChange={e => setFacForm(f => ({ ...f, firstName: e.target.value }))}
+                                    placeholder="e.g. Neo"
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Books Given</label>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Last Name *</label>
                                 <input
-                                    type="number"
-                                    value={facForm.booksDistributed}
-                                    onChange={e => setFacForm(f => ({ ...f, booksDistributed: e.target.value }))}
+                                    type="text"
+                                    required
+                                    value={facForm.lastName}
+                                    onChange={e => setFacForm(f => ({ ...f, lastName: e.target.value }))}
+                                    placeholder="e.g. Kgosi"
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                 />
                             </div>
-                        </div>
-                        <div className="sm:col-span-2 md:col-span-4 flex justify-end pt-2">
-                            <button
-                                type="submit"
-                                className="px-6 py-2.5 rounded-xl bg-[#71167F] text-white hover:bg-[#5a1166] text-xs font-black uppercase tracking-wider shadow-md"
-                            >
-                                Save Facilitator
-                            </button>
-                        </div>
-                    </form>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Gender</label>
+                                <select
+                                    value={facForm.gender}
+                                    onChange={e => setFacForm(f => ({ ...f, gender: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                >
+                                    <option value="F">Female (F)</option>
+                                    <option value="M">Male (M)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Age</label>
+                                <input
+                                    type="number"
+                                    value={facForm.age}
+                                    onChange={e => setFacForm(f => ({ ...f, age: e.target.value }))}
+                                    placeholder="e.g. 34"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Phone / Contact</label>
+                                <input
+                                    type="text"
+                                    value={facForm.contact}
+                                    onChange={e => setFacForm(f => ({ ...f, contact: e.target.value }))}
+                                    placeholder="e.g. 71234567"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Village / Ward</label>
+                                <input
+                                    type="text"
+                                    list="paper-known-places-list"
+                                    value={facForm.place}
+                                    onChange={e => setFacForm(f => ({ ...f, place: e.target.value }))}
+                                    placeholder="e.g. Mochudi / Boseja"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Education Level</label>
+                                <select
+                                    value={facForm.education}
+                                    onChange={e => setFacForm(f => ({ ...f, education: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                >
+                                    <option value="">Select Education</option>
+                                    <option value="Primary">Primary</option>
+                                    <option value="Junior Secondary">Junior Secondary</option>
+                                    <option value="Senior Secondary">Senior Secondary</option>
+                                    <option value="Vocational">Vocational</option>
+                                    <option value="Tertiary">Tertiary</option>
+                                    <option value="None">None</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Marital Status</label>
+                                <select
+                                    value={facForm.maritalStatus}
+                                    onChange={e => setFacForm(f => ({ ...f, maritalStatus: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                >
+                                    <option value="">Select Status</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                    <option value="Cohabiting">Cohabiting</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Occupation</label>
+                                <input
+                                    type="text"
+                                    value={facForm.occupation}
+                                    onChange={e => setFacForm(f => ({ ...f, occupation: e.target.value }))}
+                                    placeholder="e.g. Teacher, Self-employed"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Place / Affiliation</label>
+                                <input
+                                    type="text"
+                                    value={facForm.affiliation}
+                                    onChange={e => setFacForm(f => ({ ...f, affiliation: e.target.value }))}
+                                    placeholder="e.g. Community Hall / Church"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Time</label>
+                                <input
+                                    type="text"
+                                    value={facForm.meetingTime}
+                                    onChange={e => setFacForm(f => ({ ...f, meetingTime: e.target.value }))}
+                                    placeholder="e.g. Tuesdays 14:00"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Group Size</label>
+                                    <input
+                                        type="number"
+                                        value={facForm.participantsCount}
+                                        onChange={e => setFacForm(f => ({ ...f, participantsCount: e.target.value }))}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Books Given</label>
+                                    <input
+                                        type="number"
+                                        value={facForm.booksDistributed}
+                                        onChange={e => setFacForm(f => ({ ...f, booksDistributed: e.target.value }))}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                    />
+                                </div>
+                            </div>
+                            <div className="sm:col-span-2 md:col-span-4 flex justify-end pt-2">
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2.5 rounded-xl bg-[#71167F] text-white hover:bg-[#5a1166] text-xs font-black uppercase tracking-wider shadow-md"
+                                >
+                                    {facilitatorModalMode === 'edit' ? `Update Facilitator (Form #${formNumber})` : `Register & Link Facilitator to Form #${formNumber}`}
+                                </button>
+                            </div>
+                        </form>
+                    )}
                 </div>
             )}
 
