@@ -13,6 +13,61 @@ const cleanForm = (f) => String(f || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCas
 const cleanStr = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const cleanPhone = (p) => String(p || '').replace(/\D/g, '').replace(/^0+/, '');
 
+// Setswana vowel alternation & spelling normalization
+const normalizeSetswanaWord = (w) => {
+    let s = cleanStr(w);
+    if (!s) return '';
+    // Normalize common Setswana vowel alternation at word endings (-e / -a, -o / -u)
+    if (s.endsWith('e')) s = s.slice(0, -1) + 'a';
+    if (s.endsWith('u')) s = s.slice(0, -1) + 'o';
+    return s;
+};
+
+// Check if two phone numbers match exactly or with a 1-digit typo (Botswana 8-digit mobile / 7-digit landline)
+const isPhoneFuzzyMatch = (p1, p2) => {
+    const cp1 = cleanPhone(p1);
+    const cp2 = cleanPhone(p2);
+    if (!cp1 || !cp2) return false;
+    if (cp1 === cp2) return true;
+    if (cp1.length === cp2.length && (cp1.length === 8 || cp1.length === 7)) {
+        let diff = 0;
+        for (let i = 0; i < cp1.length; i++) {
+            if (cp1[i] !== cp2[i]) diff++;
+            if (diff > 1) return false;
+        }
+        return diff === 1;
+    }
+    return false;
+};
+
+// Token-based name comparison: checks if core names overlap (handles middle name omission, name inversion)
+const areNamesFuzzyMatch = (fnA, lnA, fnB, lnB) => {
+    const tokensA = cleanStr(`${fnA || ''} ${lnA || ''}`).split(' ').filter(t => t.length > 1);
+    const tokensB = cleanStr(`${fnB || ''} ${lnB || ''}`).split(' ').filter(t => t.length > 1);
+    if (tokensA.length === 0 || tokensB.length === 0) return false;
+
+    // Exact string match
+    if (tokensA.join(' ') === tokensB.join(' ')) return true;
+
+    // Check normalized tokens
+    const normA = tokensA.map(normalizeSetswanaWord);
+    const normB = tokensB.map(normalizeSetswanaWord);
+
+    // Inverted first/last name with 2 tokens: e.g. "Bojelo Mmakgabo" vs "Mmakgabo Bojelo"
+    if (normA.length === 2 && normB.length === 2) {
+        if (normA[0] === normB[1] && normA[1] === normB[0]) return true;
+    }
+
+    // If all normalized tokens of shorter are contained in longer
+    const [shorter, longer] = normA.length <= normB.length ? [normA, normB] : [normB, normA];
+    const matchCount = shorter.filter(tok => longer.some(lTok => lTok === tok || (tok.length > 3 && lTok.startsWith(tok.slice(0, -1))))).length;
+    
+    // If at least 2 tokens match or 100% of shorter matches (minimum 2 tokens required for confidence)
+    if (matchCount >= 2 && matchCount === shorter.length) return true;
+
+    return false;
+};
+
 /**
  * Merges duplicate registrations safely within the same campaign:
  * 1. Exact UUID match
@@ -76,25 +131,32 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
             const fnB = cleanStr(b.first_name);
             const lnA = cleanStr(a.last_name);
             const lnB = cleanStr(b.last_name);
-            // Only auto-merge same-form facilitators if they share the same name or one is blank
-            if ((!fnA && !lnA) || (!fnB && !lnB) || (fnA === fnB && lnA === lnB)) {
+            // Auto-merge same-form facilitators if one is blank, or if names match exactly or fuzzy
+            if ((!fnA && !lnA) || (!fnB && !lnB) || areNamesFuzzyMatch(a.first_name, a.last_name, b.first_name, b.last_name)) {
                 return true;
             }
         }
 
-        // Check 2: Matching Full Name
+        // Check 2: Matching Full Name (exact or fuzzy/inverted/middle-name overlap)
         const fullA = cleanStr(`${a.first_name || ''} ${a.last_name || ''}`);
         const fullB = cleanStr(`${b.first_name || ''} ${b.last_name || ''}`);
-        if (!fullA || fullA.length <= 2 || fullA !== fullB) {
+        const namesMatch = (fullA && fullB && fullA === fullB) || areNamesFuzzyMatch(a.first_name, a.last_name, b.first_name, b.last_name);
+        if (!namesMatch) {
             return false;
         }
 
         // Guard against merging distinct people who share a common name:
-        if (phA && phB && phA !== phB) return false;
+        // (Allows exact match or 1-digit typo match; rejects totally different phone numbers)
+        const phonesFuzzy = isPhoneFuzzyMatch(phA, phB);
+        if (phA && phB && !phonesFuzzy) return false;
 
         if (typeA === 'facilitator') {
             // Do not merge two facilitators assigned to two different form numbers
             if (formA && formB && formA !== formB) return false;
+            // For facilitators without matching form, require corroborating phone (exact or fuzzy)
+            if (!formA || !formB) {
+                return Boolean(phonesFuzzy || (!phA && !phB));
+            }
             return true;
         }
 
@@ -141,6 +203,17 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         const full = cleanStr(`${r.first_name || ''} ${r.last_name || ''}`);
         if (full && full.length > 2) {
             addToBucket(`name|${camp}|${type}|${full}`, i);
+            const tokens = full.split(' ').filter(t => t.length >= 3);
+            for (const t of tokens) {
+                addToBucket(`token|${camp}|${type}|${normalizeSetswanaWord(t)}`, i);
+            }
+        }
+        if (r.contact) {
+            const ph = cleanPhone(r.contact);
+            if (ph.length >= 7) {
+                addToBucket(`phone7|${camp}|${ph.slice(0, 7)}`, i);
+                addToBucket(`phone|${camp}|${ph}`, i);
+            }
         }
     }
 

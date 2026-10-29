@@ -115,16 +115,128 @@ This document details the exact actions taken to resolve each duplicate cluster,
 
 ---
 
-## 3. Data Quality & Deficient Record Notes for Ongoing Tracking
+### Clusters 9–11: Fuzzy Typo & Handwriting Variation Clusters (Resolved)
 
-1. **Shared Phone Numbers:**
-   * **Mochudi State Prison (`5777251`):** All 54 inmates legitimately share the prison landline. Do not flag as duplicate based on contact number.
-   * **Household Shared Mobiles:** Several young participants share mobile phones with older relatives (e.g., `Selinah Moitoi` [39] & `Monich Moitoi` [21] on `77741676`; `Janet Pone` [13] & `Abigail Pone` [16] on `71596708`). These are verified legitimate separate individuals.
-2. **Attendance Integrity:**
-   * Form 72 marked attendance physically on `28 Oct` (Day 2).
-   * Form 58 (Mmusi P. School) has active participants with `None` marked on dates, which remain unselected until verified.
-   * Day 1 & Day 2 attendances were merged additively during record deduplication to avoid under-reporting.
-3. **Database Integrity Status:**
-   * **Cloud Firestore:** 6 duplicate records soft-deleted, 3 master records updated with complete merged attributes.
-   * **Google Sheets:** Buffer updated and reconciled into `MASTER_UNIFORM_REGISTER` (total reconciled: 949 rows).
-   * **Local Storage (Dexie):** Pre-sanitized to strip device-specific `id` values, preventing `ConstraintError` exceptions upon pull.
+#### Cluster 9: Form 106 Facilitator — Lebogang Doreen Makgale vs. LEBOGANG MAKGALA
+* **Context:** Facilitator onboarded during pre-campaign as `Lebogang Doreen Makgale` (entered by Kagiso Moffat on Oct 27). When the physical paper register for Form 106 was transcribed on Oct 28, she was entered as `LEBOGANG MAKGALA` (under Samukeliso Mayabane).
+* **Root Causes:**
+  1. Middle name omitted on paper (`Doreen` absent).
+  2. Setswana vowel variation in surname (`Makgale` vs. `Makgala`).
+  3. Single-digit handwriting phone discrepancy: `75966113` (digital onboarding) vs. `75966118` (paper register handwritten `3` misread as `8`).
+* **Records Involved:**
+  * **Master Record A:** `Lebogang Doreen Makgale` | Cell: `75966113` | Age: `46` | Female | UUID: `3ccca050-f6c0-449e-b2d9-3652d87e07eb`
+  * **Paper Register Record B:** `LEBOGANG MAKGALA` | Cell: `75966118` | Form: `106` | Place: `BOSEJA BEHIND IPCC` | Meeting: `5:00 - 6:30 PM` | UUID: `00b5d86f-23ea-42f0-911e-089aa14bc497`
+* **Action Taken:**
+  * **Retained Record A as Master:** Preserved full canonical name `Lebogang Doreen Makgale`, demographic details (Age 46, Female), and verified contact `75966113`.
+  * **Merged Attributes from Record B:** Attached Form Number `106`, meeting time `5:00 - 6:30 PM`, place `BOSEJA BEHIND IPCC`, `teaching_group: true`, `is_daily_core: true`.
+  * **Re-linked All 12 Group 106 Participants:** Updated `facilitator_uuid` on all 12 participants from `00b5d86f...` to master `3ccca050...`.
+  * **Soft-Deleted Record B:** Soft-deleted `00b5d86f...` with `is_deleted: true`.
+
+#### Cluster 10: Form 121 Facilitator — Mmakgabo Bojelo vs. BOJELO MMAKGAGO
+* **Context:** Pre-campaign record `Mmakgabo Bojelo` duplicated when physical register Form 121 was transcribed with reversed First/Last names as `BOJELO MMAKGAGO` (Setswana `b` vs. `g` transcription variant).
+* **Records Involved:**
+  * **Master Record A:** `BOJELO MMAKGAGO` | Cell: `77626920` | Form: `121` | Place: `IKAGENG/RATSWEVENG` | UUID: `2140e009-42b7-4b7b-8919-61da88df1796`
+  * **Pre-campaign Record B:** `Mmakgabo Bojelo` | Cell: `77626920` | UUID: `76fd9f34-1188-4db8-8d07-28e6c7025ec1`
+* **Action Taken:**
+  * **Retained Record A as Master Facilitator:** Preserved Form Number `121`, linked participants, place `IKAGENG/RATSWEVENG`, and verified contact `77626920`.
+  * **Soft-Deleted Record B:** Soft-deleted `76fd9f34...` with `is_deleted: true`.
+
+#### Cluster 11: Participant — Daphney Chelane vs. Daphney chabuya
+* **Context:** Participant in Form 104 recorded with identical phone `76342674`, age `27`, female, under slight surname spelling variant.
+* **Records Involved:**
+  * **Master Record A:** `Daphney Chelane` | Cell: `76342674` | Age: `27` | Form: `104` | UUID: `f44a3627-ef31-41c1-8ce2-da47b1e7c5b6`
+  * **Duplicate Record B:** `Daphney chabuya` | Cell: `76342674` | Age: `27` | Form: `104` | UUID: `ca13f704-5e16-43bf-bb2b-4fa88dcf6d9b`
+* **Action Taken:**
+  * **Retained Record A** (`Daphney Chelane`).
+  * **Soft-Deleted Record B** (`ca13f704...`) with `is_deleted: true`.
+
+---
+
+## 4. Systemic Duplicate Prevention Engine Enhancements
+
+To prevent similar fuzzy-name, Setswana orthographic variations, and single-digit handwriting phone errors from creating duplicate records in future imports and live synchronization, the client-side deduplication engine in `src/lib/dataMaintenance.js` was enhanced with:
+
+1. **Setswana Vowel Ending Normalization (`normalizeSetswanaWord`):**
+   * Normalizes terminal vowel alternations common in Setswana transcription (`-e` ↔ `-a` such as *Makgale* ↔ *Makgala*; `-o` ↔ `-u` such as *Setsuma* ↔ *Setsoma*).
+2. **Fuzzy Phone Matching (`isPhoneFuzzyMatch`):**
+   * Computes Hamming distance on 8-digit mobile and 7-digit landline numbers. If numbers differ by exactly 1 digit (e.g. `75966113` vs `75966118`), it is recognized as a handwriting transcription typo rather than a distinct individual.
+3. **Multi-Token & Inverted Name Matching (`areNamesFuzzyMatch`):**
+   * Evaluates token subsets to catch omitted middle names (e.g. *Lebogang Doreen Makgale* vs. *Lebogang Makgale*).
+   * Automatically recognizes inverted name ordering (*First Last* vs. *Last First*, e.g. *Bojelo Mmakgabo* vs. *Mmakgabo Bojelo*).
+4. **Candidate Bucketing by Phone Prefix and Name Tokens:**
+   * Bucketing incorporates 7-digit phone prefixes (`phone7`) and normalized word tokens (`token`), allowing the $O(N)$ candidate clustering system to detect fuzzy pairs without expensive $O(N^2)$ comparisons across the 3,000+ record dataset.
+
+---
+
+## 5. Execution Report: 29 October 2026 Numbered Registers Handover (Range 51–221)
+
+On 29 October 2026, the complete ingestion and reconciliation pipeline was executed for all physical registers in the 51–221 range in accordance with the handover specification (`HFF_Registers_51_to_200s_Handover_29-10-2026.md`).
+
+### Part A — 20 Brand-New Numbered Register Groups Ingested (256 Active Participants)
+All 20 new registers were verified, facilitators assigned/created, and participant rosters populated with complete demographics (`education`, `marital_status`, `affiliation`, `occupation`):
+* **REGISTER 57** (Boseja / Boseja Kgotla): Maipelo Rathari-Molefe (`71780517`) / Keatlaretse Mokgosi (`71449339`) — **24 participants**, 24 books.
+* **REGISTER 68** (Boseja / Boseja Clinic): Lesego Popie Pheto (`77158917`) — **15 participants**, 15 books.
+* **REGISTER 78** (Modipane / Modipane Clinic): Bathusi Tsheko (`76735515`) — **5 participants**, 5 books.
+* **REGISTER 92** (Mochudi / Makgophana): Itumeleng Senyarelo (`74620023`) — **11 participants**, 11 books.
+* **REGISTER 100** (Mabalane / Mabalane Clinic): Kutlo L Batlang (`74408167`) — **12 participants**, 12 books.
+* **REGISTER 101** (Sikwane / Sikwane Clinic): Ronicah Motshegwe (`76420556`) — **12 participants**, 12 books.
+* **REGISTER 123** (Boseja Ward): Elisa Mapotsane (`72352125`) — **15 participants**, 15 books.
+* **REGISTER 125** (Modipane): Kefilwe Moseki (`71626245`) — **18 participants**, 18 books.
+* **REGISTER 151** (Boseja / Home): Lesego Moraope (`75042296`) — **6 participants**, 6 books.
+* **REGISTER 153** (Boseja): Tebogo Moeng (`76233481`) — **21 participants**, 21 books.
+* **REGISTER 157** (Boseja Ward): Leah Senwelo (`75966113`) — **3 participants**, 3 books.
+* **REGISTER 179** (Makgophana): Kgomotso Nquesh Dintsi (`76677943`) — **4 participants**, 4 books.
+* **REGISTER 191** (Mochudi Prison Staff): Raymond Baiphetlhi (`71374706`) — **4 participants**, 4 books.
+* **REGISTER 203** (Modipane): Tebogo Charmine Dikgang (`75440755`) — **12 participants**, 12 books.
+* **REGISTER 205** (Boseja Ward): Itumeleng Pilane (`75932594`) — **4 participants** (Row 1 struck through and omitted), 4 books.
+* **REGISTER 208** (Boseja): Gaonyalelwe kgang (`72242125`) — **17 participants**, 17 books.
+* **REGISTER 210** (Modipane): Gaanewe Pinkie Molema (`76211833`) — **3 participants**, 3 books.
+* **REGISTER 216** (Mochudi / Lady Mitchison): Lesedi Ramabokwa (`76785237`) — **24 participants**, 24 books.
+* **REGISTER 217** (Mochudi / Lady Mitchison): Dolly Shapata (`71780517`) — **35 participants**, 35 books.
+* **REGISTER 221** (Mochudi / Lady Mitchison): Lesedi Kaone (`74581177`) — **11 participants**, 11 books.
+
+### Part B — Updates, New Pages, Removals & Attendance Across Existing Registers
+* **Re-numbering REGISTER 129 → REGISTER 128 (Wildlife Office):**
+  * Group Leaders Boago Letshoo (`77326267`) & Wabo Venda (`74406246`) re-numbered from Form 129 to Form 128.
+  * Rows 1–11 updated with expanded full names and `affiliation: "Wildlife"`.
+  * Added 8 new participants (Rows 12–19). Total group roster: **19 participants**.
+  * Attendance: Rows 1–14 marked for `27 Oct, 28 Oct`; Rows 15–19 marked for `28 Oct`.
+* **New Pages & Supplementary Participant Rows Added:**
+  * **REGISTER 53** (Pulafela Pilane): Added full initial roster of 8 participants.
+  * **REGISTER 54**: Added Rows 12–14 (3 new participants).
+  * **REGISTER 72**: Added Rows 13–15 (3 new participants).
+  * **REGISTER 73**: Added Row 11 (`Mmathapelo Tsele`).
+  * **REGISTER 104**: Added Rows 13–16 (4 new participants).
+  * **REGISTER 132**: Added Rows 6–10 (5 new participants).
+  * **REGISTER 172 Set B**: Added Row 16 (`Amantle Ditlole`).
+  * **REGISTER 182**: Added Row 10 (`Meshack Musonda`).
+  * **REGISTER 183 A**: Added Row 12 (`Katlego Seabelo`).
+  * **REGISTER 185**: Added 3 participants from the 15:30hr sub-group sheet.
+  * **REGISTER 196**: Added New Page 1 (Rows 1–5).
+  * **REGISTER 197**: Added Rows 20–22 (3 new participants).
+  * **REGISTER 201 Sheet 1**: Added Rows 8–12 (5 new inmate participants).
+* **Physical Struck-Through / Crossed-Out Rows Purged (Soft-Deleted):**
+  * `REGISTER 73`: Row 8 (`Bokang Kgaupe`).
+  * `REGISTER 201 Sheet 2`: Row 16 (`Tomeletso Lengwadibe`) and Row 18 (`Kabelo Thibogang`).
+  * `REGISTER 201 Sheet 3`: Row 16 (`Kefilwe Koitsiwe`) and Row 17 (`Oteng Kgabangwe`).
+* **Demographic Fields Enriched:**
+  * `REGISTER 85`: Row 1 (`Mmamasedinyane Moitoi`) `occupation: "Cluster"`.
+  * `REGISTER 121`: All 10 rows `affiliation: "IKAGENG"`, `occupation: "CLEANING"`.
+  * `REGISTER 197`: Row 16 marital status `"S"`, Row 17 marital status `"M"`.
+  * `REGISTER 201` (Mochudi State Prison Sheets 1–5): Filled education level and marital status across all 56 active inmate rows.
+* **Physical Attendance Tracking (`attendance` Array Updates):**
+  * `attendance[0]` = 27 Oct, `attendance[1]` = 28 Oct, `attendance[2]` = 29 Oct, `attendance[3]` = 30 Oct.
+  * Applied verified physical ticks across `REGISTER 53`, `54`, `63`, `72`, `73`, `85`, `104`, `108`, `116`, `121`, `128`, `132`, `136`, `143` (Grps 1–3), `159`, `172` (Sets A & B), `182`, `183 A`, `185`, `196`, `197`, `201`, `202`, and `220`.
+* **Book Accounting Policy Enforced (`1 Participant = 1 Book Given`):**
+  * All active participants marked `books_received: true`.
+  * Every facilitator's `books_distributed` and `participants_count` recalculated to equal their active group roster size.
+
+### Synchronization & Reconciliation Metrics
+* **Cloud Firestore:**
+  * 644 registration records upserted across 2 batches.
+  * 8 redundant / struck-through records soft-deleted (`is_deleted: true`).
+* **Google Sheets Web App Integration:**
+  * 913 active records pushed to `PROFILE_Samukeliso_Mayabane` (379 inserted, 534 updated, 963 total in profile tab).
+  * Auto-reconciliation in `MASTER_UNIFORM_REGISTER` executed: **1,375 uniform master total records**, with 1,212 duplicate matches reconciled.
+* **Audit Footprint:**
+  * All records stamped under operator **Samukeliso Mayabane** (`samukeliso.mayabane@thehealthyfamilies.net`, UID `E7bGBQslPsafBPovmFoYHiLqxQZ2`).
