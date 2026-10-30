@@ -237,10 +237,32 @@ export function processAnalytics(registrations) {
         }
     });
 
-    // Book distribution
+    // Book distribution:
+    // 1 participant = 1 book given (tracked individually via participant.books_received).
+    // Facilitators report books_distributed to their group, which mirrors the participants' books_received.
+    // To prevent double-counting (where books given > total people), we count participants who received books,
+    // plus any facilitator-reported books for groups whose participants are not yet individually digitized.
     const participantBooks = participants.filter(p => parseBool(p.books_received)).length;
-    const facilitatorBooks = facilitators.reduce((sum, f) => sum + (parseInt(f.books_distributed, 10) || 0), 0);
-    const totalBooksGiven = participantBooks + facilitatorBooks;
+
+    const participantBooksByFac = new Map();
+    participants.forEach(p => {
+        if (p.facilitator_uuid && parseBool(p.books_received)) {
+            participantBooksByFac.set(p.facilitator_uuid, (participantBooksByFac.get(p.facilitator_uuid) || 0) + 1);
+        }
+    });
+
+    let extraFacilitatorBooks = 0;
+    facilitators.forEach(f => {
+        const digitizedInGroup = participantBooksByFac.get(f.uuid) || 0;
+        const reportedByFac = parseInt(f.books_distributed, 10) || 0;
+        if (reportedByFac > digitizedInGroup) {
+            extraFacilitatorBooks += (reportedByFac - digitizedInGroup);
+        }
+    });
+
+    // Total books given cannot exceed total registered people
+    const totalPeople = participants.length + facilitators.length;
+    const totalBooksGiven = Math.min(participantBooks + extraFacilitatorBooks, totalPeople);
 
     return {
         totalRegistrations: participants.length,

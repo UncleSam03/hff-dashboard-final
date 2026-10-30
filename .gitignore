@@ -32,3 +32,7 @@ hff-dashboard-*.json
 .env*.local
 kdp_output/
 .agents/
+
+# Sensitive / temporary docs
+*passwords*
+~$*
