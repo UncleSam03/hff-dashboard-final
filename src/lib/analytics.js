@@ -255,8 +255,11 @@ export function processAnalytics(registrations) {
     facilitators.forEach(f => {
         const digitizedInGroup = participantBooksByFac.get(f.uuid) || 0;
         const reportedByFac = parseInt(f.books_distributed, 10) || 0;
-        if (reportedByFac > digitizedInGroup) {
-            extraFacilitatorBooks += (reportedByFac - digitizedInGroup);
+        const groupParticipantsCount = parseInt(f.participants_count, 10) || 0;
+        const maxBooksForGroup = Math.max(groupParticipantsCount, digitizedInGroup);
+        const cappedReported = maxBooksForGroup > 0 ? Math.min(reportedByFac, maxBooksForGroup) : reportedByFac;
+        if (cappedReported > digitizedInGroup) {
+            extraFacilitatorBooks += (cappedReported - digitizedInGroup);
         }
     });
 
