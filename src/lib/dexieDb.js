@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { splitOccupationAndAffiliation } from './utils';
 
 export const db = new Dexie('HFF_Dashboard_V2');
 
@@ -111,6 +112,27 @@ db.version(19).stores({
     registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation, campaign_id, form_number, group_form_number, teaching_group, contact, place, created_by_uid, created_by_email, created_by_name, submission_source, is_daily_core',
     notices: '++id, uuid, title, type, priority, created_at, sync_status',
     campaigns: '++id, uuid, name, village, year, status, created_at, updated_at, sync_status, is_current'
+});
+
+// v20: Added meeting_place index on registrations and auto-split hyphenated "Occupation - Affiliation" entries
+db.version(20).stores({
+    participants: '++id, uuid, name, gender, age, sync_status, created_at, updated_at',
+    registrations: '++id, uuid, first_name, last_name, type, facilitator_uuid, sync_status, created_at, updated_at, education, marital_status, processed, processed_at, is_deleted, attendance, books_received, affiliation, occupation, meeting_place, campaign_id, form_number, group_form_number, teaching_group, contact, place, created_by_uid, created_by_email, created_by_name, submission_source, is_daily_core',
+    notices: '++id, uuid, title, type, priority, created_at, sync_status',
+    campaigns: '++id, uuid, name, village, year, status, created_at, updated_at, sync_status, is_current'
+}).upgrade(tx => {
+    return tx.table('registrations').toCollection().modify(rec => {
+        if (rec.occupation && /[-–—]/.test(String(rec.occupation))) {
+            const split = splitOccupationAndAffiliation(rec.occupation, rec.affiliation, rec.meeting_place);
+            if (split.wasSplit || split.occupation !== rec.occupation) {
+                rec.occupation = split.occupation;
+                rec.affiliation = split.affiliation;
+                if (split.meeting_place) {
+                    rec.meeting_place = split.meeting_place;
+                }
+            }
+        }
+    });
 });
 
 export default db;

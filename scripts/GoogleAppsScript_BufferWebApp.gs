@@ -30,6 +30,8 @@ const HEADERS = [
   'Age',
   'Phone / Contact',
   'Location / Zone',
+  'Occupation',
+  'Affiliation',
   'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12',
   'Total Days',
   'Books Received',
@@ -39,15 +41,95 @@ const HEADERS = [
   'Source Tab'
 ];
 
+const COMPOUND_OCCUPATION_PATTERNS = [
+  /^self[\s-]*employed$/i,
+  /^pre[\s-]*school(\s+teacher)?$/i,
+  /^co[\s-]*founder$/i,
+  /^co[\s-]*ordinator$/i,
+  /^sub[\s-]*inspector$/i,
+  /^part[\s-]*time$/i,
+  /^full[\s-]*time$/i,
+  /^v[\s-]*secretary$/i,
+  /^vice[\s-]*secretary$/i,
+  /^vice[\s-]*chair(person|man)?$/i,
+  /^add[\s-]*member$/i,
+  /^non[\s-]*commissioned(\s+officer)?$/i
+];
+
+const INSTITUTION_PATTERNS = /\b(parliament|land\s*board|district\s*council|coucil|council|tribal(\s+admin(istration)?)?|police\s*service|ministry|department|church|school|clinic|hospital|brigade|prison|bdf|defence\s*force|university|college|association|foundation|society|centre|center|bank)\b/i;
+
+const ROLE_PATTERNS = /^(clerk(\s+assistant(\s*\d*)?)?|groundsman|operator|driver|kgosi|police\s*officer|procurement(\s+assistant|\s+officer)?|administration\s*officer|admin\s*officer|environmental\s*officer|social\s*worker|pastor|teacher|cleaner|nurse|secretary|director|manager|officer|assistant|tutor|lecturer|soldier|inspector|warden|cook|chef|caretaker|messenger|typist|accountant|receptionist|supervisor|coordinator|counselor|counsellor|intern|volunteer|agent|security(\s+officer|\s+guard)?)$/i;
+
+function splitOccupationAndAffiliation(rawOccupation, existingAffiliation) {
+  const cleanOcc = String(rawOccupation || '').trim();
+  const cleanAff = String(existingAffiliation || '').trim();
+
+  if (!cleanOcc || /^[-–—]+$/.test(cleanOcc)) {
+    return { occupation: '', affiliation: cleanAff === '—' ? '' : cleanAff };
+  }
+
+  for (let i = 0; i < COMPOUND_OCCUPATION_PATTERNS.length; i++) {
+    if (COMPOUND_OCCUPATION_PATTERNS[i].test(cleanOcc)) {
+      return {
+        occupation: /^self[\s-]*employed$/i.test(cleanOcc) ? 'Self-Employed' : cleanOcc,
+        affiliation: cleanAff
+      };
+    }
+  }
+
+  if (!/[-–—]/.test(cleanOcc)) {
+    return { occupation: cleanOcc, affiliation: cleanAff };
+  }
+
+  let left = '';
+  let right = '';
+  const spacedMatch = cleanOcc.match(/^(.+?)\s+[-–—]\s*(.+)$/) || cleanOcc.match(/^(.+?)\s*[-–—]\s+(.+)$/);
+  if (spacedMatch) {
+    left = spacedMatch[1].trim();
+    right = spacedMatch[2].trim();
+  } else {
+    const firstHyphenIdx = cleanOcc.search(/[-–—]/);
+    left = cleanOcc.slice(0, firstHyphenIdx).trim();
+    right = cleanOcc.slice(firstHyphenIdx + 1).trim();
+  }
+
+  if (!left || !right) {
+    return {
+      occupation: cleanOcc.replace(/^[-–—\s]+|[-–—\s]+$/g, '').trim(),
+      affiliation: cleanAff
+    };
+  }
+
+  const leftLooksLikeInstitution = INSTITUTION_PATTERNS.test(left) && !ROLE_PATTERNS.test(left);
+  const rightLooksLikeRole = ROLE_PATTERNS.test(right) && !INSTITUTION_PATTERNS.test(right);
+  const wasReversed = leftLooksLikeInstitution && rightLooksLikeRole;
+
+  const extractedOccupation = wasReversed ? right : left;
+  const extractedAffiliation = String(wasReversed ? left : right).trim().replace(/^Coucil$/i, 'Council').replace(/\bCoucil\b/gi, 'Council');
+
+  return {
+    occupation: extractedOccupation,
+    affiliation: extractedAffiliation || cleanAff
+  };
+}
+
 /**
- * Ensure a sheet tab exists with formatted headers
+ * Ensure a sheet tab exists with formatted 32-column headers
  */
 function getOrCreateSheet(ss, tabName, headerColor) {
   let sheet = ss.getSheetByName(tabName);
   if (!sheet) {
     sheet = ss.insertSheet(tabName);
   }
-  if (sheet.getLastRow() === 0) {
+  const lastRow = sheet.getLastRow();
+  let needsHeaderUpdate = lastRow === 0;
+  if (!needsHeaderUpdate) {
+    const currentHdr = sheet.getRange(1, 1, 1, Math.min(sheet.getMaxColumns(), HEADERS.length)).getValues()[0] || [];
+    if (currentHdr[12] !== 'Occupation' || currentHdr[13] !== 'Affiliation') {
+      needsHeaderUpdate = true;
+    }
+  }
+  if (needsHeaderUpdate) {
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
     const headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
     headerRange.setFontWeight('bold');
@@ -59,7 +141,7 @@ function getOrCreateSheet(ss, tabName, headerColor) {
 }
 
 /**
- * Convert a registration JSON object into a 30-column row array
+ * Convert a registration JSON object into a 32-column row array
  */
 function recordToRow(r, sourceTabName) {
   const att = Array.isArray(r.attendance) ? r.attendance : [];
@@ -70,6 +152,8 @@ function recordToRow(r, sourceTabName) {
     days.push(present ? 'TRUE' : 'FALSE');
     if (present) totalDays++;
   }
+
+  const split = splitOccupationAndAffiliation(r.occupation, r.affiliation);
 
   return [
     String(r.uuid || ''),
@@ -84,6 +168,8 @@ function recordToRow(r, sourceTabName) {
     r.age !== undefined && r.age !== null ? String(r.age) : '',
     String(r.contact || ''),
     String(r.place || ''),
+    String(split.occupation || '').trim(),
+    String(split.affiliation || '').trim(),
     ...days,
     totalDays,
     r.books_received ? 'TRUE' : 'FALSE',
@@ -95,14 +181,26 @@ function recordToRow(r, sourceTabName) {
 }
 
 /**
- * Convert a 30-column sheet row back into a structured registration object
+ * Convert a 32-column (or legacy 30-column) sheet row back into a structured registration object
  */
 function rowToRecord(row) {
+  const isBoolStr = (val) => {
+    const s = String(val || '').trim().toUpperCase();
+    return s === 'TRUE' || s === 'FALSE';
+  };
+  const isLegacy30Col = isBoolStr(row[12]) && isBoolStr(row[13]) && String(row[30] || '').trim() === '';
+  const dayStartIdx = isLegacy30Col ? 12 : 14;
+
   const attendance = [];
-  for (let i = 12; i < 24; i++) {
+  for (let i = dayStartIdx; i < dayStartIdx + 12; i++) {
     const v = String(row[i] || '').trim().toUpperCase();
     attendance.push(v === 'TRUE' || v === '1' || v === 'YES' || v === '✓');
   }
+
+  const rawOcc = isLegacy30Col ? '' : String(row[12] || '').trim();
+  const rawAff = isLegacy30Col ? '' : String(row[13] || '').trim();
+  const split = splitOccupationAndAffiliation(rawOcc, rawAff);
+
   return {
     uuid: String(row[0] || '').trim(),
     campaign_id: String(row[1] || 'hff_campaign_2026').trim(),
@@ -116,12 +214,14 @@ function rowToRecord(row) {
     age: row[9] !== '' && row[9] !== null ? Number(row[9]) || String(row[9]) : null,
     contact: String(row[10] || '').trim(),
     place: String(row[11] || '').trim(),
+    occupation: split.occupation,
+    affiliation: split.affiliation,
     attendance: attendance,
-    books_received: String(row[25] || '').trim().toUpperCase() === 'TRUE',
-    updated_by_name: String(row[26] || '').trim(),
-    updated_by_email: String(row[27] || '').trim(),
-    updated_at: String(row[28] || '').trim(),
-    source_tab: String(row[29] || '').trim()
+    books_received: String(row[dayStartIdx + 13] || '').trim().toUpperCase() === 'TRUE',
+    updated_by_name: String(row[dayStartIdx + 14] || '').trim(),
+    updated_by_email: String(row[dayStartIdx + 15] || '').trim(),
+    updated_at: String(row[dayStartIdx + 16] || '').trim(),
+    source_tab: String(row[dayStartIdx + 17] || '').trim()
   };
 }
 
@@ -150,8 +250,9 @@ function upsertProfileTab(ss, tabName, records, deletedUuids, replaceTab) {
     for (let i = 0; i < rawRows.length; i++) {
       const u = String(rawRows[i][0] || '').trim();
       if (!u || deletedSet.has(u)) continue;
+      const normalizedExisting = recordToRow(rowToRecord(rawRows[i]), safeTabName);
       existingByUuid.set(u, allRows.length);
-      allRows.push(rawRows[i]);
+      allRows.push(normalizedExisting);
     }
   } else if (lastRow > 1 && replaceTab) {
     // Even when replacing tab, preserve existing attendance bits for matching UUIDs
@@ -174,19 +275,23 @@ function upsertProfileTab(ss, tabName, records, deletedUuids, replaceTab) {
     if (replaceTab) {
       const oldRow = existingByUuid.get(rec.uuid);
       if (oldRow) {
+        const oldRec = rowToRecord(oldRow);
+        if (!newRow[12] && oldRec.occupation) newRow[12] = oldRec.occupation;
+        if (!newRow[13] && oldRec.affiliation) newRow[13] = oldRec.affiliation;
         let totalDays = 0;
-        for (let d = 12; d < 24; d++) {
-          const oldPresent = String(oldRow[d] || '').toUpperCase() === 'TRUE';
-          const newPresent = String(newRow[d] || '').toUpperCase() === 'TRUE';
+        for (let dayIdx = 0; dayIdx < 12; dayIdx++) {
+          const colIdx = 14 + dayIdx;
+          const oldPresent = Boolean(oldRec.attendance && oldRec.attendance[dayIdx]);
+          const newPresent = String(newRow[colIdx] || '').toUpperCase() === 'TRUE';
           const merged = oldPresent || newPresent;
-          if (rec.last_attendance_mark && rec.last_attendance_mark.day_index === (d - 12) && rec.last_attendance_mark.value === false) {
-            newRow[d] = 'FALSE';
+          if (rec.last_attendance_mark && rec.last_attendance_mark.day_index === dayIdx && rec.last_attendance_mark.value === false) {
+            newRow[colIdx] = 'FALSE';
           } else {
-            newRow[d] = merged ? 'TRUE' : 'FALSE';
+            newRow[colIdx] = merged ? 'TRUE' : 'FALSE';
           }
-          if (newRow[d] === 'TRUE') totalDays++;
+          if (newRow[colIdx] === 'TRUE') totalDays++;
         }
-        newRow[24] = totalDays;
+        newRow[26] = totalDays;
         updated++;
       } else {
         inserted++;
@@ -195,21 +300,25 @@ function upsertProfileTab(ss, tabName, records, deletedUuids, replaceTab) {
     } else if (existingByUuid.has(rec.uuid)) {
       const idx = existingByUuid.get(rec.uuid);
       const oldRow = allRows[idx];
-      // Merge attendance non-destructively across days D1..D12 (columns 12..23)
+      const oldRec = rowToRecord(oldRow);
+      if (!newRow[12] && oldRec.occupation) newRow[12] = oldRec.occupation;
+      if (!newRow[13] && oldRec.affiliation) newRow[13] = oldRec.affiliation;
+      // Merge attendance non-destructively across days D1..D12 (columns 14..25)
       let totalDays = 0;
-      for (let d = 12; d < 24; d++) {
-        const oldPresent = String(oldRow[d] || '').toUpperCase() === 'TRUE';
-        const newPresent = String(newRow[d] || '').toUpperCase() === 'TRUE';
+      for (let dayIdx = 0; dayIdx < 12; dayIdx++) {
+        const colIdx = 14 + dayIdx;
+        const oldPresent = Boolean(oldRec.attendance && oldRec.attendance[dayIdx]);
+        const newPresent = String(newRow[colIdx] || '').toUpperCase() === 'TRUE';
         const merged = oldPresent || newPresent;
         // Honor explicit single-day uncheck if last_attendance_mark specifies value === false
-        if (rec.last_attendance_mark && rec.last_attendance_mark.day_index === (d - 12) && rec.last_attendance_mark.value === false) {
-          newRow[d] = 'FALSE';
+        if (rec.last_attendance_mark && rec.last_attendance_mark.day_index === dayIdx && rec.last_attendance_mark.value === false) {
+          newRow[colIdx] = 'FALSE';
         } else {
-          newRow[d] = merged ? 'TRUE' : 'FALSE';
+          newRow[colIdx] = merged ? 'TRUE' : 'FALSE';
         }
-        if (newRow[d] === 'TRUE') totalDays++;
+        if (newRow[colIdx] === 'TRUE') totalDays++;
       }
-      newRow[24] = totalDays;
+      newRow[26] = totalDays;
       allRows[idx] = newRow;
       updated++;
     } else {
@@ -309,6 +418,8 @@ function reconcileAllProfileTabs(ss) {
         existing.books_received = Boolean(existing.books_received || rec.books_received);
         if (!existing.contact && rec.contact) existing.contact = rec.contact;
         if (!existing.place && rec.place) existing.place = rec.place;
+        if (!existing.occupation && rec.occupation) existing.occupation = rec.occupation;
+        if (!existing.affiliation && rec.affiliation) existing.affiliation = rec.affiliation;
         if (!existing.age && rec.age) existing.age = rec.age;
         if (!existing.facilitator_uuid && rec.facilitator_uuid) existing.facilitator_uuid = rec.facilitator_uuid;
         if (!existing.group_form_number && rec.group_form_number) existing.group_form_number = rec.group_form_number;

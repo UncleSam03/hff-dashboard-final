@@ -1,9 +1,9 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil, Hash, FileText, UserCheck } from 'lucide-react';
+import { ArrowLeft, User, MapPin, CalendarDays, Activity, Briefcase, Heart, BookOpen, GraduationCap, Clock, CheckCircle, Pencil, Hash, FileText, UserCheck, Users } from 'lucide-react';
 import RegistrationForm from '../RegistrationForm';
-import { cn } from '../../lib/utils';
+import { cn, splitOccupationAndAffiliation } from '../../lib/utils';
 import { normalizeAttendance } from '../../lib/analytics';
 
 const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigateToAttendance, onNavigateToFacilitator }) => {
@@ -17,6 +17,8 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
     const participant = liveParticipant 
         ? { ...liveParticipant, facilitatorName: initialParticipant.facilitatorName } 
         : initialParticipant;
+
+    const partSplit = splitOccupationAndAffiliation(participant.occupation, participant.affiliation, participant.meeting_place);
 
     const safeFormatTime = (dateStr) => {
         if (!dateStr) return 'N/A';
@@ -206,7 +208,14 @@ const ParticipantDetail = ({ participant: initialParticipant, onBack, onNavigate
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Occupation</p>
                             <p className="text-base font-black text-gray-900 flex items-center gap-1.5">
                                 <Briefcase size={14} className="text-gray-300" />
-                                {participant.occupation || 'Not recorded'}
+                                {partSplit.occupation || 'Not recorded'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Affiliation / Organisation</p>
+                            <p className="text-base font-black text-gray-900 flex items-center gap-1.5">
+                                <Users size={14} className="text-gray-300" />
+                                {partSplit.affiliation || 'Not recorded'}
                             </p>
                         </div>
                     </div>

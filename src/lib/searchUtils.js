@@ -13,6 +13,8 @@
  * Also supports person's own name and tokenized multi-word search across all criteria.
  */
 
+import { splitOccupationAndAffiliation } from './utils';
+
 const MONTH_NAMES = [
     { short: 'jan', full: 'january' },
     { short: 'feb', full: 'february' },
@@ -122,17 +124,63 @@ export function matchSingleCriterion(person, criterion, query) {
     const assignedFac = person.assignedFacilitator;
 
     switch (criterion) {
-        case 'meeting_place': {
-            // Check person's affiliation (which stores meeting place), meeting_place, and place
+        case 'affiliation':
+        case 'organisation':
+        case 'organization': {
+            const splitOwn = splitOccupationAndAffiliation(person.occupation, person.affiliation, person.meeting_place);
             const fields = [
                 person.affiliation,
+                person.Affiliation,
+                person.organisation,
+                person.organization,
+                splitOwn.affiliation
+            ];
+
+            if (assignedFac) {
+                const splitFac = splitOccupationAndAffiliation(assignedFac.occupation, assignedFac.affiliation, assignedFac.meeting_place);
+                fields.push(
+                    assignedFac.affiliation,
+                    assignedFac.Affiliation,
+                    assignedFac.organisation,
+                    assignedFac.organization,
+                    splitFac.affiliation
+                );
+            }
+
+            return fields.some(f => f && String(f).toLowerCase().includes(cleanQuery));
+        }
+
+        case 'occupation': {
+            const splitOwn = splitOccupationAndAffiliation(person.occupation, person.affiliation, person.meeting_place);
+            const fields = [
+                person.occupation,
+                person.Occupation,
+                splitOwn.occupation
+            ];
+
+            if (assignedFac) {
+                const splitFac = splitOccupationAndAffiliation(assignedFac.occupation, assignedFac.affiliation, assignedFac.meeting_place);
+                fields.push(
+                    assignedFac.occupation,
+                    assignedFac.Occupation,
+                    splitFac.occupation
+                );
+            }
+
+            return fields.some(f => f && String(f).toLowerCase().includes(cleanQuery));
+        }
+
+        case 'meeting_place': {
+            // Check person's meeting_place, place, and affiliation
+            const fields = [
                 person.meeting_place,
+                person.affiliation,
                 person.place
             ];
 
             // If participant, also check assigned facilitator's meeting place
             if (assignedFac) {
-                fields.push(assignedFac.affiliation, assignedFac.meeting_place, assignedFac.place);
+                fields.push(assignedFac.meeting_place, assignedFac.affiliation, assignedFac.place);
             }
 
             return fields.some(f => f && String(f).toLowerCase().includes(cleanQuery));
@@ -274,6 +322,8 @@ export function matchesPerson(person, query, criterion = 'all') {
 
     // For 'all', check phrase match across all criteria first
     const ALL_CRITERIA = [
+        'affiliation',
+        'occupation',
         'meeting_place',
         'form_number',
         'phone_number',

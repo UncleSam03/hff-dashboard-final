@@ -6,10 +6,16 @@ import { useAuth } from '../auth/AuthContext';
 
 import { Save, Search, User, Check, AlertCircle, FileText, Hash, Clock, Users, MapPin, Phone, X } from 'lucide-react';
 import { matchesPerson } from '../lib/searchUtils';
+import { splitOccupationAndAffiliation } from '../lib/utils';
 
 const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFacilitator, initialData, campaignId }) => {
     const { user, profile, role } = useAuth();
     const activeCampId = campaignId || initialData?.campaign_id || getActiveCampaignId() || DEFAULT_CAMPAIGN.uuid;
+    const initialSplit = splitOccupationAndAffiliation(
+        initialData?.occupation || '',
+        initialData?.affiliation || '',
+        initialData?.meeting_place || ''
+    );
 
     // Form State
     const [formData, setFormData] = useState({
@@ -21,8 +27,9 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
         place: initialData?.place || '',
         education: initialData?.education || '',
         maritalStatus: initialData?.marital_status || '',
-        affiliation: initialData?.affiliation || '',
-        occupation: initialData?.occupation || '',
+        affiliation: initialSplit.affiliation,
+        occupation: initialSplit.occupation,
+        meetingPlace: initialSplit.meeting_place,
         participantsCount: initialData?.participants_count || 1,
         booksDistributed: initialData?.books_distributed || 0,
         booksReceived: initialData?.books_received || false,
@@ -159,6 +166,19 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
         }
     };
 
+    const handleOccupationBlur = () => {
+        setFormData(prev => {
+            const split = splitOccupationAndAffiliation(prev.occupation, prev.affiliation, prev.meetingPlace);
+            if (!split.wasSplit) return prev;
+            return {
+                ...prev,
+                occupation: split.occupation,
+                affiliation: split.affiliation,
+                meetingPlace: split.meeting_place,
+            };
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -170,7 +190,9 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 throw new Error("Please fill in all required fields.");
             }
 
-            if (type === 'participant' && inGroup && !selectedFacilitator && !formData.affiliation?.trim()) {
+            const split = splitOccupationAndAffiliation(formData.occupation, formData.affiliation, formData.meetingPlace);
+
+            if (type === 'participant' && inGroup && !selectedFacilitator && !split.affiliation?.trim()) {
                 throw new Error("Please provide an Affiliation / Group name, or link directly to a Facilitator.");
             }
 
@@ -185,8 +207,9 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 place: formData.place,
                 education: formData.education,
                 marital_status: formData.maritalStatus,
-                affiliation: formData.affiliation,
-                occupation: formData.occupation,
+                affiliation: split.affiliation,
+                occupation: split.occupation,
+                meeting_place: split.meeting_place || null,
                 type: type, // 'facilitator' or 'participant'
                 // Facilitator specific
                 participants_count: type === 'facilitator' ? parseInt(formData.participantsCount) : null,
@@ -295,6 +318,7 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                     maritalStatus: '',
                     affiliation: '',
                     occupation: '',
+                    meetingPlace: '',
                     participantsCount: 1,
                     booksDistributed: 0,
                     booksReceived: false,
@@ -667,34 +691,6 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {type === 'participant' ? (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Affiliation / Group (e.g. Church, School)
-                                {inGroup && !selectedFacilitator && <span className="text-red-500 ml-1">*</span>}
-                            </label>
-                            <input
-                                type="text"
-                                name="affiliation"
-                                value={formData.affiliation}
-                                onChange={handleChange}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
-                                placeholder="Group name"
-                            />
-                        </div>
-                    ) : (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Place</label>
-                            <input
-                                type="text"
-                                name="affiliation"
-                                value={formData.affiliation}
-                                onChange={handleChange}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
-                                placeholder="e.g. St Jude Hall, Community Center"
-                            />
-                        </div>
-                    )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
                         <input
@@ -702,8 +698,23 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                             name="occupation"
                             value={formData.occupation}
                             onChange={handleChange}
+                            onBlur={handleOccupationBlur}
                             className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
-                            placeholder="e.g. Teacher, Farmer"
+                            placeholder="e.g. Teacher, Social Worker, Pastor"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Affiliation / Organisation (e.g. Church, School, Dept)
+                            {type === 'participant' && inGroup && !selectedFacilitator && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                        <input
+                            type="text"
+                            name="affiliation"
+                            value={formData.affiliation}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all"
+                            placeholder="e.g. Apostolic Faith Mission, District Council"
                         />
                     </div>
                 </div>
@@ -761,20 +772,36 @@ const RegistrationForm = ({ type, onBack, onSaveSuccess, inGroup, predefinedFaci
                                 />
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Time / Schedule</label>
-                            <div className="relative">
-                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                                <input
-                                    type="text"
-                                    name="meetingTime"
-                                    value={formData.meetingTime}
-                                    onChange={handleChange}
-                                    placeholder="e.g. Tuesdays at 6:00 PM, Sundays after service"
-                                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all text-sm"
-                                />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Place</label>
+                                <div className="relative">
+                                    <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        name="meetingPlace"
+                                        value={formData.meetingPlace}
+                                        onChange={handleChange}
+                                        placeholder="e.g. St Jude Hall, Community Center"
+                                        className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all text-sm"
+                                    />
+                                </div>
                             </div>
-                            <p className="text-[11px] text-gray-500 mt-1">Designated weekly meeting time for the group they teach</p>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Time / Schedule</label>
+                                <div className="relative">
+                                    <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        name="meetingTime"
+                                        value={formData.meetingTime}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Tuesdays at 6:00 PM, Sundays after service"
+                                        className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-hff-primary/50 focus:border-hff-primary outline-none transition-all text-sm"
+                                    />
+                                </div>
+                                <p className="text-[11px] text-gray-500 mt-1">Designated weekly meeting time for the group they teach</p>
+                            </div>
                         </div>
                     </div>
                 )}

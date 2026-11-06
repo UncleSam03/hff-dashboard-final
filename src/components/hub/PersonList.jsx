@@ -8,7 +8,7 @@ import {
     Check, Minus, MapPin, GraduationCap, Phone, Target, UserCheck, UserPlus, BookCheck, AlertCircle,
     Clock, FileText, Hash, Calendar, Upload, Loader2
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, splitOccupationAndAffiliation } from '../../lib/utils';
 import { matchesPerson, formatEnteredDate } from '../../lib/searchUtils';
 import { normalizeAttendance } from '../../lib/analytics';
 import FacilitatorDetail from './FacilitatorDetail';
@@ -18,6 +18,8 @@ import { pushProfileBufferToSheets } from '../../lib/sheetsBufferSync';
 
 const SEARCH_CRITERIA = [
     { id: 'all', label: 'All Criteria' },
+    { id: 'affiliation', label: 'Affiliation' },
+    { id: 'occupation', label: 'Occupation' },
     { id: 'meeting_place', label: 'Meeting Place' },
     { id: 'form_number', label: 'Form #' },
     { id: 'phone_number', label: 'Phone #' },
@@ -62,6 +64,7 @@ const PersonList = ({
         marital_status: '',
         affiliation: '',
         occupation: '',
+        meeting_place: '',
         facilitator_uuid: '',
         books_received: false,
         participants_count: 1,
@@ -287,6 +290,11 @@ const PersonList = ({
 
     const resetForm = (defaults = {}) => {
         const isFac = (defaults.type || 'participant').toLowerCase() === 'facilitator';
+        const split = splitOccupationAndAffiliation(
+            defaults.occupation || '',
+            defaults.affiliation || '',
+            defaults.meeting_place || ''
+        );
         setFormData({
             type: (defaults.type || 'participant').toLowerCase(),
             teaching_group: defaults.teaching_group ?? isFac,
@@ -301,8 +309,9 @@ const PersonList = ({
             place: defaults.place || '',
             education: defaults.education || '',
             marital_status: defaults.marital_status || '',
-            affiliation: defaults.affiliation || '',
-            occupation: defaults.occupation || '',
+            affiliation: split.affiliation,
+            occupation: split.occupation,
+            meeting_place: split.meeting_place,
             facilitator_uuid: defaults.facilitator_uuid || '',
             books_received: defaults.books_received || false,
             participants_count: defaults.participants_count || 1,
@@ -341,6 +350,19 @@ const PersonList = ({
     const handleFormChange = (event) => {
         const { name, value } = event.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleOccupationBlur = () => {
+        setFormData((prev) => {
+            const split = splitOccupationAndAffiliation(prev.occupation, prev.affiliation, prev.meeting_place);
+            if (!split.wasSplit) return prev;
+            return {
+                ...prev,
+                occupation: split.occupation,
+                affiliation: split.affiliation,
+                meeting_place: split.meeting_place
+            };
+        });
     };
 
     const handleGroupFormNumberChange = (e) => {
@@ -418,6 +440,7 @@ const PersonList = ({
         setEditorSubmitting(true);
         try {
             const now = new Date().toISOString();
+            const split = splitOccupationAndAffiliation(formData.occupation, formData.affiliation, formData.meeting_place);
             const normalized = {
                 type: formData.type,
                 teaching_group: Boolean(formData.teaching_group),
@@ -432,8 +455,9 @@ const PersonList = ({
                 place: formData.place?.trim() || '',
                 education: formData.education || '',
                 marital_status: formData.marital_status || '',
-                affiliation: formData.affiliation?.trim() || '',
-                occupation: formData.occupation?.trim() || '',
+                affiliation: split.affiliation?.trim() || '',
+                occupation: split.occupation?.trim() || '',
+                meeting_place: split.meeting_place?.trim() || '',
                 facilitator_uuid: formData.type === 'participant' ? (formData.facilitator_uuid || null) : null,
                 books_received: formData.type === 'participant' ? (formData.books_received || false) : false,
                 participants_count: (formData.type === 'facilitator' || formData.teaching_group) ? Number(formData.participants_count || 1) : null,
@@ -536,25 +560,30 @@ const PersonList = ({
     );
 
     const exportToCSV = () => {
-        const headers = ['ID', 'Form Number', 'First Name', 'Last Name', 'Type', 'Teaching Group', 'Group Form Number', 'Meeting Place', 'Meeting Time', 'Gender', 'Age', 'Place', 'Facilitator', 'Status'];
+        const headers = ['ID', 'Form Number', 'First Name', 'Last Name', 'Type', 'Teaching Group', 'Group Form Number', 'Occupation', 'Affiliation', 'Meeting Place', 'Meeting Time', 'Gender', 'Age', 'Place', 'Facilitator', 'Status'];
         const csvContent = [
             headers.join(','),
-            ...people.map(p => [
-                p.id, 
-                p.form_number || '', 
-                p.first_name, 
-                p.last_name, 
-                p.type, 
-                p.teaching_group ? 'Yes' : 'No', 
-                p.group_form_number || '', 
-                p.affiliation || '',
-                p.meeting_time || '', 
-                p.gender, 
-                p.age, 
-                p.place || '', 
-                p.facilitatorName || '', 
-                p.sync_status
-            ].map(v => `"${v}"`).join(','))
+            ...people.map(p => {
+                const split = splitOccupationAndAffiliation(p.occupation, p.affiliation, p.meeting_place);
+                return [
+                    p.id, 
+                    p.form_number || '', 
+                    p.first_name, 
+                    p.last_name, 
+                    p.type, 
+                    p.teaching_group ? 'Yes' : 'No', 
+                    p.group_form_number || '', 
+                    split.occupation || '',
+                    split.affiliation || '',
+                    split.meeting_place || p.meeting_place || '',
+                    p.meeting_time || '', 
+                    p.gender, 
+                    p.age, 
+                    p.place || '', 
+                    p.facilitatorName || '', 
+                    p.sync_status
+                ].map(v => `"${v}"`).join(',');
+            })
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -600,7 +629,7 @@ const PersonList = ({
                             type="text"
                             placeholder={
                                 searchCriterion === 'all'
-                                    ? "Search meeting place, form #, phone, facilitator, date, time..."
+                                    ? "Search affiliation, occupation, meeting place, form #, phone, facilitator..."
                                     : `Search by ${SEARCH_CRITERIA.find(c => c.id === searchCriterion)?.label}...`
                             }
                             value={searchTerm}
@@ -938,20 +967,40 @@ const PersonList = ({
                             </div>
 
                             <div className="space-y-2 mt-4">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-widest bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
-                                        <span className="w-1.5 h-1.5 rounded-full hff-gradient-bg" />
-                                        {person.place || 'Unspecified Cluster'}
-                                    </div>
-                                    {(person.affiliation || person.assignedFacilitator?.affiliation) && (
-                                        <div className="flex items-center gap-1 text-[10px] font-bold text-purple-900 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100/70" title="Meeting Place / Affiliation">
-                                            <MapPin size={11} className="text-[#71167F] shrink-0" />
-                                            <span className="truncate max-w-[180px]">
-                                                {person.affiliation || person.assignedFacilitator?.affiliation}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
+                                {(() => {
+                                    const split = splitOccupationAndAffiliation(person.occupation, person.affiliation, person.meeting_place);
+                                    const displayOcc = split.occupation;
+                                    const displayAff = split.affiliation || person.assignedFacilitator?.affiliation;
+                                    const displayMeet = split.meeting_place || person.meeting_place || person.assignedFacilitator?.meeting_place;
+                                    return (
+                                        <>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-widest bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+                                                    <span className="w-1.5 h-1.5 rounded-full hff-gradient-bg" />
+                                                    {person.place || 'Unspecified Cluster'}
+                                                </div>
+                                                {displayOcc && (
+                                                    <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100/70" title="Occupation">
+                                                        <Briefcase size={11} className="text-indigo-600 shrink-0" />
+                                                        <span className="truncate max-w-[160px]">{displayOcc}</span>
+                                                    </div>
+                                                )}
+                                                {displayAff && (
+                                                    <div className="flex items-center gap-1 text-[10px] font-bold text-purple-900 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100/70" title="Affiliation / Organisation">
+                                                        <Users size={11} className="text-[#71167F] shrink-0" />
+                                                        <span className="truncate max-w-[180px]">{displayAff}</span>
+                                                    </div>
+                                                )}
+                                                {displayMeet && displayMeet !== displayAff && (
+                                                    <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-900 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100/70" title="Meeting Place">
+                                                        <MapPin size={11} className="text-emerald-600 shrink-0" />
+                                                        <span className="truncate max-w-[160px]">{displayMeet}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    );
+                                })()}
 
                                 {(person.contact || person.assignedFacilitator?.contact) && (
                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-600 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100 w-fit" title="Contact Phone Number">
@@ -1324,7 +1373,7 @@ const PersonList = ({
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Marital Status</label>
                                         <select
@@ -1347,7 +1396,18 @@ const PersonList = ({
                                             name="occupation"
                                             value={formData.occupation}
                                             onChange={handleFormChange}
-                                            placeholder="e.g. Teacher, Self-employed"
+                                            onBlur={handleOccupationBlur}
+                                            placeholder="e.g. Teacher, Social Worker"
+                                            className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 liquid-glass-input text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Affiliation / Organisation</label>
+                                        <input
+                                            name="affiliation"
+                                            value={formData.affiliation}
+                                            onChange={handleFormChange}
+                                            placeholder="e.g. Church, School, Council, Dept"
                                             className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 liquid-glass-input text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
                                         />
                                     </div>
@@ -1517,8 +1577,8 @@ const PersonList = ({
                                                 <div className="relative flex items-center">
                                                     <MapPin size={14} className="absolute left-3.5 text-gray-400" />
                                                     <input
-                                                        name="affiliation"
-                                                        value={formData.affiliation}
+                                                        name="meeting_place"
+                                                        value={formData.meeting_place}
                                                         onChange={handleFormChange}
                                                         className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 liquid-glass-input text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F]"
                                                         placeholder="e.g. St Jude Hall, Community Center"

@@ -4,6 +4,7 @@ import db from './dexieDb';
 import { getActiveCampaignId, DEFAULT_CAMPAIGN } from './campaignManager';
 import { normalizeAttendance } from './analytics';
 import { TOTAL_CAMPAIGN_DAYS } from './constants';
+import { splitOccupationAndAffiliation } from './utils';
 import * as XLSX from 'xlsx';
 
 const LOCAL_CONFIG_KEY = 'hff_sheets_buffer_config_v1';
@@ -32,6 +33,8 @@ export const SHEET_HEADERS = [
     'Age',
     'Phone / Contact',
     'Location / Zone',
+    'Occupation',
+    'Affiliation',
     'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12',
     'Total Days',
     'Books Received',
@@ -86,6 +89,8 @@ function recordToRow(r, sourceTabName) {
         if (present) totalDays++;
     }
 
+    const split = splitOccupationAndAffiliation(r.occupation, r.affiliation, r.meeting_place);
+
     return [
         String(r.uuid || ''),
         String(r.campaign_id || DEFAULT_CAMPAIGN.uuid),
@@ -99,6 +104,8 @@ function recordToRow(r, sourceTabName) {
         r.age !== undefined && r.age !== null ? String(r.age) : '',
         String(r.contact || ''),
         String(r.place || ''),
+        String(split.occupation || '').trim(),
+        String(split.affiliation || '').trim(),
         ...days,
         totalDays,
         r.books_received ? 'TRUE' : 'FALSE',
@@ -110,11 +117,20 @@ function recordToRow(r, sourceTabName) {
 }
 
 function rowToRecord(row) {
+    const isBoolStr = (val) => ['TRUE', 'FALSE'].includes(String(val || '').trim().toUpperCase());
+    const isLegacy30Col = row.length <= 30 && isBoolStr(row[12]) && isBoolStr(row[13]);
+    const dayStartIdx = isLegacy30Col ? 12 : 14;
+
     const attendance = [];
-    for (let i = 12; i < 24; i++) {
+    for (let i = dayStartIdx; i < dayStartIdx + 12; i++) {
         const v = String(row[i] || '').trim().toUpperCase();
         attendance.push(v === 'TRUE' || v === '1' || v === 'YES' || v === '✓');
     }
+
+    const rawOcc = isLegacy30Col ? '' : String(row[12] || '').trim();
+    const rawAff = isLegacy30Col ? '' : String(row[13] || '').trim();
+    const split = splitOccupationAndAffiliation(rawOcc, rawAff);
+
     return {
         uuid: String(row[0] || '').trim(),
         campaign_id: String(row[1] || DEFAULT_CAMPAIGN.uuid).trim(),
@@ -128,12 +144,14 @@ function rowToRecord(row) {
         age: row[9] !== '' && row[9] !== null && row[9] !== undefined ? Number(row[9]) || String(row[9]) : null,
         contact: String(row[10] || '').trim(),
         place: String(row[11] || '').trim(),
+        occupation: split.occupation,
+        affiliation: split.affiliation,
         attendance,
-        books_received: String(row[25] || '').trim().toUpperCase() === 'TRUE',
-        updated_by_name: String(row[26] || '').trim(),
-        updated_by_email: String(row[27] || '').trim(),
-        updated_at: String(row[28] || '').trim(),
-        source_tab: String(row[29] || '').trim()
+        books_received: String(row[dayStartIdx + 13] || '').trim().toUpperCase() === 'TRUE',
+        updated_by_name: String(row[dayStartIdx + 14] || '').trim(),
+        updated_by_email: String(row[dayStartIdx + 15] || '').trim(),
+        updated_at: String(row[dayStartIdx + 16] || '').trim(),
+        source_tab: String(row[dayStartIdx + 17] || '').trim()
     };
 }
 
@@ -187,13 +205,14 @@ async function ensureSheetTabDirect(spreadsheetId, accessToken, tabName, headerC
         }
     }
 
-    // Check if header row is populated
-    const hdrRange = `${tabName}!A1:AD1`;
+    // Check if header row is populated and matches 32-column schema (Occupation at index 12, Affiliation at index 13)
+    const hdrRange = `${tabName}!A1:AF1`;
     const hdrGet = await fetch(`${baseUrl}/values/${encodeURIComponent(hdrRange)}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
     }).then(r => r.json()).catch(() => ({}));
 
-    if (!hdrGet?.values || hdrGet.values.length === 0 || !hdrGet.values[0]?.[0]) {
+    const currentHeaders = hdrGet?.values?.[0] || [];
+    if (!currentHeaders[0] || currentHeaders[12] !== 'Occupation' || currentHeaders[13] !== 'Affiliation') {
         await fetch(`${baseUrl}/values/${encodeURIComponent(hdrRange)}?valueInputOption=RAW`, {
             method: 'PUT',
             headers: {
@@ -245,7 +264,7 @@ async function upsertProfileTabDirect(spreadsheetId, accessToken, tabName, recor
     await ensureSheetTabDirect(spreadsheetId, accessToken, safeTabName, '#4A154B');
 
     const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
-    const dataRange = `${safeTabName}!A2:AD2000`;
+    const dataRange = `${safeTabName}!A2:AF2000`;
 
     const existingResp = await fetch(`${baseUrl}/values/${encodeURIComponent(dataRange)}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
@@ -285,19 +304,23 @@ async function upsertProfileTabDirect(spreadsheetId, accessToken, tabName, recor
         const oldRow = existingByUuid.get(rec.uuid);
 
         if (oldRow) {
+            const oldRec = rowToRecord(oldRow);
+            if (!newRow[12] && oldRec.occupation) newRow[12] = oldRec.occupation;
+            if (!newRow[13] && oldRec.affiliation) newRow[13] = oldRec.affiliation;
             let totalDays = 0;
-            for (let d = 12; d < 24; d++) {
-                const oldPresent = String(oldRow[d] || '').toUpperCase() === 'TRUE';
-                const newPresent = String(newRow[d] || '').toUpperCase() === 'TRUE';
+            for (let dayIdx = 0; dayIdx < 12; dayIdx++) {
+                const colIdx = 14 + dayIdx;
+                const oldPresent = Boolean(oldRec.attendance?.[dayIdx]);
+                const newPresent = String(newRow[colIdx] || '').toUpperCase() === 'TRUE';
                 const merged = oldPresent || newPresent;
-                if (rec.last_attendance_mark && rec.last_attendance_mark.day_index === (d - 12) && rec.last_attendance_mark.value === false) {
-                    newRow[d] = 'FALSE';
+                if (rec.last_attendance_mark && rec.last_attendance_mark.day_index === dayIdx && rec.last_attendance_mark.value === false) {
+                    newRow[colIdx] = 'FALSE';
                 } else {
-                    newRow[d] = merged ? 'TRUE' : 'FALSE';
+                    newRow[colIdx] = merged ? 'TRUE' : 'FALSE';
                 }
-                if (newRow[d] === 'TRUE') totalDays++;
+                if (newRow[colIdx] === 'TRUE') totalDays++;
             }
-            newRow[24] = totalDays;
+            newRow[26] = totalDays;
             updated++;
         } else {
             inserted++;
@@ -366,7 +389,7 @@ async function reconcileAllProfileTabsDirect(spreadsheetId, accessToken, deleted
     const perTabStats = [];
 
     for (const pName of profileSheets) {
-        const range = `${pName}!A2:AD2000`;
+        const range = `${pName}!A2:AF2000`;
         const valResp = await fetch(`${baseUrl}/values/${encodeURIComponent(range)}`, {
             headers: { Authorization: `Bearer ${accessToken}` }
         }).then(r => r.json()).catch(() => ({}));
@@ -419,6 +442,8 @@ async function reconcileAllProfileTabsDirect(spreadsheetId, accessToken, deleted
                 existing.books_received = Boolean(existing.books_received || rec.books_received);
                 if (!existing.contact && rec.contact) existing.contact = rec.contact;
                 if (!existing.place && rec.place) existing.place = rec.place;
+                if (!existing.occupation && rec.occupation) existing.occupation = rec.occupation;
+                if (!existing.affiliation && rec.affiliation) existing.affiliation = rec.affiliation;
                 if (!existing.age && rec.age) existing.age = rec.age;
                 if (!existing.facilitator_uuid && rec.facilitator_uuid) existing.facilitator_uuid = rec.facilitator_uuid;
                 if (!existing.group_form_number && rec.group_form_number) existing.group_form_number = rec.group_form_number;
@@ -443,7 +468,7 @@ async function reconcileAllProfileTabsDirect(spreadsheetId, accessToken, deleted
         return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
     });
 
-    await fetch(`${baseUrl}/values/${encodeURIComponent(`${MASTER_TAB_NAME}!A2:AD3000`)}:clear`, {
+    await fetch(`${baseUrl}/values/${encodeURIComponent(`${MASTER_TAB_NAME}!A2:AF3000`)}:clear`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -874,6 +899,7 @@ export function exportMultiTabBufferWorkbook(registrations = [], profiles = []) 
 
     const toSheetRow = (r, sourceTab) => {
         const att = Array.isArray(r.attendance) ? r.attendance : Array(TOTAL_CAMPAIGN_DAYS).fill(false);
+        const split = splitOccupationAndAffiliation(r.occupation, r.affiliation, r.meeting_place);
         const rowObj = {
             'UUID': r.uuid || '',
             'Record Type': r.type || 'participant',
@@ -884,7 +910,9 @@ export function exportMultiTabBufferWorkbook(registrations = [], profiles = []) 
             'Gender': r.gender || 'F',
             'Age': r.age ?? '',
             'Contact': r.contact || '',
-            'Location': r.place || ''
+            'Location': r.place || '',
+            'Occupation': split.occupation || '',
+            'Affiliation': split.affiliation || ''
         };
         let total = 0;
         for (let d = 0; d < TOTAL_CAMPAIGN_DAYS; d++) {

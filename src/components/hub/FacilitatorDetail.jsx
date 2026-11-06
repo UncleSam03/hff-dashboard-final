@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/dexieDb';
-import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Trash2, Briefcase as OccupationIcon, Clock, FileText, Hash, X } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, MapPin, GraduationCap, Heart, Activity, Plus, Pencil, Trash2, Briefcase as OccupationIcon, Clock, FileText, Hash, X, Users } from 'lucide-react';
+import { cn, splitOccupationAndAffiliation } from '../../lib/utils';
 import { matchesPerson } from '../../lib/searchUtils';
 import { normalizeAttendance } from '../../lib/analytics';
 import ParticipantDetail from './ParticipantDetail';
@@ -144,20 +144,24 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
 
     const exportToCSV = () => {
         if (!participants) return;
-        const headers = ['ID', 'First Name', 'Last Name', 'Gender', 'Age', 'Place', 'Education', 'Marital Status', 'Occupation'];
+        const headers = ['ID', 'First Name', 'Last Name', 'Gender', 'Age', 'Place', 'Education', 'Marital Status', 'Occupation', 'Affiliation'];
         const csvContent = [
             headers.join(','),
-            ...participants.map(p => [
-                p.id,
-                p.first_name,
-                p.last_name,
-                p.gender,
-                p.age,
-                p.place || '',
-                p.education || '',
-                p.marital_status || '',
-                p.occupation || ''
-            ].map(v => `"${v}"`).join(','))
+            ...participants.map(p => {
+                const split = splitOccupationAndAffiliation(p.occupation, p.affiliation, p.meeting_place);
+                return [
+                    p.id,
+                    p.first_name,
+                    p.last_name,
+                    p.gender,
+                    p.age,
+                    p.place || '',
+                    p.education || '',
+                    p.marital_status || '',
+                    split.occupation || '',
+                    split.affiliation || ''
+                ].map(v => `"${v}"`).join(',');
+            })
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -268,7 +272,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search facilitator by name, form #, phone, meeting place/time..."
+                            placeholder="Search facilitator by name, affiliation, occupation, form #, phone..."
                             value={coFacSearchTerm}
                             onChange={(e) => setCoFacSearchTerm(e.target.value)}
                             className="w-full pl-12 pr-10 py-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-sm font-bold"
@@ -340,6 +344,8 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
         );
     }
 
+    const facSplit = splitOccupationAndAffiliation(facilitator.occupation, facilitator.affiliation, facilitator.meeting_place);
+
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
             {/* Action Bar / Header */}
@@ -385,6 +391,24 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                                         Form #{facilitator.form_number}
                                     </span>
                                 )}
+                                {facSplit.occupation && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-indigo-200/70">
+                                        <Briefcase size={11} className="text-indigo-600" />
+                                        {facSplit.occupation}
+                                    </span>
+                                )}
+                                {facSplit.affiliation && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-900 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-purple-200/70">
+                                        <Users size={11} className="text-[#71167F]" />
+                                        {facSplit.affiliation}
+                                    </span>
+                                )}
+                                {facSplit.meeting_place && facSplit.meeting_place !== facSplit.affiliation && (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-emerald-200/70">
+                                        <MapPin size={11} className="text-emerald-600" />
+                                        {facSplit.meeting_place}
+                                    </span>
+                                )}
                                 {facilitator.meeting_time && (
                                     <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-gray-200">
                                         <Clock size={11} className="text-[#71167F]" />
@@ -426,7 +450,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search by name, meeting place, form #, phone, date, time..."
+                            placeholder="Search by name, affiliation, occupation, form #, phone..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-8 py-2.5 rounded-xl bg-white border border-gray-100 outline-none focus:ring-2 focus:ring-[#71167F]/20 focus:border-[#71167F] transition-all text-xs font-bold shadow-sm"

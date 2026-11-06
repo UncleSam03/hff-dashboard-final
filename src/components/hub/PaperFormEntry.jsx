@@ -30,7 +30,7 @@ import {
     X,
     Hash
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, splitOccupationAndAffiliation } from '../../lib/utils';
 import { TOTAL_CAMPAIGN_FORMS, normalizeFormNumber } from '../../lib/formRangeManager';
 import { TOTAL_CAMPAIGN_DAYS } from '../../lib/constants';
 import { getProfileBufferTabName, pushProfileBufferToSheets } from '../../lib/sheetsBufferSync';
@@ -51,6 +51,16 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     const assignedEnd = profile?.form_range_end || 50;
 
     const [formNumber, setFormNumber] = useState(initialFormNumber || assignedStart);
+    const [unnumberedFacUuid, setUnnumberedFacUuid] = useState(null);
+    const [isNewUnnumberedForm, setIsNewUnnumberedForm] = useState(false);
+    const [formSearchQuery, setFormSearchQuery] = useState('');
+    const [isFormSearchOpen, setIsFormSearchOpen] = useState(false);
+    const [onlyUnnumberedInSearch, setOnlyUnnumberedInSearch] = useState(false);
+    const [highlightedParticipantKey, setHighlightedParticipantKey] = useState(null);
+    const formSearchContainerRef = useRef(null);
+
+    const isUnnumberedMode = Boolean(unnumberedFacUuid || isNewUnnumberedForm);
+
     const [selectedSprintId, setSelectedSprintId] = useState('sprint1');
     const [statusMessage, setStatusMessage] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -72,6 +82,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         contact: '',
         place: '',
         affiliation: '',
+        meetingPlace: '',
         meetingTime: '',
         education: '',
         maritalStatus: '',
@@ -83,6 +94,17 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
     const activeSprint = useMemo(() => 
         SPRINTS.find(s => s.id === selectedSprintId) || SPRINTS[0]
     , [selectedSprintId]);
+
+    // Close form search dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (formSearchContainerRef.current && !formSearchContainerRef.current.contains(e.target)) {
+                setIsFormSearchOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     function createEmptyRow(defaultPlace = '', defaultAffiliation = '') {
         return {
@@ -119,17 +141,92 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         return Array.from(set).sort();
     }, [campaignRegistrations]);
 
-    // Identify facilitator for the current form
+    // Lookup maps for fast form & facilitator resolution
+    const { facByUuid, facByFormNum, partCountByFormNum, linkedParticipantsByFacUuid, unnumberedFacilitators } = useMemo(() => {
+        const byUuid = new Map();
+        const byFormNum = new Map();
+        const countByForm = new Map();
+        const countByFacUuid = new Map();
+        const unnumberedFacs = [];
+
+        campaignRegistrations.forEach(r => {
+            if (r.type === 'facilitator') {
+                if (r.uuid) byUuid.set(r.uuid, r);
+                const fNum = normalizeFormNumber(r.form_number);
+                if (fNum) {
+                    if (!byFormNum.has(fNum)) byFormNum.set(fNum, r);
+                } else {
+                    unnumberedFacs.push(r);
+                }
+            }
+        });
+
+        campaignRegistrations.forEach(r => {
+            if (r.type === 'participant') {
+                if (r.facilitator_uuid) {
+                    countByFacUuid.set(r.facilitator_uuid, (countByFacUuid.get(r.facilitator_uuid) || 0) + 1);
+                }
+                const directNum = normalizeFormNumber(r.group_form_number || r.form_number);
+                const inheritedNum = (!directNum && r.facilitator_uuid && byUuid.get(r.facilitator_uuid))
+                    ? normalizeFormNumber(byUuid.get(r.facilitator_uuid).form_number)
+                    : null;
+                const effectiveNum = directNum || inheritedNum;
+                if (effectiveNum) {
+                    countByForm.set(effectiveNum, (countByForm.get(effectiveNum) || 0) + 1);
+                }
+            }
+        });
+
+        unnumberedFacs.sort((a, b) => {
+            const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+            const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
+            return aName.localeCompare(bName);
+        });
+
+        return {
+            facByUuid: byUuid,
+            facByFormNum: byFormNum,
+            partCountByFormNum: countByForm,
+            linkedParticipantsByFacUuid: countByFacUuid,
+            unnumberedFacilitators: unnumberedFacs
+        };
+    }, [campaignRegistrations]);
+
+    // Identify facilitator for the current form (numbered or unnumbered)
     const currentFacilitator = useMemo(() => {
+        if (isNewUnnumberedForm) return null;
+        if (unnumberedFacUuid) {
+            if (unnumberedFacUuid.startsWith('orphan-part:')) return null;
+            return campaignRegistrations.find(r =>
+                r.type === 'facilitator' && (
+                    r.uuid === unnumberedFacUuid ||
+                    `id:${r.id}` === unnumberedFacUuid ||
+                    String(r.id) === unnumberedFacUuid
+                )
+            ) || null;
+        }
         const num = normalizeFormNumber(formNumber);
         if (!num) return null;
         return campaignRegistrations.find(r => 
             r.type === 'facilitator' && normalizeFormNumber(r.form_number) === num
         ) || null;
-    }, [campaignRegistrations, formNumber]);
+    }, [campaignRegistrations, formNumber, unnumberedFacUuid, isNewUnnumberedForm]);
 
     // Existing participants already in DB for this form (either by group_form_number or linked facilitator_uuid)
     const existingParticipants = useMemo(() => {
+        if (isNewUnnumberedForm) return [];
+        if (unnumberedFacUuid) {
+            if (unnumberedFacUuid.startsWith('orphan-part:')) {
+                const partKey = unnumberedFacUuid.replace('orphan-part:', '');
+                return campaignRegistrations.filter(r =>
+                    r.type === 'participant' && (r.uuid === partKey || String(r.id) === partKey)
+                );
+            }
+            if (!currentFacilitator?.uuid) return [];
+            return campaignRegistrations.filter(r =>
+                r.type === 'participant' && r.facilitator_uuid === currentFacilitator.uuid
+            );
+        }
         const num = normalizeFormNumber(formNumber);
         if (!num) return [];
         return campaignRegistrations.filter(r => {
@@ -141,25 +238,143 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             }
             return false;
         });
-    }, [campaignRegistrations, formNumber, currentFacilitator]);
-
-    // Count linked participants per facilitator UUID for display in existing facilitator selector
-    const linkedParticipantsByFacUuid = useMemo(() => {
-        const counts = new Map();
-        campaignRegistrations.forEach(r => {
-            if (r.type === 'participant' && r.facilitator_uuid) {
-                counts.set(r.facilitator_uuid, (counts.get(r.facilitator_uuid) || 0) + 1);
-            }
-        });
-        return counts;
-    }, [campaignRegistrations]);
+    }, [campaignRegistrations, formNumber, currentFacilitator, unnumberedFacUuid, isNewUnnumberedForm]);
 
     // Count how many facilitators in the campaign do not have a form number assigned yet
-    const unassignedFacilitatorsCount = useMemo(() => {
-        return campaignRegistrations.filter(r => 
-            r.type === 'facilitator' && !normalizeFormNumber(r.form_number)
-        ).length;
-    }, [campaignRegistrations]);
+    const unassignedFacilitatorsCount = unnumberedFacilitators.length;
+
+    // Search results for the top "Search Form by Name" bar
+    const formSearchResults = useMemo(() => {
+        const q = formSearchQuery.trim();
+        const lowerQ = q.toLowerCase();
+
+        // 1. Matching Facilitators (both numbered and unnumbered)
+        let matchingFacs = campaignRegistrations.filter(r => r.type === 'facilitator');
+        if (onlyUnnumberedInSearch) {
+            matchingFacs = matchingFacs.filter(r => !normalizeFormNumber(r.form_number));
+        }
+        if (q) {
+            matchingFacs = matchingFacs.filter(r => matchesPerson(r, q, 'all'));
+        }
+
+        matchingFacs.sort((a, b) => {
+            const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+            const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
+            if (lowerQ) {
+                const aStarts = aName.startsWith(lowerQ) || (a.first_name || '').toLowerCase().startsWith(lowerQ) || (a.last_name || '').toLowerCase().startsWith(lowerQ);
+                const bStarts = bName.startsWith(lowerQ) || (b.first_name || '').toLowerCase().startsWith(lowerQ) || (b.last_name || '').toLowerCase().startsWith(lowerQ);
+                if (aStarts !== bStarts) return aStarts ? -1 : 1;
+            }
+            // When browsing without query, show unnumbered first if filter is on, otherwise sort by name
+            const aUnnum = !normalizeFormNumber(a.form_number);
+            const bUnnum = !normalizeFormNumber(b.form_number);
+            if (!lowerQ && aUnnum !== bUnnum) return aUnnum ? -1 : 1;
+            return aName.localeCompare(bName);
+        });
+
+        // 2. Matching Participants (when user searches by a participant's name on the form)
+        let matchingParts = [];
+        if (q) {
+            matchingParts = campaignRegistrations
+                .filter(r => {
+                    if (r.type !== 'participant') return false;
+                    const assignedFac = r.facilitator_uuid ? facByUuid.get(r.facilitator_uuid) : null;
+                    return matchesPerson({ ...r, assignedFacilitator: assignedFac }, q, 'all');
+                })
+                .map(p => {
+                    const directNum = normalizeFormNumber(p.group_form_number || p.form_number);
+                    const linkedFac = (p.facilitator_uuid && facByUuid.get(p.facilitator_uuid))
+                        || (directNum && facByFormNum.get(directNum))
+                        || null;
+                    const resolvedFormNum = directNum || (linkedFac ? normalizeFormNumber(linkedFac.form_number) : null);
+                    return {
+                        participant: p,
+                        facilitator: linkedFac,
+                        formNumber: resolvedFormNum
+                    };
+                });
+
+            if (onlyUnnumberedInSearch) {
+                matchingParts = matchingParts.filter(item => !item.formNumber);
+            }
+
+            matchingParts.sort((a, b) => {
+                const aName = `${a.participant.first_name || ''} ${a.participant.last_name || ''}`.trim().toLowerCase();
+                const bName = `${b.participant.first_name || ''} ${b.participant.last_name || ''}`.trim().toLowerCase();
+                const aStarts = aName.startsWith(lowerQ);
+                const bStarts = bName.startsWith(lowerQ);
+                if (aStarts !== bStarts) return aStarts ? -1 : 1;
+                return aName.localeCompare(bName);
+            });
+        }
+
+        return {
+            facilitators: matchingFacs.slice(0, 30),
+            participants: matchingParts.slice(0, 25),
+            totalFacilitators: matchingFacs.length,
+            totalParticipants: matchingParts.length
+        };
+    }, [campaignRegistrations, formSearchQuery, onlyUnnumberedInSearch, facByUuid, facByFormNum]);
+
+    // Switch to a numbered form
+    const handleSelectNumberedForm = (num, highlightPartKey = null) => {
+        const cleanNum = Math.max(1, Math.min(TOTAL_CAMPAIGN_FORMS, parseInt(num, 10) || 1));
+        setUnnumberedFacUuid(null);
+        setIsNewUnnumberedForm(false);
+        setFormNumber(cleanNum);
+        setHighlightedParticipantKey(highlightPartKey);
+        setIsFormSearchOpen(false);
+    };
+
+    // Open a facilitator's form from search (either numbered or unnumbered)
+    const handleOpenFacilitatorForm = (fac, highlightPartKey = null) => {
+        if (!fac) return;
+        const fNum = normalizeFormNumber(fac.form_number);
+        if (fNum) {
+            handleSelectNumberedForm(fNum, highlightPartKey);
+        } else {
+            const key = fac.uuid || `id:${fac.id}`;
+            setIsNewUnnumberedForm(false);
+            setUnnumberedFacUuid(key);
+            setHighlightedParticipantKey(highlightPartKey);
+            setIsFormSearchOpen(false);
+        }
+    };
+
+    // Open a form from a participant search result
+    const handleOpenParticipantForm = (item) => {
+        const partKey = item.participant.uuid || String(item.participant.id);
+        if (item.formNumber) {
+            handleSelectNumberedForm(item.formNumber, partKey);
+        } else if (item.facilitator) {
+            handleOpenFacilitatorForm(item.facilitator, partKey);
+        } else {
+            // Standalone unnumbered participant with no facilitator linked yet
+            setIsNewUnnumberedForm(false);
+            setUnnumberedFacUuid(`orphan-part:${partKey}`);
+            setHighlightedParticipantKey(partKey);
+            setIsFormSearchOpen(false);
+        }
+    };
+
+    // Start a brand-new unnumbered form
+    const handleStartNewUnnumberedForm = (prefillName = '') => {
+        setUnnumberedFacUuid(null);
+        setIsNewUnnumberedForm(true);
+        setHighlightedParticipantKey(null);
+        setIsFormSearchOpen(false);
+        resetBlankFacForm();
+        if (prefillName && prefillName.trim()) {
+            const parts = prefillName.trim().split(/\s+/);
+            setFacForm(prev => ({
+                ...prev,
+                firstName: parts[0] || '',
+                lastName: parts.slice(1).join(' ') || ''
+            }));
+        }
+        setFacilitatorModalMode('create');
+        setShowFacilitatorModal(true);
+    };
 
     // Filtered & sorted existing facilitators (and optionally participants) for assigning Form #
     const facilitatorCandidates = useMemo(() => {
@@ -210,12 +425,16 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         isDirty: false
     });
 
-    // When formNumber changes, preload any existing participants or prepare a fresh draft row.
-    // If existingParticipants updates in the background for the SAME formNumber, preserve unsaved drafts & dirty edits!
+    // When active form (numbered or unnumbered) changes, preload any existing participants or prepare a fresh draft row.
+    // If existingParticipants updates in the background for the SAME form, preserve unsaved drafts & dirty edits!
     useEffect(() => {
-        const num = normalizeFormNumber(formNumber);
-        const formChanged = loadedFormRef.current !== num;
-        loadedFormRef.current = num;
+        const activeFormKey = isNewUnnumberedForm
+            ? 'unnumbered:new'
+            : unnumberedFacUuid
+                ? `unnumbered:${unnumberedFacUuid}`
+                : `num:${normalizeFormNumber(formNumber)}`;
+        const formChanged = loadedFormRef.current !== activeFormKey;
+        loadedFormRef.current = activeFormKey;
 
         if (formChanged) {
             if (existingParticipants.length > 0) {
@@ -224,12 +443,14 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 setDraftRows([createEmptyRow(currentFacilitator?.place, currentFacilitator?.affiliation)]);
             }
             setStatusMessage(null);
-            setShowFacilitatorModal(false);
+            if (!isNewUnnumberedForm) {
+                setShowFacilitatorModal(false);
+            }
             setFacSearchQuery('');
             return;
         }
 
-        // Same formNumber, background update of existingParticipants:
+        // Same form, background update of existingParticipants:
         setDraftRows(prev => {
             const unsavedDrafts = prev.filter(r => !r.isExisting && (
                 r.firstName.trim() || r.lastName.trim() || r.contact.trim() || String(r.age).trim() ||
@@ -256,7 +477,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             const blankDrafts = prev.filter(r => !r.isExisting);
             return blankDrafts.length > 0 ? blankDrafts : [createEmptyRow(currentFacilitator?.place, currentFacilitator?.affiliation)];
         });
-    }, [formNumber, existingParticipants, currentFacilitator]);
+    }, [formNumber, unnumberedFacUuid, isNewUnnumberedForm, existingParticipants, currentFacilitator]);
 
     // Add a new row to draft
     const handleAddRow = () => {
@@ -349,6 +570,11 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
 
     const populateFacFormFromCurrent = () => {
         if (currentFacilitator) {
+            const split = splitOccupationAndAffiliation(
+                currentFacilitator.occupation || '',
+                currentFacilitator.affiliation || '',
+                currentFacilitator.meeting_place || ''
+            );
             setFacForm({
                 firstName: currentFacilitator.first_name || '',
                 lastName: currentFacilitator.last_name || '',
@@ -356,11 +582,12 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 gender: currentFacilitator.gender || 'F',
                 contact: currentFacilitator.contact || '',
                 place: currentFacilitator.place || '',
-                affiliation: currentFacilitator.affiliation || '',
+                affiliation: split.affiliation,
+                meetingPlace: split.meeting_place,
                 meetingTime: currentFacilitator.meeting_time || '',
                 education: currentFacilitator.education || '',
                 maritalStatus: currentFacilitator.marital_status || '',
-                occupation: currentFacilitator.occupation || '',
+                occupation: split.occupation,
                 participantsCount: currentFacilitator.participants_count ?? 10,
                 booksDistributed: currentFacilitator.books_distributed ?? 0
             });
@@ -376,6 +603,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             contact: '',
             place: '',
             affiliation: '',
+            meetingPlace: '',
             meetingTime: '',
             education: '',
             maritalStatus: '',
@@ -409,10 +637,71 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         setFacilitatorModalMode(mode);
     };
 
-    // Assign Form # to an existing facilitator (or promote participant to facilitator)
+    // Assign Form # to an existing facilitator (or open/link in unnumbered mode)
     const handleAssignExistingFacilitator = async (selectedFac) => {
+        if (!selectedFac?.id) return;
+
+        // If user is in unnumbered mode, selecting an existing facilitator switches to or links that facilitator without requiring a form number
+        if (isUnnumberedMode) {
+            const now = new Date().toISOString();
+            const adminName = profile?.full_name || user?.displayName || user?.email || 'Admin';
+            const targetFacUuid = selectedFac.uuid || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36)));
+
+            try {
+                await db.transaction('rw', db.registrations, async () => {
+                    await db.registrations.update(selectedFac.id, {
+                        uuid: targetFacUuid,
+                        type: 'facilitator',
+                        teaching_group: true,
+                        is_daily_core: true,
+                        sync_status: 'pending',
+                        updated_at: now,
+                        updated_by_uid: user?.uid || null,
+                        updated_by_name: adminName,
+                        updated_by_email: user?.email || null,
+                    });
+
+                    // If we were viewing an orphan participant, link them to this facilitator
+                    if (unnumberedFacUuid && unnumberedFacUuid.startsWith('orphan-part:')) {
+                        const partKey = unnumberedFacUuid.replace('orphan-part:', '');
+                        const orphanRec = campaignRegistrations.find(r =>
+                            r.type === 'participant' && (r.uuid === partKey || String(r.id) === partKey)
+                        );
+                        if (orphanRec?.id) {
+                            await db.registrations.update(orphanRec.id, {
+                                facilitator_uuid: targetFacUuid,
+                                sync_status: 'pending',
+                                updated_at: now,
+                            });
+                        }
+                    }
+                });
+
+                window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
+                pushProfileBufferToSheets({ profile, user }).catch(() => {});
+                setShowFacilitatorModal(false);
+                setFacSearchQuery('');
+
+                const existingFacNum = normalizeFormNumber(selectedFac.form_number);
+                if (existingFacNum) {
+                    handleSelectNumberedForm(existingFacNum);
+                } else {
+                    setIsNewUnnumberedForm(false);
+                    setUnnumberedFacUuid(targetFacUuid);
+                }
+                setStatusMessage({
+                    type: 'success',
+                    text: `Opened form for ${selectedFac.first_name} ${selectedFac.last_name}!`
+                });
+            } catch (err) {
+                console.error('[PaperFormEntry] Error selecting facilitator in unnumbered mode:', err);
+                alert('Failed to link facilitator: ' + err.message);
+            }
+            return;
+        }
+
         const num = normalizeFormNumber(formNumber);
-        if (!num || !selectedFac?.id) return;
+        if (!num) return;
 
         const existingFacNum = normalizeFormNumber(selectedFac.form_number);
         if (existingFacNum && existingFacNum !== num) {
@@ -521,7 +810,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         const num = normalizeFormNumber(formNumber);
         if (!num || !currentFacilitator?.id) return;
         const ok = window.confirm(
-            `Unlink ${currentFacilitator.first_name} ${currentFacilitator.last_name} from Form #${num}?\n\nTheir facilitator record will remain in the database without a form number.`
+            `Unlink ${currentFacilitator.first_name} ${currentFacilitator.last_name} from Form #${num}?\n\nTheir facilitator record will remain in the database as an unnumbered form.`
         );
         if (!ok) return;
 
@@ -548,11 +837,11 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         }
     };
 
-    // Handle Quick Facilitator Creation or Update
+    // Handle Quick Facilitator Creation or Update (supports both numbered and unnumbered forms)
     const handleCreateFacilitator = async (e) => {
         e.preventDefault();
-        const num = normalizeFormNumber(formNumber);
-        if (!num) return;
+        const num = isUnnumberedMode ? null : normalizeFormNumber(formNumber);
+        if (!isUnnumberedMode && !num) return;
         if (!facForm.firstName.trim() || !facForm.lastName.trim()) {
             alert('Please provide facilitator first and last name.');
             return;
@@ -560,6 +849,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
 
         const now = new Date().toISOString();
         const adminName = profile?.full_name || user?.displayName || user?.email || 'Admin';
+        const split = splitOccupationAndAffiliation(facForm.occupation, facForm.affiliation, facForm.meetingPlace);
         const payload = {
             first_name: facForm.firstName.trim(),
             last_name: facForm.lastName.trim(),
@@ -567,16 +857,17 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             gender: facForm.gender || 'F',
             contact: facForm.contact.trim() || '',
             place: facForm.place.trim() || '',
-            affiliation: facForm.affiliation.trim() || '',
+            affiliation: split.affiliation.trim() || '',
+            meeting_place: split.meeting_place.trim() || '',
             meeting_time: facForm.meetingTime.trim() || '',
             education: facForm.education || '',
             marital_status: facForm.maritalStatus || '',
-            occupation: facForm.occupation.trim() || '',
+            occupation: split.occupation.trim() || '',
             participants_count: parseInt(facForm.participantsCount, 10) || 10,
             books_distributed: parseInt(facForm.booksDistributed, 10) || 0,
             teaching_group: true,
             type: 'facilitator',
-            form_number: String(num),
+            form_number: isUnnumberedMode ? '' : String(num),
             campaign_id: activeCampId,
             is_daily_core: true,
             sync_status: 'pending',
@@ -584,18 +875,24 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         };
 
         try {
+            let savedFacUuid = currentFacilitator?.uuid || null;
+
             await db.transaction('rw', db.registrations, async () => {
                 let targetFacUuid = currentFacilitator?.uuid;
 
                 if (facilitatorModalMode === 'edit' && currentFacilitator?.id) {
+                    if (!targetFacUuid) {
+                        targetFacUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36));
+                    }
                     await db.registrations.update(currentFacilitator.id, {
                         ...payload,
+                        uuid: targetFacUuid,
                         updated_by_uid: user?.uid || null,
                         updated_by_name: adminName,
                         updated_by_email: user?.email || null,
                     });
                 } else {
-                    if (currentFacilitator?.id) {
+                    if (!isUnnumberedMode && currentFacilitator?.id) {
                         await db.registrations.update(currentFacilitator.id, {
                             form_number: '',
                             sync_status: 'pending',
@@ -617,8 +914,10 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                     });
                 }
 
-                // Link any participants already on Form #num to this facilitator
-                if (targetFacUuid) {
+                savedFacUuid = targetFacUuid;
+
+                // Link any participants already on Form #num (or orphan participant in unnumbered mode) to this facilitator
+                if (targetFacUuid && !isUnnumberedMode && num) {
                     for (const r of campaignRegistrations) {
                         if (r.type === 'participant' && r.id && normalizeFormNumber(r.group_form_number || r.form_number) === num && r.facilitator_uuid !== targetFacUuid) {
                             await db.registrations.update(r.id, {
@@ -628,24 +927,67 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                             });
                         }
                     }
+                } else if (targetFacUuid && isUnnumberedMode && unnumberedFacUuid?.startsWith('orphan-part:')) {
+                    const partKey = unnumberedFacUuid.replace('orphan-part:', '');
+                    const orphanRec = campaignRegistrations.find(r =>
+                        r.type === 'participant' && (r.uuid === partKey || String(r.id) === partKey)
+                    );
+                    if (orphanRec?.id) {
+                        await db.registrations.update(orphanRec.id, {
+                            facilitator_uuid: targetFacUuid,
+                            sync_status: 'pending',
+                            updated_at: now,
+                        });
+                    }
                 }
             });
+
+            if (isUnnumberedMode && savedFacUuid) {
+                setIsNewUnnumberedForm(false);
+                setUnnumberedFacUuid(savedFacUuid);
+            }
+
+            // Update default place/affiliation on any blank draft rows
+            setDraftRows(prev => prev.map(r => {
+                if (!r.isExisting && !r.firstName.trim() && !r.lastName.trim()) {
+                    return {
+                        ...r,
+                        place: r.place || payload.place || '',
+                        affiliation: r.affiliation || payload.affiliation || ''
+                    };
+                }
+                return r;
+            }));
 
             window.dispatchEvent(new CustomEvent('hff-firebase-sync-request'));
             pushProfileBufferToSheets({ profile, user }).catch(() => {});
             setShowFacilitatorModal(false);
-            setStatusMessage({ type: 'success', text: `Facilitator saved for Form #${num}!` });
+            setStatusMessage({
+                type: 'success',
+                text: isUnnumberedMode
+                    ? `Unnumbered form facilitator (${payload.first_name} ${payload.last_name}) saved!`
+                    : `Facilitator saved for Form #${num}!`
+            });
         } catch (err) {
             console.error('[PaperFormEntry] Error saving facilitator:', err);
             alert('Failed to save facilitator: ' + err.message);
         }
     };
 
-    // Save entire form and all its participants
+    // Save entire form and all its participants (supports both numbered and unnumbered forms)
     const handleSaveForm = async (andAdvance = false) => {
-        const num = normalizeFormNumber(formNumber);
-        if (!num) {
-            setStatusMessage({ type: 'error', text: `Please enter a valid form number (1 to ${TOTAL_CAMPAIGN_FORMS}).` });
+        const num = isUnnumberedMode ? null : normalizeFormNumber(formNumber);
+        if (!isUnnumberedMode && !num) {
+            setStatusMessage({ type: 'error', text: `Please enter a valid form number (1 to ${TOTAL_CAMPAIGN_FORMS}), or use Search / Unnumbered Form mode.` });
+            return;
+        }
+
+        if (isUnnumberedMode && !currentFacilitator && !unnumberedFacUuid?.startsWith('orphan-part:')) {
+            setStatusMessage({
+                type: 'warning',
+                text: 'Please register or select the facilitator for this unnumbered form first so it can be searched by name.'
+            });
+            openFacilitatorModal('create');
             return;
         }
 
@@ -661,9 +1003,22 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         let writtenCount = 0;
 
         try {
+            let ensuredFacUuid = currentFacilitator?.uuid || null;
+
             await db.transaction('rw', db.registrations, async () => {
+                // Ensure unnumbered facilitator has a valid UUID so participants stay linked
+                if (currentFacilitator?.id && !ensuredFacUuid) {
+                    ensuredFacUuid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : ('fac-' + Date.now().toString(36));
+                    await db.registrations.update(currentFacilitator.id, {
+                        uuid: ensuredFacUuid,
+                        sync_status: 'pending',
+                        updated_at: now
+                    });
+                }
+
                 for (const row of validRows) {
-                    const targetFacUuid = currentFacilitator?.uuid || row.facilitator_uuid || null;
+                    const targetFacUuid = ensuredFacUuid || row.facilitator_uuid || null;
+                    const splitRow = splitOccupationAndAffiliation(row.occupation, row.affiliation);
                     const recordData = {
                         first_name: row.firstName.trim(),
                         last_name: row.lastName.trim(),
@@ -673,11 +1028,11 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                         place: row.place?.trim() || currentFacilitator?.place || null,
                         education: row.education || null,
                         marital_status: row.maritalStatus || null,
-                        occupation: row.occupation?.trim() || null,
-                        affiliation: row.affiliation?.trim() || currentFacilitator?.affiliation || null,
+                        occupation: splitRow.occupation?.trim() || null,
+                        affiliation: splitRow.affiliation?.trim() || currentFacilitator?.affiliation || null,
                         books_received: Boolean(row.booksReceived),
                         type: 'participant',
-                        group_form_number: String(num),
+                        group_form_number: isUnnumberedMode ? '' : String(num),
                         facilitator_uuid: targetFacUuid,
                         attendance: Array.isArray(row.attendance) ? row.attendance : Array(TOTAL_CAMPAIGN_DAYS).fill(false),
                         campaign_id: activeCampId,
@@ -711,6 +1066,10 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 }
             });
 
+            if (isUnnumberedMode && ensuredFacUuid && unnumberedFacUuid !== ensuredFacUuid) {
+                setUnnumberedFacUuid(ensuredFacUuid);
+            }
+
             // Clear dirty flags locally so subsequent saves don't re-push
             setDraftRows(prev => prev.map(r => ({ ...r, isDirty: false })));
 
@@ -723,15 +1082,32 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 });
             }
 
+            const formLabel = isUnnumberedMode
+                ? `Unnumbered form${currentFacilitator ? ` (${currentFacilitator.first_name} ${currentFacilitator.last_name})` : ''}`
+                : `Form #${num}`;
+
             setStatusMessage({ 
                 type: 'success', 
-                text: `Form #${num} saved successfully (${validRows.length} participants) — synced to ${getProfileBufferTabName(profile, user)}!` 
+                text: `${formLabel} saved successfully (${validRows.length} participants) — synced to ${getProfileBufferTabName(profile, user)}!` 
             });
 
-            if (andAdvance && num < TOTAL_CAMPAIGN_FORMS) {
-                setTimeout(() => {
-                    setFormNumber(num + 1);
-                }, 400);
+            if (andAdvance) {
+                if (isUnnumberedMode) {
+                    // Advance to next unnumbered facilitator if available
+                    const idx = unnumberedFacilitators.findIndex(f =>
+                        (f.uuid && f.uuid === unnumberedFacUuid) || `id:${f.id}` === unnumberedFacUuid
+                    );
+                    if (idx >= 0 && idx + 1 < unnumberedFacilitators.length) {
+                        const nextFac = unnumberedFacilitators[idx + 1];
+                        setTimeout(() => {
+                            handleOpenFacilitatorForm(nextFac);
+                        }, 400);
+                    }
+                } else if (num < TOTAL_CAMPAIGN_FORMS) {
+                    setTimeout(() => {
+                        handleSelectNumberedForm(num + 1);
+                    }, 400);
+                }
             }
         } catch (err) {
             console.error('[PaperFormEntry] Error saving form:', err);
@@ -757,6 +1133,10 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
         }
     };
 
+    const activeFormTitle = isUnnumberedMode
+        ? (currentFacilitator ? `${currentFacilitator.first_name} ${currentFacilitator.last_name}'s Form (Unnumbered)` : 'Unnumbered Form')
+        : `Form #${formNumber}`;
+
     return (
         <div className="space-y-6 max-w-[1600px] mx-auto pb-12 animate-in fade-in duration-300">
             <datalist id="paper-known-places-list">
@@ -766,90 +1146,446 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
             </datalist>
 
             {/* Top Control Bar */}
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#71167F]/10 text-[#71167F] flex items-center justify-center shrink-0">
-                        <FileText size={26} />
-                    </div>
-                    <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#71167F]">
-                                Field Form Transcription
-                            </span>
-                            <span className="text-gray-300">•</span>
-                            <span className="text-xs font-bold text-gray-500">
-                                Assigned Range: Forms <strong className="text-gray-900">{assignedStart}–{assignedEnd}</strong>
-                            </span>
-                            <span className="text-gray-300">•</span>
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black">
-                                Sheet Tab: {getProfileBufferTabName(profile, user)}
-                            </span>
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[#71167F]/10 text-[#71167F] flex items-center justify-center shrink-0">
+                            <FileText size={26} />
                         </div>
-                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                            Paper Form Batch Entry
-                        </h2>
+                        <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[#71167F]">
+                                    Field Form Transcription
+                                </span>
+                                <span className="text-gray-300">•</span>
+                                <span className="text-xs font-bold text-gray-500">
+                                    Assigned Range: Forms <strong className="text-gray-900">{assignedStart}–{assignedEnd}</strong>
+                                </span>
+                                <span className="text-gray-300">•</span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black">
+                                    Sheet Tab: {getProfileBufferTabName(profile, user)}
+                                </span>
+                            </div>
+                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                                Paper Form Batch Entry
+                            </h2>
+                        </div>
+                    </div>
+
+                    {/* Form Navigation Controls */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button
+                            onClick={() => {
+                                if (isUnnumberedMode) {
+                                    const idx = unnumberedFacilitators.findIndex(f =>
+                                        (f.uuid && f.uuid === unnumberedFacUuid) || `id:${f.id}` === unnumberedFacUuid
+                                    );
+                                    if (idx > 0) {
+                                        handleOpenFacilitatorForm(unnumberedFacilitators[idx - 1]);
+                                    } else {
+                                        handleSelectNumberedForm(formNumber);
+                                    }
+                                } else {
+                                    handleSelectNumberedForm(Math.max(1, formNumber - 1));
+                                }
+                            }}
+                            disabled={!isUnnumberedMode && formNumber <= 1}
+                            className="p-3 rounded-2xl bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition-all"
+                            title={isUnnumberedMode ? "Previous Unnumbered Form" : "Previous Form"}
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+
+                        {isUnnumberedMode ? (
+                            <div className="flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-2xl border border-purple-200">
+                                <span className="px-2 py-0.5 rounded-lg bg-[#71167F] text-white text-[10px] font-black uppercase tracking-wider">
+                                    Unnumbered Form
+                                </span>
+                                <span className="text-xs font-black text-gray-900 truncate max-w-[180px]">
+                                    {currentFacilitator
+                                        ? `${currentFacilitator.first_name} ${currentFacilitator.last_name}`
+                                        : 'New Unnumbered'}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSelectNumberedForm(formNumber)}
+                                    className="ml-1 px-2 py-1 rounded-lg bg-white border border-purple-200 text-[10px] font-black text-[#71167F] hover:bg-purple-100 transition-colors"
+                                    title="Switch back to numbered forms"
+                                >
+                                    Form #{formNumber}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-200">
+                                <span className="text-xs font-black uppercase text-gray-400">Form #</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={TOTAL_CAMPAIGN_FORMS}
+                                    value={formNumber}
+                                    onChange={(e) => handleSelectNumberedForm(parseInt(e.target.value, 10) || 1)}
+                                    className="w-16 bg-white border border-gray-200 rounded-xl px-2 py-1 text-center font-black text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                                <span className="text-xs font-bold text-gray-400">/ {TOTAL_CAMPAIGN_FORMS}</span>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => {
+                                if (isUnnumberedMode) {
+                                    const idx = unnumberedFacilitators.findIndex(f =>
+                                        (f.uuid && f.uuid === unnumberedFacUuid) || `id:${f.id}` === unnumberedFacUuid
+                                    );
+                                    if (idx >= 0 && idx + 1 < unnumberedFacilitators.length) {
+                                        handleOpenFacilitatorForm(unnumberedFacilitators[idx + 1]);
+                                    }
+                                } else {
+                                    handleSelectNumberedForm(Math.min(TOTAL_CAMPAIGN_FORMS, formNumber + 1));
+                                }
+                            }}
+                            disabled={isUnnumberedMode
+                                ? unnumberedFacilitators.findIndex(f => (f.uuid && f.uuid === unnumberedFacUuid) || `id:${f.id}` === unnumberedFacUuid) >= unnumberedFacilitators.length - 1
+                                : formNumber >= TOTAL_CAMPAIGN_FORMS}
+                            className="p-3 rounded-2xl bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition-all"
+                            title={isUnnumberedMode ? "Next Unnumbered Form" : "Next Form"}
+                        >
+                            <ChevronRight size={20} />
+                        </button>
+
+                        {/* Sprint Selector */}
+                        <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200">
+                            {SPRINTS.map(sprint => (
+                                <button
+                                    key={sprint.id}
+                                    onClick={() => setSelectedSprintId(sprint.id)}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-xl text-xs font-black transition-all",
+                                        selectedSprintId === sprint.id
+                                            ? "bg-white text-[#71167F] shadow-sm"
+                                            : "text-gray-500 hover:text-gray-900"
+                                    )}
+                                >
+                                    {sprint.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {isMasterAdmin && onNavigateToAdminAudit && (
+                            <button
+                                onClick={onNavigateToAdminAudit}
+                                className="px-4 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200/60 font-black text-xs hover:bg-amber-100 transition-all flex items-center gap-1.5"
+                            >
+                                <Shield size={14} className="text-amber-600" />
+                                <span>Master Form Audit</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                {/* Form Navigation Controls */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <button
-                        onClick={() => setFormNumber(prev => Math.max(1, prev - 1))}
-                        disabled={formNumber <= 1}
-                        className="p-3 rounded-2xl bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition-all"
-                        title="Previous Form"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
+                {/* Search Form by Name Bar (Supports both Numbered & Unnumbered Forms) */}
+                <div ref={formSearchContainerRef} className="relative pt-3 border-t border-gray-100">
+                    <div className="flex flex-col md:flex-row md:items-center gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71167F]" />
+                            <input
+                                type="text"
+                                value={formSearchQuery}
+                                onFocus={() => setIsFormSearchOpen(true)}
+                                onChange={(e) => {
+                                    setFormSearchQuery(e.target.value);
+                                    setIsFormSearchOpen(true);
+                                }}
+                                placeholder="Search form by Facilitator Name, Participant Name, Village/Ward, Phone, or Form #..."
+                                className="w-full pl-11 pr-10 py-2.5 bg-gray-50/90 border border-gray-200 rounded-2xl text-sm font-bold text-gray-900 placeholder:text-gray-400 placeholder:font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F] focus:bg-white transition-all"
+                            />
+                            {formSearchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFormSearchQuery('');
+                                        setIsFormSearchOpen(true);
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
+                                    title="Clear search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
 
-                    <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-200">
-                        <span className="text-xs font-black uppercase text-gray-400">Form #</span>
-                        <input
-                            type="number"
-                            min="1"
-                            max={TOTAL_CAMPAIGN_FORMS}
-                            value={formNumber}
-                            onChange={(e) => setFormNumber(parseInt(e.target.value, 10) || 1)}
-                            className="w-16 bg-white border border-gray-200 rounded-xl px-2 py-1 text-center font-black text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-[#71167F]"
-                        />
-                        <span className="text-xs font-bold text-gray-400">/ {TOTAL_CAMPAIGN_FORMS}</span>
-                    </div>
-
-                    <button
-                        onClick={() => setFormNumber(prev => Math.min(TOTAL_CAMPAIGN_FORMS, prev + 1))}
-                        disabled={formNumber >= TOTAL_CAMPAIGN_FORMS}
-                        className="p-3 rounded-2xl bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition-all"
-                        title="Next Form"
-                    >
-                        <ChevronRight size={20} />
-                    </button>
-
-                    {/* Sprint Selector */}
-                    <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200">
-                        {SPRINTS.map(sprint => (
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <button
-                                key={sprint.id}
-                                onClick={() => setSelectedSprintId(sprint.id)}
+                                type="button"
+                                onClick={() => {
+                                    setOnlyUnnumberedInSearch(prev => !prev);
+                                    setIsFormSearchOpen(true);
+                                }}
                                 className={cn(
-                                    "px-3 py-1.5 rounded-xl text-xs font-black transition-all",
-                                    selectedSprintId === sprint.id
-                                        ? "bg-white text-[#71167F] shadow-sm"
-                                        : "text-gray-500 hover:text-gray-900"
+                                    "px-3.5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border transition-all",
+                                    onlyUnnumberedInSearch
+                                        ? "bg-[#71167F] text-white border-[#71167F] shadow-sm"
+                                        : "bg-purple-50/70 text-[#71167F] border-purple-200 hover:bg-purple-100/80"
                                 )}
+                                title="Browse or filter forms that do not have a form number assigned"
                             >
-                                {sprint.label}
+                                <FileText size={14} />
+                                <span>Unnumbered Forms</span>
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded-full text-[10px] font-black",
+                                    onlyUnnumberedInSearch ? "bg-white/20 text-white" : "bg-[#71167F]/15 text-[#71167F]"
+                                )}>
+                                    {unassignedFacilitatorsCount}
+                                </span>
                             </button>
-                        ))}
+
+                            <button
+                                type="button"
+                                onClick={() => handleStartNewUnnumberedForm(formSearchQuery)}
+                                className="px-3.5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-[#71167F]/40 transition-all"
+                                title="Start entering a paper form that does not have a form number"
+                            >
+                                <Plus size={14} className="text-[#71167F]" />
+                                <span>New Unnumbered Form</span>
+                            </button>
+                        </div>
                     </div>
 
-                    {isMasterAdmin && onNavigateToAdminAudit && (
-                        <button
-                            onClick={onNavigateToAdminAudit}
-                            className="px-4 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200/60 font-black text-xs hover:bg-amber-100 transition-all flex items-center gap-1.5"
-                        >
-                            <Shield size={14} className="text-amber-600" />
-                            <span>Master Form Audit</span>
-                        </button>
+                    {/* Search Dropdown Panel */}
+                    {isFormSearchOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-3xl border border-gray-200 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                            <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+                                    <span>
+                                        {formSearchQuery.trim()
+                                            ? `Search results for "${formSearchQuery.trim()}"`
+                                            : onlyUnnumberedInSearch
+                                                ? `Unnumbered Forms (${formSearchResults.totalFacilitators})`
+                                                : `All Facilitators & Forms (${formSearchResults.totalFacilitators})`}
+                                    </span>
+                                    {onlyUnnumberedInSearch && (
+                                        <span className="px-2 py-0.5 rounded-full bg-purple-100 text-[#71167F] text-[10px] font-black uppercase">
+                                            Unnumbered Only
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={onlyUnnumberedInSearch}
+                                            onChange={e => setOnlyUnnumberedInSearch(e.target.checked)}
+                                            className="rounded border-gray-300 text-[#71167F] focus:ring-[#71167F]"
+                                        />
+                                        <span>Only unnumbered forms</span>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsFormSearchOpen(false)}
+                                        className="text-xs font-bold text-gray-400 hover:text-gray-700"
+                                    >
+                                        Close ✕
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="max-h-96 overflow-y-auto divide-y divide-gray-100">
+                                {formSearchResults.facilitators.length === 0 && formSearchResults.participants.length === 0 ? (
+                                    <div className="p-8 text-center space-y-3">
+                                        <p className="text-sm font-bold text-gray-700">
+                                            No forms, facilitators, or participants found{formSearchQuery.trim() ? ` matching "${formSearchQuery.trim()}"` : ''}.
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            If this is a new unnumbered paper form, you can create and transcribe it directly by name.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleStartNewUnnumberedForm(formSearchQuery)}
+                                            className="px-4 py-2 rounded-xl bg-[#71167F] text-white text-xs font-black uppercase tracking-wider hover:bg-[#5a1166] inline-flex items-center gap-1.5 shadow-sm"
+                                        >
+                                            <UserPlus size={14} />
+                                            <span>
+                                                {formSearchQuery.trim()
+                                                    ? `Create Unnumbered Form for "${formSearchQuery.trim()}"`
+                                                    : 'Create New Unnumbered Form'}
+                                            </span>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Facilitators / Forms Section */}
+                                        {formSearchResults.facilitators.length > 0 && (
+                                            <div>
+                                                <div className="px-4 py-1.5 bg-gray-50/70 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                                                    Facilitators / Forms ({formSearchResults.totalFacilitators})
+                                                </div>
+                                                <div className="divide-y divide-gray-50">
+                                                    {formSearchResults.facilitators.map(fac => {
+                                                        const fNum = normalizeFormNumber(fac.form_number);
+                                                        const partCount = fNum
+                                                            ? (partCountByFormNum.get(fNum) || (fac.uuid ? linkedParticipantsByFacUuid.get(fac.uuid) || 0 : 0))
+                                                            : (fac.uuid ? linkedParticipantsByFacUuid.get(fac.uuid) || 0 : 0);
+
+                                                        return (
+                                                            <div
+                                                                key={fac.uuid || fac.id}
+                                                                onClick={() => handleOpenFacilitatorForm(fac)}
+                                                                className="px-4 py-3 hover:bg-purple-50/60 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                                                            >
+                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                    <div className={cn(
+                                                                        "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black",
+                                                                        fNum
+                                                                            ? "bg-emerald-100 text-emerald-800"
+                                                                            : "bg-purple-100 text-[#71167F]"
+                                                                    )}>
+                                                                        {fNum ? `#${fNum}` : <User size={16} />}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="flex flex-wrap items-center gap-2">
+                                                                            <span className="font-black text-gray-900 text-sm">
+                                                                                {fac.first_name} {fac.last_name}
+                                                                            </span>
+                                                                            {fNum ? (
+                                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-emerald-100 text-emerald-800">
+                                                                                    Form #{fNum}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#71167F]">
+                                                                                    Unnumbered Form
+                                                                                </span>
+                                                                            )}
+                                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700">
+                                                                                {partCount} participant{partCount === 1 ? '' : 's'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 font-semibold mt-0.5">
+                                                                            {fac.place && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <MapPin size={11} className="text-gray-400" />
+                                                                                    {fac.place}
+                                                                                </span>
+                                                                            )}
+                                                                            {fac.affiliation && (
+                                                                                <span className="flex items-center gap-1 text-[#71167F]">
+                                                                                    <Sparkles size={11} />
+                                                                                    {fac.affiliation}
+                                                                                </span>
+                                                                            )}
+                                                                            {fac.contact && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Phone size={11} className="text-gray-400" />
+                                                                                    {fac.contact}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                                                    {!fNum && !isUnnumberedMode && !currentFacilitator && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleAssignExistingFacilitator(fac);
+                                                                                setIsFormSearchOpen(false);
+                                                                            }}
+                                                                            className="px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100 text-[10px] font-black uppercase tracking-wider"
+                                                                            title={`Assign ${fac.first_name} ${fac.last_name} to Form #${formNumber}`}
+                                                                        >
+                                                                            Assign Form #{formNumber}
+                                                                        </button>
+                                                                    )}
+                                                                    <span className="px-3 py-1.5 rounded-xl bg-[#71167F]/10 text-[#71167F] text-xs font-black uppercase tracking-wider">
+                                                                        Open Form →
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Participants Section */}
+                                        {formSearchResults.participants.length > 0 && (
+                                            <div>
+                                                <div className="px-4 py-1.5 bg-gray-50/70 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                                                    Matching Participants ({formSearchResults.totalParticipants}) — Click to open their form
+                                                </div>
+                                                <div className="divide-y divide-gray-50">
+                                                    {formSearchResults.participants.map(item => {
+                                                        const p = item.participant;
+                                                        const fac = item.facilitator;
+                                                        const fNum = item.formNumber;
+
+                                                        return (
+                                                            <div
+                                                                key={p.uuid || p.id}
+                                                                onClick={() => handleOpenParticipantForm(item)}
+                                                                className="px-4 py-2.5 hover:bg-blue-50/60 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                                                            >
+                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 text-xs font-black">
+                                                                        <Users size={15} />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="flex flex-wrap items-center gap-2">
+                                                                            <span className="font-black text-gray-900 text-sm">
+                                                                                {p.first_name} {p.last_name}
+                                                                            </span>
+                                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                                                                Participant
+                                                                            </span>
+                                                                            {fNum ? (
+                                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-emerald-100 text-emerald-800">
+                                                                                    Form #{fNum}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#71167F]">
+                                                                                    Unnumbered Form
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 font-semibold mt-0.5">
+                                                                            {fac ? (
+                                                                                <span className="text-gray-700 font-bold">
+                                                                                    Facilitator: {fac.first_name} {fac.last_name}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-amber-700">
+                                                                                    No facilitator linked
+                                                                                </span>
+                                                                            )}
+                                                                            {p.place && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <MapPin size={11} className="text-gray-400" />
+                                                                                    {p.place}
+                                                                                </span>
+                                                                            )}
+                                                                            {p.contact && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Phone size={11} className="text-gray-400" />
+                                                                                    {p.contact}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <span className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-black uppercase tracking-wider shrink-0 self-end sm:self-center">
+                                                                    Jump to Form →
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -876,7 +1612,9 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
                                             Facilitator Linked
                                         </span>
-                                        <span className="text-xs font-bold text-gray-500">• Form #{formNumber}</span>
+                                        <span className="text-xs font-bold text-gray-500">
+                                            • {isUnnumberedMode ? 'Unnumbered Form' : `Form #${formNumber}`}
+                                        </span>
                                     </div>
                                     <h3 className="text-lg font-black text-gray-900 mt-0.5">
                                         {currentFacilitator.first_name} {currentFacilitator.last_name}
@@ -918,13 +1656,19 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-200 text-amber-900">
                                             No Facilitator Linked
                                         </span>
-                                        <span className="text-xs font-bold text-amber-700">• Form #{formNumber}</span>
+                                        <span className="text-xs font-bold text-amber-700">
+                                            • {isUnnumberedMode ? 'Unnumbered Form' : `Form #${formNumber}`}
+                                        </span>
                                     </div>
                                     <h3 className="text-base font-black text-gray-900 mt-0.5">
-                                        Form #{formNumber} is not yet attached to a facilitator record.
+                                        {isUnnumberedMode
+                                            ? 'This unnumbered form is not yet attached to a facilitator record.'
+                                            : `Form #${formNumber} is not yet attached to a facilitator record.`}
                                     </h3>
                                     <p className="text-xs text-gray-600 mt-0.5">
-                                        Assign Form #{formNumber} to an existing facilitator from the database, or register a new facilitator.
+                                        {isUnnumberedMode
+                                            ? 'Select an existing unnumbered facilitator from the database, or register a new facilitator by name.'
+                                            : `Assign Form #${formNumber} to an existing facilitator from the database, or register a new facilitator.`}
                                     </p>
                                 </>
                             )}
@@ -1046,7 +1790,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
 
                     {facilitatorModalMode === 'select' ? (
                         <div className="space-y-4">
-                            {currentFacilitator && (
+                            {currentFacilitator && !isUnnumberedMode && (
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
                                     <div className="text-xs text-emerald-900 font-semibold">
                                         Currently linked to <strong>Form #{formNumber}</strong>:{' '}
@@ -1200,21 +1944,39 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                                     </div>
                                                 </div>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleAssignExistingFacilitator(fac)}
-                                                    className={cn(
-                                                        "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5 transition-all self-start sm:self-center",
-                                                        existingNum
-                                                            ? "bg-white border border-gray-200 text-gray-700 hover:bg-[#71167F] hover:text-white hover:border-[#71167F]"
-                                                            : "bg-[#71167F] text-white hover:bg-[#5a1166] shadow-sm"
+                                                <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                                                    {!isUnnumberedMode && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setShowFacilitatorModal(false);
+                                                                handleOpenFacilitatorForm(fac);
+                                                            }}
+                                                            className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-purple-50 text-[#71167F] border border-purple-200 hover:bg-purple-100 transition-all"
+                                                        >
+                                                            Open Form
+                                                        </button>
                                                     )}
-                                                >
-                                                    <Hash size={13} />
-                                                    <span>
-                                                        {existingNum ? `Reassign to Form #${formNumber}` : `Assign Form #${formNumber}`}
-                                                    </span>
-                                                </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAssignExistingFacilitator(fac)}
+                                                        className={cn(
+                                                            "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5 transition-all",
+                                                            existingNum
+                                                                ? "bg-white border border-gray-200 text-gray-700 hover:bg-[#71167F] hover:text-white hover:border-[#71167F]"
+                                                                : "bg-[#71167F] text-white hover:bg-[#5a1166] shadow-sm"
+                                                        )}
+                                                    >
+                                                        <Hash size={13} />
+                                                        <span>
+                                                            {isUnnumberedMode
+                                                                ? 'Select for Unnumbered Form'
+                                                                : existingNum
+                                                                    ? `Reassign to Form #${formNumber}`
+                                                                    : `Assign Form #${formNumber}`}
+                                                        </span>
+                                                    </button>
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -1324,17 +2086,34 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                     type="text"
                                     value={facForm.occupation}
                                     onChange={e => setFacForm(f => ({ ...f, occupation: e.target.value }))}
-                                    placeholder="e.g. Teacher, Self-employed"
+                                    onBlur={() => {
+                                        setFacForm(f => {
+                                            const s = splitOccupationAndAffiliation(f.occupation, f.affiliation, f.meetingPlace);
+                                            if (!s.wasSplit) return f;
+                                            return { ...f, occupation: s.occupation, affiliation: s.affiliation, meetingPlace: s.meeting_place };
+                                        });
+                                    }}
+                                    placeholder="e.g. Teacher, Social Worker"
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Place / Affiliation</label>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Affiliation / Organisation</label>
                                 <input
                                     type="text"
                                     value={facForm.affiliation}
                                     onChange={e => setFacForm(f => ({ ...f, affiliation: e.target.value }))}
-                                    placeholder="e.g. Community Hall / Church"
+                                    placeholder="e.g. Church, School, Council"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 mb-1 block">Meeting Place</label>
+                                <input
+                                    type="text"
+                                    value={facForm.meetingPlace}
+                                    onChange={e => setFacForm(f => ({ ...f, meetingPlace: e.target.value }))}
+                                    placeholder="e.g. Community Hall, Staff Room"
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#71167F]"
                                 />
                             </div>
@@ -1373,7 +2152,11 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                                     type="submit"
                                     className="px-6 py-2.5 rounded-xl bg-[#71167F] text-white hover:bg-[#5a1166] text-xs font-black uppercase tracking-wider shadow-md"
                                 >
-                                    {facilitatorModalMode === 'edit' ? `Update Facilitator (Form #${formNumber})` : `Register & Link Facilitator to Form #${formNumber}`}
+                                    {facilitatorModalMode === 'edit'
+                                        ? `Update Facilitator (${isUnnumberedMode ? 'Unnumbered Form' : `Form #${formNumber}`})`
+                                        : isUnnumberedMode
+                                            ? 'Register Facilitator for Unnumbered Form'
+                                            : `Register & Link Facilitator to Form #${formNumber}`}
                                 </button>
                             </div>
                         </form>
@@ -1404,7 +2187,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                 <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/50">
                     <div>
                         <h4 className="text-base font-black text-gray-900 flex items-center gap-2">
-                            <span>Form #{formNumber} Participants</span>
+                            <span>{activeFormTitle} Participants</span>
                             <span className="px-2.5 py-0.5 rounded-full bg-[#71167F]/10 text-[#71167F] text-xs font-bold">
                                 {draftRows.filter(r => r.firstName.trim()).length} Entered
                             </span>
@@ -1476,9 +2259,19 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                             {draftRows.map((row, index) => {
                                 const rowAtt = Array.isArray(row.attendance) ? row.attendance : [];
                                 const allSprintPresent = activeSprint.days.every(d => rowAtt[d]);
+                                const isHighlighted = Boolean(
+                                    highlightedParticipantKey &&
+                                    (row.uuid === highlightedParticipantKey || String(row.id) === highlightedParticipantKey)
+                                );
 
                                 return (
-                                    <tr key={row.tempId || index} className="hover:bg-gray-50/60 transition-colors">
+                                    <tr
+                                        key={row.tempId || index}
+                                        className={cn(
+                                            "transition-colors",
+                                            isHighlighted ? "bg-purple-50/90 ring-2 ring-inset ring-[#71167F]/40" : "hover:bg-gray-50/60"
+                                        )}
+                                    >
                                         <td className="py-2.5 px-2 text-center text-xs font-mono font-bold text-gray-400">
                                             {index + 1}
                                         </td>
@@ -1702,7 +2495,7 @@ export default function PaperFormEntry({ initialFormNumber = 1, onNavigateToAdmi
                             className="px-5 py-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-2"
                         >
                             <Save size={16} />
-                            <span>Save Form #{formNumber}</span>
+                            <span>{isUnnumberedMode ? 'Save Unnumbered Form' : `Save Form #${formNumber}`}</span>
                         </button>
 
                         <button
