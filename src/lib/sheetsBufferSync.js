@@ -1,10 +1,10 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db as firestoreDb, isConfigured } from './firebase';
-import db from './dexieDb';
-import { getActiveCampaignId, DEFAULT_CAMPAIGN } from './campaignManager';
-import { normalizeAttendance } from './analytics';
-import { TOTAL_CAMPAIGN_DAYS } from './constants';
-import { splitOccupationAndAffiliation } from './utils';
+import { db as firestoreDb, isConfigured } from './firebase.js';
+import db from './dexieDb.js';
+import { getActiveCampaignId, DEFAULT_CAMPAIGN } from './campaignManager.js';
+import { normalizeAttendance } from './analytics.js';
+import { TOTAL_CAMPAIGN_DAYS } from './constants.js';
+import { splitOccupationAndAffiliation } from './utils.js';
 import * as XLSX from 'xlsx';
 
 const LOCAL_CONFIG_KEY = 'hff_sheets_buffer_config_v1';
@@ -898,44 +898,22 @@ export function exportMultiTabBufferWorkbook(registrations = [], profiles = []) 
     const activeRecords = registrations.filter(r => !r.is_deleted);
 
     const toSheetRow = (r, sourceTab) => {
-        const att = Array.isArray(r.attendance) ? r.attendance : Array(TOTAL_CAMPAIGN_DAYS).fill(false);
-        const split = splitOccupationAndAffiliation(r.occupation, r.affiliation, r.meeting_place);
-        const rowObj = {
-            'UUID': r.uuid || '',
-            'Record Type': r.type || 'participant',
-            'Form #': r.form_number || '',
-            'Group Form #': r.group_form_number || r.form_number || '',
-            'First Name': r.first_name || '',
-            'Last Name': r.last_name || '',
-            'Gender': r.gender || 'F',
-            'Age': r.age ?? '',
-            'Contact': r.contact || '',
-            'Location': r.place || '',
-            'Occupation': split.occupation || '',
-            'Affiliation': split.affiliation || ''
-        };
-        let total = 0;
-        for (let d = 0; d < TOTAL_CAMPAIGN_DAYS; d++) {
-            const p = Boolean(att[d]);
-            rowObj[`D${d + 1}`] = p ? 'TRUE' : 'FALSE';
-            if (p) total++;
-        }
-        rowObj['Total Days'] = total;
-        rowObj['Books Received'] = r.books_received ? 'TRUE' : 'FALSE';
-        rowObj['Entered By'] = r.updated_by_name || r.created_by_name || 'Admin';
-        rowObj['Updated At'] = r.updated_at || r.created_at || '';
-        rowObj['Source Tab'] = sourceTab;
+        const rowArr = recordToRow(r, sourceTab);
+        const rowObj = {};
+        SHEET_HEADERS.forEach((header, idx) => {
+            rowObj[header] = rowArr[idx] ?? '';
+        });
         return rowObj;
     };
 
-    // 1. Master Uniform Register Tab
+    // 1. Master Uniform Register Tab (32 columns A:AF)
     const masterRows = activeRecords.map(r =>
         toSheetRow(r, `PROFILE_${(r.updated_by_name || r.created_by_name || 'Admin').replace(/[^a-zA-Z0-9]+/g, '_')}`)
     );
-    const masterWs = XLSX.utils.json_to_sheet(masterRows.length > 0 ? masterRows : [toSheetRow({}, 'MASTER')]);
+    const masterWs = XLSX.utils.json_to_sheet(masterRows.length > 0 ? masterRows : [toSheetRow({}, 'MASTER')], { header: SHEET_HEADERS });
     XLSX.utils.book_append_sheet(wb, masterWs, 'MASTER_UNIFORM_REGISTER');
 
-    // 2. Per-Profile Buffer Tabs
+    // 2. Per-Profile Buffer Tabs (32 columns A:AF)
     const byTab = new Map();
     for (const p of profiles) {
         const tName = getProfileBufferTabName(p, null).substring(0, 31);
@@ -968,11 +946,70 @@ export function exportMultiTabBufferWorkbook(registrations = [], profiles = []) 
     }
 
     for (const [tabName, rows] of byTab.entries()) {
-        const ws = XLSX.utils.json_to_sheet(rows.length > 0 ? rows : [toSheetRow({}, tabName)]);
+        const ws = XLSX.utils.json_to_sheet(rows.length > 0 ? rows : [toSheetRow({}, tabName)], { header: SHEET_HEADERS });
         XLSX.utils.book_append_sheet(wb, ws, tabName);
     }
 
     const fileName = `HFF_Uniform_Register_Buffer_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, fileName);
     return fileName;
+}
+
+/**
+ * Exports uniform canonical 32-column CSV dataset
+ * Col M: Occupation, Col N: Affiliation, Cols O-Z: D1-D12
+ */
+export function exportUniform32ColCSV(registrations = [], customFileName = null) {
+    const activeRecords = registrations.filter(r => !r.is_deleted);
+    const rows = [
+        SHEET_HEADERS,
+        ...activeRecords.map(r => {
+            const author = String(r.updated_by_name || r.created_by_name || 'Admin').replace(/[^a-zA-Z0-9]+/g, '_');
+            return recordToRow(r, `PROFILE_${author}`);
+        })
+    ];
+
+    const csvContent = rows.map(row =>
+        row.map(cell => {
+            const str = cell === null || cell === undefined ? '' : String(cell);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        }).join(',')
+    ).join('\n');
+
+    const fileName = customFileName || `HFF_Uniform_32Col_Register_${new Date().toISOString().slice(0, 10)}.csv`;
+    if (typeof window !== 'undefined' && typeof Blob !== 'undefined') {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+    return { fileName, rowCount: activeRecords.length, headers: SHEET_HEADERS };
+}
+
+/**
+ * Exports uniform canonical 32-column Excel dataset
+ * Col M: Occupation, Col N: Affiliation, Cols O-Z: D1-D12
+ */
+export function exportUniform32ColExcel(registrations = [], customFileName = null) {
+    const wb = XLSX.utils.book_new();
+    const activeRecords = registrations.filter(r => !r.is_deleted);
+    const masterRows = activeRecords.map(r => {
+        const author = String(r.updated_by_name || r.created_by_name || 'Admin').replace(/[^a-zA-Z0-9]+/g, '_');
+        const rowArray = recordToRow(r, `PROFILE_${author}`);
+        const obj = {};
+        SHEET_HEADERS.forEach((h, idx) => { obj[h] = rowArray[idx] ?? ''; });
+        return obj;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(masterRows.length > 0 ? masterRows : [{}], { header: SHEET_HEADERS });
+    XLSX.utils.book_append_sheet(wb, ws, 'MASTER_UNIFORM_REGISTER');
+
+    const fileName = customFileName || `HFF_Uniform_32Col_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    return { fileName, rowCount: activeRecords.length, headers: SHEET_HEADERS };
 }

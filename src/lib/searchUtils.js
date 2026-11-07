@@ -188,12 +188,25 @@ export function matchSingleCriterion(person, criterion, query) {
 
         case 'form_number': {
             const normalizedQuery = normalizeFormNumber(cleanQuery);
-            const forms = [
+            const rawForms = [
                 person.form_number,
-                person.group_form_number
+                person.group_form_number,
+                ...(Array.isArray(person.form_numbers) ? person.form_numbers : [])
             ];
             if (assignedFac) {
-                forms.push(assignedFac.form_number);
+                rawForms.push(assignedFac.form_number);
+                if (Array.isArray(assignedFac.form_numbers)) {
+                    rawForms.push(...assignedFac.form_numbers);
+                }
+            }
+
+            // Expand comma-separated form numbers (e.g. "1, 45" -> ["1", "45"])
+            const forms = [];
+            for (const rf of rawForms) {
+                if (rf === null || rf === undefined || rf === '') continue;
+                forms.push(String(rf));
+                const tokens = String(rf).split(/[,/&;\s]+/).filter(Boolean);
+                if (tokens.length > 1) forms.push(...tokens);
             }
 
             return forms.some(f => {

@@ -1,5 +1,5 @@
 import Dexie from 'dexie';
-import { splitOccupationAndAffiliation } from './utils';
+import { splitOccupationAndAffiliation } from './utils.js';
 
 export const db = new Dexie('HFF_Dashboard_V2');
 

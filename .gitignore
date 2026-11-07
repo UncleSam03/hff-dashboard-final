@@ -36,3 +36,4 @@ kdp_output/
 # Sensitive / temporary docs
 *passwords*
 ~$*
+dist_certificates/

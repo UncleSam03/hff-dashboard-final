@@ -185,7 +185,7 @@ async function pullStoreUpdates(storeName, forceFull = false) {
 
         // Zero-Cost Guard: If lastPull is missing from localStorage but records exist in Dexie,
         // recover lastPull from the latest local timestamp to avoid burning full collection read quota!
-        if (!lastPull && localCount > 0) {
+        if (!forceFull && !lastPull && localCount > 0) {
             try {
                 const latestLocal = await db[storeName].orderBy('updated_at').last();
                 if (latestLocal?.updated_at) {
@@ -599,6 +599,9 @@ export async function resetLocalFromFirebase() {
                 await db.campaigns.bulkAdd(finalCampRows);
             }
         });
+
+        setLastPullTime('registrations', now);
+        setLastPullTime('campaigns', now);
 
         window.dispatchEvent(new CustomEvent('hff-firebase-data-updated'));
         window.dispatchEvent(new CustomEvent('hff-firebase-registrations-updated'));

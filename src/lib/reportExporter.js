@@ -234,3 +234,9 @@ function exportSummaryCSV(analytics, dateStr) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+export {
+    exportUniform32ColCSV,
+    exportUniform32ColExcel,
+    exportMultiTabBufferWorkbook
+} from './sheetsBufferSync';

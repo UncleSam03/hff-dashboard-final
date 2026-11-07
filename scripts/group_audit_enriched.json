@@ -1,0 +1,2035 @@
+[
+  {
+    "formNumber": "1",
+    "facilitatorName": "\u2014K\u2014e\u2014l\u2014e\u2014t\u2014s\u2014o\u2014 \u2014N\u2014k\u2014a\u2014i\u2014g\u2014w\u2014a\u2014",
+    "contact": "\u20147\u20144\u20140\u20147\u20140\u20145\u20149\u20143\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 35,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014J\u2014 \u2014S\u2014e\u2014b\u2014o\u2014k\u2014o\u2014l\u2014o\u2014d\u2014i\u2014,\u2014 \u2014N\u2014.\u2014 \u2014C\u2014h\u2014i\u2014l\u2014u\u2014m\u2014e\u2014,\u2014 \u2014M\u2014.\u2014 \u2014M\u2014a\u2014j\u2014e\u2014p\u2014e\u2014.\u2014.\u2014.\u2014;\u2014 \u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 7,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "3",
+    "facilitatorName": "\u2014B\u2014o\u2014i\u2014t\u2014s\u2014h\u2014e\u2014p\u2014o\u2014 \u2014I\u2014s\u2014h\u2014m\u2014a\u2014e\u2014l\u2014",
+    "contact": "\u20147\u20146\u20147\u20140\u20140\u20148\u20141\u20141\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "6",
+    "facilitatorName": "\u2014A\u2014i\u2014m\u2014 \u2014M\u2014a\u2014t\u2014h\u2014u\u2014m\u2014o\u2014",
+    "contact": "\u20147\u20147\u20143\u20148\u20143\u20143\u20143\u20148\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 53,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "17",
+    "facilitatorName": "\u2014O\u2014d\u2014i\u2014r\u2014i\u2014l\u2014e\u2014 \u2014A\u2014.\u2014 \u2014U\u2014t\u2014l\u2014w\u2014a\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20145\u20140\u20143\u20142\u20142\u20142\u20145\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "22",
+    "facilitatorName": "\u2014L\u2014e\u2014r\u2014a\u2014t\u2014o\u2014 \u2014L\u2014e\u2014e\u2014p\u2014i\u2014 \u2014M\u2014o\u2014r\u2014e\u2014t\u2014i\u2014",
+    "contact": "\u20147\u20142\u20141\u20142\u20143\u20142\u20141\u20142\u2014",
+    "meetingPlace": "\u2014N\u2014t\u2014s\u2014h\u2014i\u2014n\u2014o\u2014g\u2014e\u2014 \u2014N\u2014e\u2014x\u2014t\u2014 \u2014t\u2014o\u2014 \u2014M\u2014e\u2014d\u2014o\u2014l\u2014a\u2014n\u2014d\u2014 \u2014S\u2014h\u2014o\u2014p\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20140\u20140\u2014",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "23",
+    "facilitatorName": "\u2014J\u2014o\u2014y\u2014 \u2014M\u2014o\u2014t\u2014s\u2014h\u2014e\u2014g\u2014w\u2014e\u2014",
+    "contact": "\u20147\u20146\u20140\u20141\u20143\u20147\u20146\u20146\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "\u20141\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 11,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "25",
+    "facilitatorName": "\u2014M\u2014o\u2014g\u2014o\u2014m\u2014o\u2014t\u2014s\u2014i\u2014 \u2014C\u2014h\u2014e\u2014l\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20142\u20147\u20146\u20148\u20146\u20142\u20146\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014k\u2014a\u2014k\u2014a\u2014t\u2014l\u2014e\u2014l\u2014a\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20140\u20140\u2014",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 4
+    }
+  },
+  {
+    "formNumber": "26",
+    "facilitatorName": "\u2014O\u2014l\u2014e\u2014b\u2014i\u2014l\u2014e\u2014 \u2014L\u2014e\u2014s\u2014l\u2014i\u2014e\u2014 \u2014M\u2014o\u2014k\u2014g\u2014w\u2014e\u2014e\u2014t\u2014s\u2014i\u2014",
+    "contact": "\u20147\u20141\u20144\u20147\u20147\u20140\u20149\u20144\u2014",
+    "meetingPlace": "\u2014K\u2014g\u2014a\u2014t\u2014l\u2014e\u2014n\u2014g\u2014 \u2014L\u2014a\u2014n\u2014d\u2014 \u2014B\u2014o\u2014a\u2014r\u2014d\u2014 \u2014-\u2014 \u2014M\u2014a\u2014i\u2014n\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20140\u20140\u2014p\u2014m\u2014",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014K\u2014.\u2014 \u2014M\u2014o\u2014r\u2014a\u2014k\u2014e\u2014;\u2014 \u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "27",
+    "facilitatorName": "\u2014M\u2014o\u2014s\u2014u\u2014p\u2014i\u2014 \u2014M\u2014o\u2014l\u2014e\u2014b\u2014a\u2014t\u2014s\u2014i\u2014",
+    "contact": "\u20147\u20145\u20148\u20148\u20148\u20145\u20143\u20149\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014 \u2014S\u2014u\u2014b\u2014 \u2014L\u2014a\u2014n\u2014d\u2014 \u2014B\u2014o\u2014a\u2014r\u2014d\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014",
+    "participantCount": 25,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 2,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "28",
+    "facilitatorName": "\u2014P\u2014u\u2014l\u2014a\u2014p\u2014e\u2014l\u2014a\u2014 \u2014P\u2014i\u2014l\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20144\u20148\u20148\u20144\u20144\u20146\u20145\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014b\u2014o\u2014d\u2014i\u2014s\u2014a\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20147\u2014:\u20140\u20140\u2014 \u2014-\u2014 \u20147\u2014:\u20143\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 3,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "31",
+    "facilitatorName": "\u2014O\u2014b\u2014a\u2014k\u2014e\u2014n\u2014g\u2014 \u2014M\u2014o\u2014a\u2014g\u2014i\u2014",
+    "contact": "\u20147\u20142\u20142\u20147\u20141\u20146\u20141\u20144\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "\u20149\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 9,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "33",
+    "facilitatorName": "\u2014M\u2014i\u2014l\u2014l\u2014i\u2014a\u2014h\u2014 \u2014M\u2014m\u2014u\u2014i\u2014",
+    "contact": "\u20147\u20145\u20142\u20146\u20145\u20146\u20140\u20144\u2014",
+    "meetingPlace": "\u2014S\u2014E\u2014D\u2014I\u2014B\u2014E\u2014L\u2014O\u2014 \u2014J\u2014U\u2014N\u2014I\u2014O\u2014R\u2014 \u2014S\u2014E\u2014C\u2014O\u2014N\u2014D\u2014A\u2014R\u2014Y\u2014",
+    "meetingTime": "\u20141\u20142\u20140\u20140\u2014H\u2014R\u2014S\u2014",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "34",
+    "facilitatorName": "\u2014M\u2014o\u2014n\u2014i\u2014c\u2014a\u2014h\u2014 \u2014C\u2014e\u2014l\u2014i\u2014a\u2014h\u2014 \u2014M\u2014o\u2014d\u2014i\u2014s\u2014e\u2014",
+    "contact": "\u20147\u20142\u20149\u20140\u20145\u20145\u20147\u20143\u2014 \u2014/\u2014 \u20147\u20141\u20146\u20147\u20144\u20148\u20140\u20141\u2014",
+    "meetingPlace": "\u2014B\u2014o\u2014s\u2014e\u2014j\u2014a\u2014",
+    "meetingTime": "\u20145\u2014p\u2014m\u2014 \u2014-\u2014 \u20146\u2014p\u2014m\u2014",
+    "participantCount": 4,
+    "category": 2,
+    "reasons": "\u20144\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 4,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "36",
+    "facilitatorName": "\u2014T\u2014o\u2014n\u2014y\u2014 \u2014M\u2014a\u2014r\u2014i\u2014p\u2014e\u2014 \u2014/\u2014 \u2014P\u2014h\u2014e\u2014m\u2014e\u2014l\u2014o\u2014 \u2014B\u2014a\u2014b\u2014u\u2014s\u2014i\u2014 \u2014T\u2014e\u2014a\u2014m\u2014",
+    "contact": "\u20147\u20147\u20146\u20145\u20147\u20145\u20145\u20142\u2014 \u2014/\u2014 \u20147\u20142\u20149\u20146\u20148\u20143\u20149\u20142\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014 \u2014C\u2014e\u2014n\u2014t\u2014r\u2014a\u2014l\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014",
+    "participantCount": 26,
+    "category": 2,
+    "reasons": "\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "38",
+    "facilitatorName": "\u2014M\u2014m\u2014a\u2014p\u2014u\u2014l\u2014a\u2014 \u2014S\u2014a\u2014d\u2014i\u2014 \u2014M\u2014o\u2014k\u2014g\u2014a\u2014d\u2014i\u2014",
+    "contact": "\u20147\u20142\u20145\u20148\u20147\u20149\u20140\u20145\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "39",
+    "facilitatorName": "\u2014K\u2014a\u2014t\u2014l\u2014e\u2014g\u2014o\u2014 \u2014D\u2014i\u2014n\u2014t\u2014s\u2014i\u2014",
+    "contact": "\u20147\u20141\u20145\u20146\u20145\u20142\u20144\u20140\u2014",
+    "meetingPlace": "\u2014K\u2014g\u2014a\u2014t\u2014l\u2014e\u2014n\u2014g\u2014 \u2014R\u2014e\u2014g\u2014i\u2014o\u2014n\u2014a\u2014l\u2014 \u2014O\u2014f\u2014f\u2014i\u2014c\u2014e\u2014",
+    "meetingTime": "\u20141\u20145\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "40",
+    "facilitatorName": "\u2014P\u2014i\u2014t\u2014s\u2014o\u2014 \u2014 \u2014E\u2014d\u2014w\u2014i\u2014n\u2014 \u2014M\u2014o\u2014n\u2014a\u2014m\u2014e\u2014t\u2014s\u2014i\u2014",
+    "contact": "\u20147\u20144\u20147\u20144\u20149\u20140\u20144\u20140\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u20146\u2014:\u20140\u20140\u2014p\u2014m\u2014",
+    "participantCount": 1,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "41",
+    "facilitatorName": "\u2014M\u2014o\u2014a\u2014g\u2014i\u2014 \u2014M\u2014o\u2014d\u2014i\u2014s\u2014a\u2014o\u2014t\u2014s\u2014i\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20146\u20142\u20143\u20146\u20144\u20146\u20144\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u2014N\u2014o\u2014t\u2014 \u2014s\u2014p\u2014e\u2014c\u2014i\u2014f\u2014i\u2014e\u2014d\u2014",
+    "participantCount": 21,
+    "category": 2,
+    "reasons": "\u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "42",
+    "facilitatorName": "\u2014S\u2014e\u2014g\u2014a\u2014l\u2014e\u2014 \u2014V\u2014i\u2014n\u2014c\u2014e\u2014n\u2014t\u2014 \u2014M\u2014o\u2014n\u2014g\u2014a\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20148\u20145\u20146\u20148\u20147\u20143\u20149\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014k\u2014a\u2014k\u2014a\u2014t\u2014l\u2014e\u2014l\u2014a\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20143\u20140\u2014 \u2014-\u2014 \u20141\u20148\u2014:\u20143\u20140\u2014",
+    "participantCount": 25,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "43",
+    "facilitatorName": "\u2014S\u2014e\u2014f\u2014a\u2014k\u2014o\u2014 \u2014V\u2014.\u2014 \u2014M\u2014o\u2014n\u2014g\u2014a\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20148\u20145\u20146\u20148\u20147\u20143\u20149\u2014",
+    "meetingPlace": "\u2014C\u2014o\u2014r\u2014n\u2014e\u2014r\u2014s\u2014t\u2014o\u2014n\u2014e\u2014 \u2014C\u2014h\u2014u\u2014r\u2014c\u2014h\u2014",
+    "meetingTime": "\u20141\u20148\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "44",
+    "facilitatorName": "\u2014M\u2014a\u2014r\u2014i\u2014a\u2014 \u2014L\u2014e\u2014k\u2014g\u2014o\u2014w\u2014e\u2014",
+    "contact": "\u20147\u20144\u20146\u20145\u20148\u20142\u20148\u20147\u2014",
+    "meetingPlace": "\u2014M\u2014y\u2014 \u2014H\u2014o\u2014m\u2014e\u2014 \u2014P\u2014l\u2014a\u2014c\u2014e\u2014",
+    "meetingTime": "\u2014T\u2014u\u2014e\u2014s\u2014d\u2014a\u2014y\u2014 \u20141\u20148\u20140\u20140\u2014",
+    "participantCount": 8,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "45",
+    "facilitatorName": "\u2014M\u2014o\u2014l\u2014a\u2014t\u2014l\u2014h\u2014e\u2014g\u2014i\u2014 \u2014M\u2014o\u2014n\u2014t\u2014y\u2014 \u2014K\u2014g\u2014e\u2014t\u2014s\u2014e\u2014",
+    "contact": "\u20147\u20141\u20149\u20147\u20149\u20142\u20143\u20142\u2014",
+    "meetingPlace": "\u2014S\u2014u\u2014p\u2014p\u2014l\u2014i\u2014e\u2014s\u2014 \u2014/\u2014 \u2014S\u2014t\u2014o\u2014r\u2014e\u2014s\u2014 \u2014\u2014\u2014 \u2014K\u2014g\u2014a\u2014t\u2014l\u2014e\u2014n\u2014g\u2014 \u2014L\u2014a\u2014n\u2014d\u2014 \u2014B\u2014o\u2014a\u2014r\u2014d\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20140\u20140\u2014p\u2014m\u2014",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014L\u2014.\u2014W\u2014.\u2014 \u2014M\u2014o\u2014k\u2014g\u2014a\u2014t\u2014l\u2014e\u2014,\u2014 \u2014G\u2014.\u2014B\u2014.\u2014 \u2014D\u2014i\u2014n\u2014t\u2014s\u2014i\u2014,\u2014 \u2014O\u2014.\u2014 \u2014A\u2014n\u2014n\u2014a\u2014n\u2014d\u2014i\u2014l\u2014e\u2014;\u2014 \u20144\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 5,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "49",
+    "facilitatorName": "\u2014O\u2014m\u2014a\u2014n\u2014g\u2014 \u2014M\u2014a\u2014n\u2014k\u2014g\u2014e\u2014",
+    "contact": "\u20147\u20145\u20146\u20148\u20142\u20143\u20140\u20140\u2014",
+    "meetingPlace": "\u2014D\u2014i\u2014p\u2014h\u2014o\u2014n\u2014c\u2014h\u2014i\u2014",
+    "meetingTime": "\u20141\u20146\u2014:\u20143\u20140\u2014",
+    "participantCount": 5,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "53",
+    "facilitatorName": "\u2014P\u2014u\u2014l\u2014a\u2014f\u2014e\u2014l\u2014a\u2014 \u2014P\u2014i\u2014l\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20144\u20148\u20148\u20144\u20144\u20146\u20145\u2014",
+    "meetingPlace": "\u2014P\u2014u\u2014l\u2014a\u2014f\u2014e\u2014l\u2014a\u2014 \u2014H\u2014o\u2014m\u2014e\u2014 \u2014(\u2014M\u2014a\u2014b\u2014o\u2014d\u2014i\u2014s\u2014a\u2014)\u2014",
+    "meetingTime": "\u20141\u20146\u2014:\u20140\u20140\u2014 \u2014-\u2014 \u20141\u20146\u2014:\u20144\u20145\u2014",
+    "participantCount": 13,
+    "category": 2,
+    "reasons": "\u20141\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 13,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "54",
+    "facilitatorName": "\u2014L\u2014o\u2014n\u2014e\u2014 \u2014T\u2014s\u2014h\u2014o\u2014g\u2014a\u2014n\u2014e\u2014t\u2014s\u2014o\u2014 \u2014M\u2014o\u2014i\u2014t\u2014o\u2014i\u2014",
+    "contact": "\u20147\u20141\u20146\u20148\u20149\u20142\u20147\u20140\u2014",
+    "meetingPlace": "\u2014L\u2014o\u2014n\u2014e\u2014 \u2014h\u2014o\u2014m\u2014e\u2014 \u2014M\u2014a\u2014b\u2014o\u2014d\u2014i\u2014s\u2014a\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20140\u20140\u2014",
+    "participantCount": 15,
+    "category": 2,
+    "reasons": "\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 2,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "57",
+    "facilitatorName": "\u2014M\u2014a\u2014i\u2014p\u2014e\u2014l\u2014o\u2014 \u2014R\u2014a\u2014t\u2014h\u2014a\u2014r\u2014i\u2014-\u2014M\u2014o\u2014l\u2014e\u2014f\u2014e\u2014",
+    "contact": "\u20147\u20142\u20146\u20145\u20145\u20143\u20146\u20149\u2014",
+    "meetingPlace": "\u2014P\u2014H\u2014A\u2014P\u2014H\u2014A\u2014N\u2014E\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 24,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "58",
+    "facilitatorName": "\u2014K\u2014h\u2014u\u2014t\u2014s\u2014a\u2014f\u2014a\u2014l\u2014o\u2014 \u2014K\u2014g\u2014o\u2014d\u2014u\u2014n\u2014g\u2014w\u2014e\u2014",
+    "contact": "\u20147\u20142\u20147\u20142\u20148\u20147\u20144\u20148\u2014",
+    "meetingPlace": "\u2014M\u2014m\u2014u\u2014s\u2014i\u2014 \u2014P\u2014.\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20141\u20146\u2014:\u20143\u20140\u2014",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 7
+    }
+  },
+  {
+    "formNumber": "59",
+    "facilitatorName": "\u2014B\u2014a\u2014b\u2014e\u2014d\u2014i\u2014 \u2014M\u2014o\u2014r\u2014a\u2014o\u2014p\u2014e\u2014",
+    "contact": "\u20147\u20145\u20148\u20145\u20144\u20141\u20142\u20147\u2014",
+    "meetingPlace": "\u2014T\u2014i\u2014g\u2014e\u2014r\u2014s\u2014 \u2014F\u2014 \u2014C\u2014l\u2014u\u2014b\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20140\u20140\u2014",
+    "participantCount": 14,
+    "category": 3,
+    "reasons": "\u20148\u2014 \u2014o\u2014m\u2014i\u2014t\u2014t\u2014e\u2014d\u2014 \u2014e\u2014d\u2014u\u2014c\u2014a\u2014t\u2014i\u2014o\u2014n\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 8,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "61",
+    "facilitatorName": "\u2014B\u2014a\u2014r\u2014b\u2014r\u2014a\u2014 \u2014S\u2014h\u2014i\u2014v\u2014u\u2014r\u2014i\u2014",
+    "contact": "\u20147\u20147\u20147\u20147\u20142\u20147\u20149\u20148\u2014",
+    "meetingPlace": "\u2014M\u2014A\u2014K\u2014A\u2014K\u2014A\u2014T\u2014L\u2014E\u2014L\u2014A\u2014 \u2014D\u2014A\u2014M\u2014",
+    "meetingTime": "\u20141\u20141\u2014:\u20145\u20140\u2014 \u2014a\u2014m\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "\u20141\u20140\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 10,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "63",
+    "facilitatorName": "\u2014T\u2014e\u2014b\u2014o\u2014g\u2014o\u2014 \u2014E\u2014s\u2014t\u2014h\u2014e\u2014r\u2014 \u2014M\u2014o\u2014d\u2014i\u2014s\u2014a\u2014g\u2014a\u2014e\u2014",
+    "contact": "\u20147\u20146\u20141\u20149\u20143\u20146\u20149\u20149\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014k\u2014g\u2014o\u2014p\u2014h\u2014a\u2014n\u2014a\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20147\u2014:\u20140\u20140\u2014",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "65",
+    "facilitatorName": "\u2014S\u2014h\u2014a\u2014r\u2014o\u2014n\u2014 \u2014P\u2014h\u2014i\u2014r\u2014i\u2014",
+    "contact": "\u20147\u20142\u20148\u20140\u20144\u20143\u20144\u20148\u2014",
+    "meetingPlace": "\u2014H\u2014o\u2014m\u2014e\u2014 \u2014M\u2014a\u2014b\u2014o\u2014d\u2014i\u2014s\u2014a\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 6,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "68",
+    "facilitatorName": "\u2014L\u2014e\u2014s\u2014e\u2014g\u2014o\u2014 \u2014P\u2014o\u2014p\u2014i\u2014e\u2014 \u2014P\u2014h\u2014e\u2014t\u2014o\u2014",
+    "contact": "\u20147\u20141\u20141\u20142\u20146\u20142\u20143\u20141\u2014 \u2014/\u2014 \u20147\u20143\u20145\u20143\u20140\u20142\u20140\u20147\u2014",
+    "meetingPlace": "\u2014M\u2014A\u2014R\u2014U\u2014L\u2014A\u2014 \u2014A\u2014 \u2014R\u2014A\u2014T\u2014S\u2014H\u2014E\u2014O\u2014L\u2014E\u2014",
+    "meetingTime": "\u20141\u20149\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 26,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20141\u20148\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u20145\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 18,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "72",
+    "facilitatorName": "\u2014S\u2014e\u2014a\u2014n\u2014o\u2014k\u2014e\u2014n\u2014g\u2014 \u2014N\u2014k\u2014e\u2014p\u2014e\u2014 \u2014M\u2014o\u2014l\u2014e\u2014f\u2014e\u2014",
+    "contact": "\u20147\u20142\u20144\u20142\u20142\u20148\u20140\u20148\u2014",
+    "meetingPlace": "\u2014V\u2014D\u2014C\u2014 \u2014O\u2014f\u2014f\u2014i\u2014c\u2014e\u2014s\u2014 \u2014M\u2014o\u2014g\u2014a\u2014n\u2014e\u2014t\u2014s\u2014i\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 15,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "73",
+    "facilitatorName": "\u2014N\u2014e\u2014o\u2014 \u2014M\u2014a\u2014t\u2014l\u2014h\u2014a\u2014g\u2014a\u2014",
+    "contact": "\u20147\u20147\u20140\u20143\u20146\u20148\u20148\u20147\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014s\u2014i\u2014a\u2014n\u2014a\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20141\u20147\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "75",
+    "facilitatorName": "\u2014S\u2014e\u2014a\u2014n\u2014o\u2014k\u2014e\u2014n\u2014g\u2014 \u2014S\u2014e\u2014l\u2014a\u2014l\u2014a\u2014",
+    "contact": "\u20147\u20141\u20148\u20140\u20143\u20143\u20144\u20147\u2014",
+    "meetingPlace": "\u2014N\u2014t\u2014s\u2014h\u2014i\u2014n\u2014o\u2014g\u2014e\u2014,\u2014 \u2014N\u2014e\u2014x\u2014t\u2014 \u2014t\u2014o\u2014 \u2014K\u2014a\u2014g\u2014i\u2014s\u2014o\u2014 \u2014B\u2014a\u2014r\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "78",
+    "facilitatorName": "\u2014B\u2014a\u2014t\u2014h\u2014u\u2014s\u2014i\u2014 \u2014D\u2014o\u2014r\u2014i\u2014c\u2014a\u2014h\u2014 \u2014T\u2014s\u2014h\u2014e\u2014k\u2014o\u2014",
+    "contact": "\u20147\u20141\u20147\u20143\u20149\u20141\u20143\u20142\u2014",
+    "meetingPlace": "\u2014T\u2014S\u2014H\u2014U\u2014K\u2014U\u2014D\u2014U\u2014 \u2014/\u2014 \u2014H\u2014O\u2014M\u2014E\u2014",
+    "meetingTime": "\u20142\u20140\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 5,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "80",
+    "facilitatorName": "\u2014G\u2014o\u2014d\u2014i\u2014r\u2014a\u2014o\u2014n\u2014e\u2014 \u2014R\u2014r\u2014a\u2014n\u2014t\u2014s\u2014e\u2014t\u2014s\u2014e\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20145\u20145\u20141\u20147\u20145\u20148\u20146\u2014",
+    "meetingPlace": "\u2014B\u2014O\u2014K\u2014A\u2014A\u2014 \u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20143\u20140\u2014",
+    "participantCount": 8,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "85",
+    "facilitatorName": "\u2014B\u2014o\u2014a\u2014g\u2014o\u2014 \u2014M\u2014o\u2014i\u2014t\u2014o\u2014i\u2014",
+    "contact": "\u20147\u20146\u20144\u20141\u20148\u20141\u20141\u20148\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014k\u2014g\u2014o\u2014p\u2014h\u2014a\u2014n\u2014a\u2014 \u2014w\u2014a\u2014r\u2014d\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20143\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 9,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "87",
+    "facilitatorName": "\u2014M\u2014a\u2014l\u2014o\u2014t\u2014w\u2014a\u2014n\u2014a\u2014 \u2014C\u2014l\u2014u\u2014s\u2014t\u2014e\u2014r\u2014",
+    "contact": "\u20145\u20147\u20145\u20140\u20141\u20147\u20149\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014l\u2014o\u2014t\u2014w\u2014a\u2014n\u2014a\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20140\u20140\u2014",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "92",
+    "facilitatorName": "\u2014I\u2014t\u2014u\u2014m\u2014e\u2014l\u2014e\u2014n\u2014g\u2014 \u2014S\u2014e\u2014n\u2014y\u2014a\u2014r\u2014e\u2014l\u2014o\u2014",
+    "contact": "\u20147\u20146\u20145\u20142\u20149\u20148\u20149\u20148\u2014",
+    "meetingPlace": "\u2014B\u2014O\u2014S\u2014E\u2014J\u2014A\u2014 \u2014N\u2014O\u2014R\u2014T\u2014H\u2014 \u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "98",
+    "facilitatorName": "\u2014A\u2014l\u2014e\u2014t\u2014a\u2014h\u2014 \u2014K\u2014o\u2014t\u2014s\u2014e\u2014d\u2014i\u2014",
+    "contact": "\u20147\u20144\u20141\u20149\u20140\u20143\u20146\u20145\u2014",
+    "meetingPlace": "\u2014P\u2014I\u2014L\u2014A\u2014N\u2014E\u2014 \u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20140\u20140\u2014",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014e\u2014d\u2014u\u2014c\u2014a\u2014t\u2014i\u2014o\u2014n\u2014 \u2014c\u2014o\u2014d\u2014e\u2014s\u2014 \u2014(\u2014J\u2014/\u2014S\u2014/\u2014U\u2014)\u2014;\u2014 \u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014:\u2014 \u2014B\u2014.\u2014 \u2014M\u2014o\u2014n\u2014t\u2014s\u2014h\u2014o\u2014j\u2014a\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 1,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "100",
+    "facilitatorName": "\u2014K\u2014u\u2014t\u2014l\u2014o\u2014 \u2014L\u2014 \u2014B\u2014a\u2014t\u2014l\u2014a\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20142\u20141\u20145\u20142\u20147\u20146\u20146\u2014",
+    "meetingPlace": "\u2014M\u2014O\u2014R\u2014U\u2014L\u2014A\u2014 \u2014B\u2014O\u2014S\u2014E\u2014J\u2014A\u2014 \u2014S\u2014O\u2014U\u2014T\u2014H\u2014",
+    "meetingTime": "\u20141\u20146\u2014:\u20140\u20140\u2014",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u20145\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "101",
+    "facilitatorName": "\u2014R\u2014o\u2014n\u2014i\u2014c\u2014a\u2014h\u2014 \u2014M\u2014o\u2014t\u2014s\u2014h\u2014e\u2014g\u2014w\u2014e\u2014",
+    "contact": "\u20147\u20144\u20143\u20147\u20141\u20142\u20141\u20148\u2014",
+    "meetingPlace": "\u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014 \u2014B\u2014O\u2014S\u2014E\u2014J\u2014A\u2014 \u2014S\u2014O\u2014U\u2014T\u2014H\u2014",
+    "meetingTime": "\u20141\u20141\u2014:\u20140\u20140\u2014 \u2014A\u2014M\u2014",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "\u20142\u20140\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 20,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "103",
+    "facilitatorName": "\u2014D\u2014i\u2014m\u2014p\u2014h\u2014o\u2014 \u2014T\u2014l\u2014h\u2014a\u2014n\u2014k\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20144\u20144\u20149\u20148\u20147\u20145\u20148\u2014",
+    "meetingPlace": "\u2014B\u2014o\u2014s\u2014e\u2014j\u2014a\u2014 \u2014C\u2014e\u2014n\u2014t\u2014r\u2014a\u2014l\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20141\u20141\u2014:\u20143\u20140\u2014",
+    "participantCount": 15,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "104",
+    "facilitatorName": "\u2014J\u2014o\u2014s\u2014e\u2014p\u2014h\u2014i\u2014n\u2014e\u2014 \u2014M\u2014a\u2014t\u2014h\u2014i\u2014b\u2014e\u2014 \u2014&\u2014 \u2014M\u2014p\u2014h\u2014o\u2014 \u2014R\u2014a\u2014m\u2014o\u2014t\u2014h\u2014o\u2014",
+    "contact": "\u20147\u20141\u20145\u20146\u20145\u20146\u20144\u20143\u2014 \u2014/\u2014 \u20147\u20145\u20140\u20140\u20149\u20143\u20140\u20143\u2014",
+    "meetingPlace": "\u2014B\u2014o\u2014s\u2014e\u2014j\u2014a\u2014",
+    "meetingTime": "\u20140\u20143\u2014:\u20140\u20140\u2014 \u2014p\u2014m\u2014",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 3,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "106",
+    "facilitatorName": "\u2014L\u2014e\u2014b\u2014o\u2014g\u2014a\u2014n\u2014g\u2014 \u2014D\u2014o\u2014r\u2014e\u2014e\u2014n\u2014 \u2014M\u2014a\u2014k\u2014g\u2014a\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20145\u20149\u20146\u20146\u20141\u20141\u20143\u2014",
+    "meetingPlace": "\u2014B\u2014o\u2014s\u2014e\u2014j\u2014a\u2014 \u2014B\u2014e\u2014h\u2014i\u2014n\u2014d\u2014 \u2014I\u2014P\u2014C\u2014C\u2014",
+    "meetingTime": "\u20145\u2014:\u20140\u20140\u2014 \u2014-\u2014 \u20146\u2014:\u20143\u20140\u2014 \u2014P\u2014M\u2014",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "107",
+    "facilitatorName": "\u2014T\u2014h\u2014a\u2014b\u2014a\u2014n\u2014g\u2014 \u2014P\u2014a\u2014u\u2014l\u2014i\u2014n\u2014e\u2014 \u2014M\u2014o\u2014d\u2014i\u2014m\u2014a\u2014k\u2014w\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20142\u20149\u20149\u20143\u20144\u20140\u20140\u2014",
+    "meetingPlace": "\u2014L\u2014a\u2014d\u2014y\u2014 \u2014M\u2014i\u2014t\u2014c\u2014h\u2014i\u2014s\u2014o\u2014n\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20143\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 3,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "108",
+    "facilitatorName": "\u2014O\u2014n\u2014k\u2014a\u2014r\u2014a\u2014b\u2014i\u2014l\u2014e\u2014 \u2014M\u2014l\u2014a\u2014m\u2014b\u2014o\u2014",
+    "contact": "\u20147\u20143\u20141\u20149\u20142\u20146\u20140\u20149\u2014",
+    "meetingPlace": "\u2014P\u2014L\u2014O\u2014T\u2014 \u20148\u20142\u20148\u20145\u2014 \u2014B\u2014O\u2014S\u2014E\u2014J\u2014A\u2014 \u2014S\u2014O\u2014U\u2014T\u2014H\u2014",
+    "meetingTime": "\u20141\u20146\u2014:\u20143\u20140\u2014",
+    "participantCount": 9,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "110",
+    "facilitatorName": "\u2014O\u2014n\u2014n\u2014e\u2014i\u2014l\u2014e\u2014 \u2014L\u2014e\u2014k\u2014w\u2014a\u2014p\u2014e\u2014",
+    "contact": "\u20147\u20141\u20146\u20142\u20141\u20149\u20140\u20142\u2014",
+    "meetingPlace": "\u2014R\u2014O\u2014U\u2014T\u2014E\u2014 \u20147\u2014 \u2014C\u2014A\u2014R\u2014W\u2014A\u2014S\u2014H\u2014",
+    "meetingTime": "\u20141\u20146\u20143\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "\u20146\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 6,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "114 A",
+    "facilitatorName": "\u2014O\u2014n\u2014t\u2014e\u2014l\u2014e\u2014t\u2014s\u2014e\u2014 \u2014M\u2014e\u2014s\u2014w\u2014e\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20145\u20143\u20141\u20143\u20146\u20140\u20141\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014k\u2014a\u2014l\u2014o\u2014t\u2014e\u2014l\u2014o\u2014",
+    "meetingTime": "\u20140\u20145\u2014:\u20140\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "\u20141\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 11,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "116",
+    "facilitatorName": "\u2014O\u2014n\u2014k\u2014a\u2014b\u2014e\u2014t\u2014s\u2014e\u2014 \u2014K\u2014.\u2014 \u2014R\u2014a\u2014m\u2014o\u2014r\u2014e\u2014",
+    "contact": "\u20147\u20145\u20143\u20144\u20149\u20144\u20145\u20149\u2014",
+    "meetingPlace": "\u2014M\u2014O\u2014R\u2014W\u2014A\u2014,\u2014 \u2014P\u2014L\u2014O\u2014T\u2014 \u20141\u20149\u20145\u20141\u20148\u2014 \u2014A\u2014F\u2014T\u2014E\u2014R\u2014 \u2014M\u2014A\u2014I\u2014N\u2014 \u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 19,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "121",
+    "facilitatorName": "\u2014B\u2014O\u2014J\u2014E\u2014L\u2014O\u2014 \u2014M\u2014M\u2014A\u2014K\u2014G\u2014A\u2014G\u2014O\u2014",
+    "contact": "\u20147\u20147\u20146\u20144\u20149\u20148\u20140\u20145\u2014",
+    "meetingPlace": "\u2014P\u2014a\u2014v\u2014e\u2014m\u2014e\u2014n\u2014t\u2014 \u2014R\u2014o\u2014u\u2014t\u2014e\u2014 \u20149\u2014,\u2014 \u2014P\u2014h\u2014a\u2014p\u2014h\u2014a\u2014n\u2014e\u2014,\u2014 \u2014S\u2014l\u2014i\u2014c\u2014e\u2014s\u2014",
+    "meetingTime": "\u20142\u2014:\u20140\u20140\u2014 \u2014p\u2014m\u2014",
+    "participantCount": 10,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "123",
+    "facilitatorName": "\u2014E\u2014l\u2014i\u2014s\u2014a\u2014 \u2014M\u2014a\u2014p\u2014o\u2014t\u2014s\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20144\u20147\u20148\u20146\u20142\u20148\u20142\u2014",
+    "meetingPlace": "\u2014B\u2014o\u2014s\u2014e\u2014j\u2014a\u2014 \u2014C\u2014e\u2014n\u2014t\u2014r\u2014a\u2014l\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20141\u20143\u2014:\u20140\u20140\u2014 \u2014-\u2014 \u20141\u20144\u2014:\u20140\u20140\u2014",
+    "participantCount": 11,
+    "category": 3,
+    "reasons": "",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 9
+    }
+  },
+  {
+    "formNumber": "125",
+    "facilitatorName": "\u2014K\u2014e\u2014f\u2014i\u2014l\u2014w\u2014e\u2014 \u2014M\u2014o\u2014s\u2014e\u2014k\u2014i\u2014",
+    "contact": "\u20147\u20144\u20144\u20141\u20143\u20142\u20145\u20144\u2014",
+    "meetingPlace": "\u2014E\u2014D\u2014U\u2014C\u2014A\u2014T\u2014I\u2014O\u2014N\u2014 \u2014C\u2014E\u2014N\u2014T\u2014R\u2014E\u2014",
+    "meetingTime": "\u20141\u20145\u2014:\u20143\u20140\u2014 \u2014p\u2014m\u2014",
+    "participantCount": 21,
+    "category": 2,
+    "reasons": "\u20146\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 6,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "128",
+    "facilitatorName": "\u2014B\u2014o\u2014a\u2014g\u2014o\u2014 \u2014L\u2014e\u2014t\u2014s\u2014h\u2014o\u2014o\u2014",
+    "contact": "\u20147\u20147\u20143\u20142\u20146\u20142\u20146\u20147\u2014",
+    "meetingPlace": "\u2014W\u2014i\u2014l\u2014d\u2014l\u2014i\u2014f\u2014e\u2014 \u2014O\u2014f\u2014f\u2014i\u2014c\u2014e\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "130",
+    "facilitatorName": "\u2014J\u2014i\u2014m\u2014m\u2014y\u2014 \u2014J\u2014o\u2014e\u2014l\u2014 \u2014K\u2014a\u2014t\u2014s\u2014h\u2014i\u2014p\u2014i\u2014",
+    "contact": "\u20147\u20142\u20143\u20149\u20140\u20140\u20145\u20145\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014k\u2014g\u2014o\u2014p\u2014h\u2014a\u2014n\u2014e\u2014",
+    "meetingTime": "\u20141\u20142\u20143\u20140\u2014h\u2014r\u2014s\u2014",
+    "participantCount": 7,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "132",
+    "facilitatorName": "\u2014O\u2014n\u2014i\u2014c\u2014a\u2014h\u2014 \u2014P\u2014h\u2014a\u2014l\u2014a\u2014a\u2014g\u2014a\u2014e\u2014",
+    "contact": "\u20147\u20141\u20144\u20146\u20144\u20149\u20145\u20144\u2014",
+    "meetingPlace": "\u2014M\u2014A\u2014K\u2014G\u2014O\u2014P\u2014H\u2014A\u2014N\u2014A\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 9,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "134",
+    "facilitatorName": "\u2014K\u2014g\u2014o\u2014m\u2014o\u2014t\u2014s\u2014o\u2014 \u2014C\u2014o\u2014m\u2014f\u2014o\u2014r\u2014t\u2014 \u2014M\u2014o\u2014e\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20144\u20142\u20149\u20142\u20142\u20147\u20147\u2014 \u2014/\u2014 \u20147\u20143\u20140\u20140\u20141\u20141\u20140\u20143\u2014",
+    "meetingPlace": "\u2014M\u2014A\u2014K\u2014A\u2014K\u2014A\u2014T\u2014L\u2014E\u2014L\u2014A\u2014",
+    "meetingTime": "\u2014D\u2014O\u2014I\u2014N\u2014G\u2014 \u2014O\u2014N\u2014L\u2014I\u2014N\u2014E\u2014",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "\u20146\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 6,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "136",
+    "facilitatorName": "\u2014O\u2014l\u2014e\u2014b\u2014o\u2014g\u2014e\u2014n\u2014g\u2014 \u2014P\u2014e\u2014o\u2014l\u2014w\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20145\u20149\u20149\u20141\u20140\u20142\u20145\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014k\u2014g\u2014o\u2014p\u2014h\u2014a\u2014n\u2014a\u2014 \u2014C\u2014l\u2014i\u2014n\u2014i\u2014c\u2014",
+    "meetingTime": "\u20141\u20143\u2014:\u20140\u20140\u2014",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "137 A",
+    "facilitatorName": "\u2014K\u2014e\u2014b\u2014o\u2014n\u2014y\u2014e\u2014 \u2014P\u2014i\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20144\u20143\u20144\u20145\u20145\u20143\u20149\u2014",
+    "meetingPlace": "\u2014A\u2014s\u2014s\u2014e\u2014m\u2014b\u2014l\u2014i\u2014e\u2014s\u2014 \u2014o\u2014f\u2014 \u2014G\u2014o\u2014d\u2014",
+    "meetingTime": "\u20141\u20146\u2014:\u20140\u20140\u2014",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "\u20148\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 8,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "137 B",
+    "facilitatorName": "\u2014K\u2014e\u2014a\u2014l\u2014e\u2014b\u2014o\u2014g\u2014a\u2014 \u2014B\u2014e\u2014r\u2014m\u2014a\u2014n\u2014",
+    "contact": "\u20147\u20148\u20143\u20145\u20146\u20144\u20147\u20149\u2014",
+    "meetingPlace": "\u2014B\u2014o\u2014s\u2014e\u2014j\u2014a\u2014 \u2014D\u2014a\u2014m\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 9,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "138",
+    "facilitatorName": "\u2014M\u2014p\u2014h\u2014o\u2014 \u2014R\u2014a\u2014m\u2014a\u2014t\u2014o\u2014t\u2014o\u2014d\u2014i\u2014",
+    "contact": "\u20147\u20146\u20146\u20148\u20147\u20148\u20148\u20140\u2014",
+    "meetingPlace": "\u2014B\u2014O\u2014S\u2014E\u2014J\u2014A\u2014 \u2014R\u2014O\u2014U\u2014T\u2014E\u2014 \u20146\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "141",
+    "facilitatorName": "\u2014S\u2014e\u2014n\u2014t\u2014l\u2014e\u2014e\u2014n\u2014g\u2014 \u2014S\u2014i\u2014k\u2014w\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20145\u20144\u20149\u20143\u20140\u20144\u20140\u2014",
+    "meetingPlace": "\u2014M\u2014M\u2014A\u2014D\u2014I\u2014P\u2014A\u2014M\u2014O\u2014 \u2014P\u2014.\u2014 \u2014S\u2014C\u2014H\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20143\u20140\u2014h\u2014r\u2014s\u2014",
+    "participantCount": 15,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014O\u2014.\u2014 \u2014M\u2014e\u2014d\u2014u\u2014p\u2014e\u2014,\u2014 \u2014G\u2014.\u2014 \u2014M\u2014.\u2014 \u2014P\u2014o\u2014r\u2014o\u2014g\u2014a\u2014,\u2014 \u2014T\u2014.\u2014 \u2014S\u2014.\u2014 \u2014G\u2014o\u2014l\u2014e\u2014b\u2014e\u2014t\u2014s\u2014w\u2014e\u2014.\u2014.\u2014.\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 14,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "143",
+    "facilitatorName": "\u2014B\u2014a\u2014k\u2014a\u2014n\u2014g\u2014 \u2014M\u2014o\u2014d\u2014i\u2014s\u2014e\u2014",
+    "contact": "\u20147\u20144\u20147\u20140\u20144\u20147\u20143\u20141\u2014",
+    "meetingPlace": "\u2014B\u2014o\u2014g\u2014a\u2014t\u2014s\u2014u\u2014 \u2014P\u2014r\u2014i\u2014m\u2014a\u2014r\u2014y\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014 \u2014(\u2014M\u2014a\u2014k\u2014g\u2014o\u2014p\u2014h\u2014a\u2014n\u2014a\u2014)\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20143\u20140\u2014",
+    "participantCount": 36,
+    "category": 2,
+    "reasons": "\u20147\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "151",
+    "facilitatorName": "\u2014L\u2014e\u2014s\u2014e\u2014g\u2014o\u2014 \u2014M\u2014o\u2014r\u2014a\u2014o\u2014p\u2014e\u2014",
+    "contact": "\u20147\u20141\u20146\u20143\u20149\u20140\u20148\u20147\u2014",
+    "meetingPlace": "\u2014F\u2014O\u2014R\u2014E\u2014S\u2014T\u2014R\u2014Y\u2014 \u2014&\u2014 \u2014R\u2014A\u2014N\u2014G\u2014E\u2014 \u2014R\u2014E\u2014S\u2014O\u2014U\u2014R\u2014C\u2014E\u2014S\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014",
+    "participantCount": 6,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014a\u2014r\u2014i\u2014t\u2014a\u2014l\u2014 \u2014c\u2014o\u2014d\u2014e\u2014s\u2014 \u2014(\u2014S\u2014/\u2014M\u2014/\u2014D\u2014)\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014s\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 1,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 2
+    }
+  },
+  {
+    "formNumber": "153",
+    "facilitatorName": "\u2014T\u2014e\u2014b\u2014o\u2014g\u2014o\u2014 \u2014M\u2014o\u2014e\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20142\u20148\u20143\u20140\u20140\u20148\u20149\u2014",
+    "meetingPlace": "\u2014K\u2014G\u2014A\u2014F\u2014E\u2014L\u2014A\u2014 \u2014P\u2014.\u2014S\u2014",
+    "meetingTime": "\u20141\u20143\u2014:\u20143\u20140\u2014",
+    "participantCount": 26,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "157",
+    "facilitatorName": "\u2014L\u2014e\u2014a\u2014h\u2014 \u2014S\u2014e\u2014n\u2014w\u2014e\u2014l\u2014o\u2014",
+    "contact": "\u20147\u20141\u20146\u20141\u20142\u20147\u20141\u20141\u2014",
+    "meetingPlace": "\u2014B\u2014O\u2014S\u2014E\u2014J\u2014A\u2014",
+    "meetingTime": "\u20141\u20141\u2014:\u20143\u20140\u2014",
+    "participantCount": 3,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "159",
+    "facilitatorName": "\u2014B\u2014o\u2014t\u2014s\u2014a\u2014l\u2014o\u2014 \u2014L\u2014e\u2014u\u2014n\u2014g\u2014o\u2014 \u2014R\u2014a\u2014k\u2014g\u2014o\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20142\u20141\u20141\u20140\u20141\u20145\u20148\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014d\u2014i\u2014a\u2014n\u2014e\u2014'\u2014s\u2014 \u2014h\u2014o\u2014u\u2014s\u2014e\u2014",
+    "meetingTime": "\u20141\u20142\u2014:\u20140\u20140\u2014",
+    "participantCount": 12,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "161",
+    "facilitatorName": "\u2014L\u2014o\u2014n\u2014e\u2014 \u2014T\u2014o\u2014t\u2014e\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20144\u20144\u20140\u20148\u20148\u20148\u20148\u2014",
+    "meetingPlace": "\u2014L\u2014a\u2014d\u2014y\u2014 \u2014M\u2014i\u2014t\u2014c\u2014h\u2014i\u2014s\u2014o\u2014n\u2014 \u2014P\u2014r\u2014i\u2014m\u2014a\u2014r\u2014y\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20146\u2014p\u2014m\u2014",
+    "participantCount": 5,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "164",
+    "facilitatorName": "\u2014D\u2014i\u2014b\u2014u\u2014k\u2014a\u2014 \u2014S\u2014e\u2014t\u2014s\u2014h\u2014w\u2014a\u2014n\u2014e\u2014n\u2014g\u2014 \u2014M\u2014o\u2014g\u2014o\u2014t\u2014s\u2014i\u2014",
+    "contact": "\u20147\u20147\u20147\u20141\u20143\u20147\u20149\u20144\u2014",
+    "meetingPlace": "\u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014 \u2014A\u2014N\u2014D\u2014 \u2014A\u2014L\u2014O\u2014N\u2014G\u2014 \u2014R\u2014O\u2014U\u2014T\u2014E\u2014 \u20146\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 8,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "168",
+    "facilitatorName": "\u2014M\u2014o\u2014l\u2014e\u2014t\u2014i\u2014 \u2014M\u2014a\u2014t\u2014l\u2014h\u2014a\u2014g\u2014a\u2014",
+    "contact": "\u20147\u20141\u20146\u20148\u20149\u20145\u20140\u20149\u2014",
+    "meetingPlace": "\u2014N\u2014T\u2014S\u2014H\u2014I\u2014N\u2014O\u2014G\u2014E\u2014",
+    "meetingTime": "\u2014[\u2014B\u2014l\u2014a\u2014n\u2014k\u2014]\u2014",
+    "participantCount": 5,
+    "category": 2,
+    "reasons": "\u20145\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 5,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "171",
+    "facilitatorName": "\u2014G\u2014a\u2014g\u2014o\u2014s\u2014e\u2014p\u2014e\u2014 \u2014T\u2014s\u2014h\u2014e\u2014k\u2014o\u2014",
+    "contact": "\u20147\u20141\u20146\u20141\u20141\u20142\u20148\u20145\u2014",
+    "meetingPlace": "\u2014C\u2014l\u2014i\u2014n\u2014i\u2014c\u2014 \u20141\u2014 \u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014",
+    "meetingTime": "\u20142\u2014p\u2014m\u2014",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "\u20149\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 9,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 10,
+      "omittedMaritalCount": 10
+    }
+  },
+  {
+    "formNumber": "172",
+    "facilitatorName": "\u2014D\u2014i\u2014n\u2014e\u2014o\u2014 \u2014S\u2014e\u2014r\u2014o\u2014k\u2014e\u2014",
+    "contact": "\u20147\u20142\u20145\u20142\u20142\u20144\u20148\u20148\u2014",
+    "meetingPlace": "\u2014R\u2014A\u2014N\u2014K\u2014O\u2014A\u2014 \u2014P\u2014 \u2014S\u2014C\u2014H\u2014O\u2014O\u2014L\u2014",
+    "meetingTime": "\u20142\u2014:\u20143\u20140\u2014",
+    "participantCount": 32,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "174",
+    "facilitatorName": "\u2014S\u2014e\u2014l\u2014i\u2014n\u2014a\u2014h\u2014 \u2014S\u2014e\u2014f\u2014a\u2014k\u2014w\u2014e\u2014",
+    "contact": "\u20147\u20142\u20143\u20149\u20145\u20144\u20140\u20149\u2014",
+    "meetingPlace": "\u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014 \u2014B\u2014o\u2014s\u2014e\u2014j\u2014a\u2014 \u2014S\u2014o\u2014u\u2014t\u2014h\u2014",
+    "meetingTime": "\u20147\u2014:\u20140\u20140\u2014 \u2014a\u2014m\u2014",
+    "participantCount": 25,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20145\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "175",
+    "facilitatorName": "\u2014E\u2014m\u2014m\u2014a\u2014n\u2014u\u2014e\u2014l\u2014 \u2014K\u2014e\u2014t\u2014s\u2014i\u2014t\u2014l\u2014i\u2014l\u2014e\u2014",
+    "contact": "\u20147\u20146\u20149\u20143\u20141\u20145\u20146\u20142\u2014",
+    "meetingPlace": "\u2014F\u2014I\u2014R\u2014E\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20143\u20140\u2014",
+    "participantCount": 15,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014B\u2014.\u2014 \u2014G\u2014.\u2014 \u2014B\u2014A\u2014G\u2014A\u2014K\u2014A\u2014,\u2014 \u2014F\u2014.\u2014 \u2014N\u2014.\u2014 \u2014M\u2014A\u2014T\u2014S\u2014O\u2014G\u2014E\u2014,\u2014 \u2014G\u2014.\u2014 \u2014G\u2014.\u2014 \u2014M\u2014A\u2014T\u2014S\u2014I\u2014R\u2014A\u2014N\u2014E\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "179",
+    "facilitatorName": "\u2014K\u2014g\u2014o\u2014m\u2014o\u2014t\u2014s\u2014o\u2014 \u2014N\u2014q\u2014u\u2014e\u2014s\u2014h\u2014 \u2014D\u2014i\u2014n\u2014t\u2014s\u2014i\u2014",
+    "contact": "\u20147\u20144\u20148\u20142\u20140\u20148\u20145\u20145\u2014 \u2014/\u2014 \u20147\u20142\u20145\u20143\u20143\u20147\u20142\u20142\u2014",
+    "meetingPlace": "\u2014M\u2014O\u2014C\u2014H\u2014U\u2014D\u2014I\u2014 \u2014M\u2014A\u2014L\u2014L\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014a\u2014r\u2014i\u2014t\u2014a\u2014l\u2014 \u2014c\u2014o\u2014d\u2014e\u2014s\u2014 \u2014(\u2014S\u2014/\u2014M\u2014/\u2014D\u2014)\u2014;\u2014 \u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014:\u2014 \u2014D\u2014 \u2014M\u2014u\u2014n\u2014t\u2014h\u2014a\u2014l\u2014i\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014s\u2014;\u2014 \u20147\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 7,
+      "rawMaritalCount": 1,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "182",
+    "facilitatorName": "\u2014T\u2014s\u2014e\u2014l\u2014a\u2014n\u2014e\u2014 \u2014B\u2014o\u2014i\u2014k\u2014h\u2014u\u2014t\u2014s\u2014o\u2014 \u2014T\u2014e\u2014m\u2014e\u2014k\u2014i\u2014",
+    "contact": "\u20147\u20141\u20147\u20147\u20140\u20149\u20140\u20145\u2014",
+    "meetingPlace": "\u2014P\u2014L\u2014O\u2014T\u2014 \u20141\u20140\u20142\u20142\u20146\u2014 \u2014P\u2014H\u2014A\u2014P\u2014H\u2014A\u2014N\u2014E\u2014",
+    "meetingTime": "\u20148\u2014 \u2014P\u2014.\u2014M\u2014",
+    "participantCount": 14,
+    "category": 3,
+    "reasons": "\u20141\u2014 \u2014e\u2014d\u2014u\u2014c\u2014a\u2014t\u2014i\u2014o\u2014n\u2014 \u2014c\u2014o\u2014d\u2014e\u2014s\u2014 \u2014(\u2014J\u2014/\u2014S\u2014/\u2014U\u2014)\u2014;\u2014 \u20144\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 4,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 1,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "183",
+    "facilitatorName": "\u2014O\u2014n\u2014a\u2014l\u2014e\u2014p\u2014e\u2014l\u2014o\u2014 \u2014D\u2014i\u2014p\u2014o\u2014g\u2014i\u2014s\u2014o\u2014",
+    "contact": "\u20147\u20146\u20149\u20143\u20144\u20145\u20142\u20141\u2014",
+    "meetingPlace": "\u2014S\u2014e\u2014i\u2014n\u2014g\u2014w\u2014a\u2014e\u2014n\u2014g\u2014 \u2014P\u2014.\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20140\u20147\u20143\u20140\u2014 \u2014-\u2014 \u20140\u20148\u20140\u20140\u2014a\u2014m\u2014",
+    "participantCount": 35,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 4
+    }
+  },
+  {
+    "formNumber": "183 A",
+    "facilitatorName": "\u2014T\u2014s\u2014h\u2014e\u2014g\u2014o\u2014f\u2014a\u2014t\u2014s\u2014o\u2014 \u2014H\u2014a\u2014p\u2014p\u2014y\u2014 \u2014L\u2014e\u2014b\u2014o\u2014t\u2014s\u2014e\u2014",
+    "contact": "\u20147\u20144\u20145\u20143\u20146\u20146\u20146\u20144\u2014",
+    "meetingPlace": "\u2014S\u2014e\u2014i\u2014n\u2014g\u2014w\u2014a\u2014e\u2014n\u2014g\u2014 \u2014P\u2014.\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20140\u20147\u20143\u20140\u2014 \u2014-\u2014 \u20140\u20148\u20140\u20140\u2014a\u2014m\u2014",
+    "participantCount": 1,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "185",
+    "facilitatorName": "\u2014K\u2014a\u2014g\u2014i\u2014s\u2014o\u2014 \u2014M\u2014o\u2014i\u2014t\u2014o\u2014i\u2014",
+    "contact": "\u20147\u20144\u20149\u20147\u20147\u20149\u20149\u20147\u2014",
+    "meetingPlace": "\u2014E\u2014d\u2014u\u2014c\u2014a\u2014t\u2014i\u2014o\u2014n\u2014 \u2014R\u2014e\u2014g\u2014i\u2014o\u2014n\u2014a\u2014l\u2014 \u2014O\u2014f\u2014f\u2014i\u2014c\u2014e\u2014",
+    "meetingTime": "\u20141\u20145\u2014:\u20140\u20140\u2014h\u2014r\u2014s\u2014",
+    "participantCount": 19,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "188",
+    "facilitatorName": "\u2014L\u2014e\u2014s\u2014e\u2014g\u2014o\u2014 \u2014T\u2014h\u2014i\u2014p\u2014e\u2014",
+    "contact": "\u20147\u20144\u20141\u20147\u20143\u20145\u20145\u20140\u2014 \u2014/\u2014 \u20147\u20144\u20148\u20144\u20141\u20141\u20141\u20144\u2014",
+    "meetingPlace": "\u2014I\u2014s\u2014a\u2014n\u2014g\u2014 \u2014P\u2014.\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20141\u20143\u2014:\u20140\u20140\u2014p\u2014m\u2014",
+    "participantCount": 24,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "190",
+    "facilitatorName": "\u2014S\u2014e\u2014g\u2014a\u2014m\u2014e\u2014t\u2014s\u2014i\u2014 \u2014C\u2014 \u2014S\u2014e\u2014t\u2014s\u2014h\u2014w\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20141\u20145\u20144\u20142\u20141\u20149\u20143\u2014",
+    "meetingPlace": "\u2014A\u2014t\u2014 \u2014h\u2014o\u2014m\u2014e\u2014",
+    "meetingTime": "\u20142\u20140\u2014:\u20140\u20140\u2014",
+    "participantCount": 12,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "196",
+    "facilitatorName": "\u2014O\u2014t\u2014s\u2014h\u2014e\u2014g\u2014e\u2014d\u2014i\u2014t\u2014s\u2014e\u2014 \u2014M\u2014o\u2014a\u2014t\u2014s\u2014w\u2014i\u2014",
+    "contact": "\u20147\u20145\u20145\u20141\u20142\u20140\u20140\u20147\u2014",
+    "meetingPlace": "\u2014M\u2014M\u2014A\u2014T\u2014H\u2014U\u2014B\u2014U\u2014D\u2014U\u2014K\u2014W\u2014A\u2014N\u2014E\u2014 \u2014P\u2014O\u2014L\u2014I\u2014C\u2014E\u2014 \u2014S\u2014T\u2014A\u2014T\u2014I\u2014O\u2014N\u2014",
+    "meetingTime": "\u20141\u20145\u20140\u20140\u2014H\u2014R\u2014S\u2014",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014L\u2014.\u2014 \u2014C\u2014.\u2014 \u2014T\u2014u\u2014e\u2014l\u2014o\u2014;\u2014 \u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "197",
+    "facilitatorName": "\u2014O\u2014l\u2014e\u2014b\u2014o\u2014g\u2014e\u2014n\u2014g\u2014 \u2014M\u2014o\u2014y\u2014o\u2014n\u2014d\u2014a\u2014",
+    "contact": "\u20147\u20142\u20147\u20149\u20145\u20148\u20143\u20141\u2014",
+    "meetingPlace": "\u2014M\u2014M\u2014A\u2014T\u2014H\u2014U\u2014B\u2014U\u2014D\u2014U\u2014K\u2014W\u2014A\u2014N\u2014E\u2014",
+    "meetingTime": "\u20140\u20147\u20143\u20140\u2014",
+    "participantCount": 10,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "198",
+    "facilitatorName": "\u2014B\u2014o\u2014t\u2014s\u2014h\u2014e\u2014l\u2014o\u2014 \u2014T\u2014s\u2014h\u2014u\u2014k\u2014u\u2014d\u2014u\u2014",
+    "contact": "\u20147\u20144\u20148\u20147\u20145\u20145\u20141\u20140\u2014",
+    "meetingPlace": "\u2014M\u2014A\u2014L\u2014O\u2014T\u2014W\u2014A\u2014N\u2014A\u2014 \u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014",
+    "meetingTime": "\u20140\u20148\u2014:\u20140\u20140\u2014",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "200",
+    "facilitatorName": "\u2014J\u2014u\u2014l\u2014i\u2014a\u2014 \u2014K\u2014.\u2014 \u2014M\u2014a\u2014d\u2014i\u2014s\u2014a\u2014",
+    "contact": "\u20147\u20142\u20149\u20146\u20148\u20143\u20149\u20142\u2014",
+    "meetingPlace": "\u2014P\u2014H\u2014A\u2014P\u2014H\u2014A\u2014N\u2014E\u2014 \u2014P\u2014R\u2014I\u2014M\u2014A\u2014R\u2014Y\u2014",
+    "meetingTime": "\u20141\u20140\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014 \u2014/\u2014 \u20141\u20144\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 39,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014O\u2014.\u2014 \u2014P\u2014e\u2014r\u2014e\u2014k\u2014i\u2014s\u2014i\u2014,\u2014 \u2014P\u2014.\u2014 \u2014M\u2014a\u2014k\u2014o\u2014n\u2014i\u2014;\u2014 \u20141\u20144\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20141\u20144\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 14,
+      "initialFirstNameCount": 2,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 12,
+      "omittedMaritalCount": 15
+    }
+  },
+  {
+    "formNumber": "201",
+    "facilitatorName": "\u2014R\u2014a\u2014y\u2014m\u2014o\u2014n\u2014d\u2014 \u2014B\u2014a\u2014i\u2014p\u2014h\u2014e\u2014t\u2014l\u2014h\u2014i\u2014",
+    "contact": "\u20147\u20141\u20143\u20147\u20144\u20147\u20140\u20146\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014 \u2014S\u2014t\u2014a\u2014t\u2014e\u2014 \u2014P\u2014r\u2014i\u2014s\u2014o\u2014n\u2014",
+    "meetingTime": "\u20141\u20142\u20143\u20140\u2014 \u2014-\u2014 \u20141\u20144\u20140\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 58,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 8,
+      "omittedMaritalCount": 4
+    }
+  },
+  {
+    "formNumber": "202",
+    "facilitatorName": "\u2014K\u2014a\u2014t\u2014l\u2014e\u2014g\u2014o\u2014 \u2014N\u2014k\u2014a\u2014t\u2014s\u2014w\u2014a\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20148\u20142\u20144\u20147\u20147\u20144\u20143\u2014",
+    "meetingPlace": "\u2014K\u2014g\u2014a\u2014m\u2014a\u2014n\u2014y\u2014a\u2014n\u2014e\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "203",
+    "facilitatorName": "\u2014T\u2014e\u2014b\u2014o\u2014g\u2014o\u2014 \u2014C\u2014h\u2014a\u2014r\u2014m\u2014i\u2014n\u2014e\u2014 \u2014D\u2014i\u2014k\u2014g\u2014a\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20146\u20143\u20141\u20142\u20145\u20144\u20144\u2014",
+    "meetingPlace": "\u2014P\u2014i\u2014l\u2014a\u2014n\u2014e\u2014 \u2014B\u2014o\u2014r\u2014i\u2014g\u2014a\u2014n\u2014e\u2014 \u2014W\u2014a\u2014r\u2014d\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20143\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014B\u2014.\u2014 \u2014M\u2014o\u2014k\u2014g\u2014a\u2014t\u2014l\u2014h\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "205",
+    "facilitatorName": "\u2014I\u2014t\u2014u\u2014m\u2014e\u2014l\u2014e\u2014n\u2014g\u2014 \u2014P\u2014i\u2014l\u2014a\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20147\u20145\u20145\u20146\u20140\u20149\u20142\u2014",
+    "meetingPlace": "\u2014M\u2014m\u2014u\u2014s\u2014i\u2014 \u2014P\u2014.\u2014 \u2014S\u2014c\u2014h\u2014o\u2014o\u2014l\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20140\u20140\u2014 \u2014a\u2014m\u2014",
+    "participantCount": 4,
+    "category": 2,
+    "reasons": "\u20144\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 4,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "208",
+    "facilitatorName": "\u2014G\u2014a\u2014o\u2014n\u2014g\u2014a\u2014l\u2014e\u2014w\u2014e\u2014 \u2014K\u2014g\u2014a\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20147\u20149\u20149\u20141\u20142\u20146\u20143\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014s\u2014o\u2014s\u2014o\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20140\u20140\u2014",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014:\u2014 \u2014L\u2014 \u2014R\u2014a\u2014m\u2014o\u2014d\u2014i\u2014s\u2014a\u2014;\u2014 \u20141\u20143\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 13,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 14,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "210",
+    "facilitatorName": "\u2014G\u2014a\u2014a\u2014n\u2014e\u2014w\u2014e\u2014 \u2014P\u2014i\u2014n\u2014k\u2014i\u2014e\u2014 \u2014M\u2014o\u2014l\u2014e\u2014m\u2014a\u2014",
+    "contact": "\u20147\u20142\u20147\u20148\u20142\u20142\u20145\u20146\u2014",
+    "meetingPlace": "\u2014D\u2014E\u2014P\u2014T\u2014 \u2014O\u2014F\u2014 \u2014S\u2014O\u2014C\u2014I\u2014A\u2014L\u2014 \u2014D\u2014E\u2014V\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 3,
+    "category": 2,
+    "reasons": "\u20143\u2014 \u2014m\u2014a\u2014r\u2014i\u2014t\u2014a\u2014l\u2014 \u2014c\u2014o\u2014d\u2014e\u2014s\u2014 \u2014(\u2014S\u2014/\u2014M\u2014/\u2014D\u2014)\u2014;\u2014 \u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014:\u2014 \u2014K\u2014.\u2014 \u2014P\u2014h\u2014u\u2014t\u2014h\u2014e\u2014g\u2014o\u2014,\u2014 \u2014O\u2014.\u2014 \u2014M\u2014m\u2014u\u2014p\u2014i\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 3,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "216",
+    "facilitatorName": "\u2014L\u2014e\u2014s\u2014e\u2014d\u2014i\u2014 \u2014R\u2014a\u2014m\u2014a\u2014b\u2014o\u2014k\u2014w\u2014a\u2014",
+    "contact": "\u20147\u20145\u20140\u20149\u20147\u20149\u20145\u20148\u2014",
+    "meetingPlace": "\u2014M\u2014R\u2014C\u2014B\u2014 \u2014H\u2014A\u2014L\u2014L\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 24,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "217",
+    "facilitatorName": "\u2014D\u2014o\u2014l\u2014l\u2014y\u2014 \u2014S\u2014h\u2014a\u2014p\u2014a\u2014t\u2014a\u2014",
+    "contact": "\u20147\u20147\u20144\u20149\u20148\u20143\u20149\u20149\u2014",
+    "meetingPlace": "\u2014L\u2014A\u2014D\u2014Y\u2014 \u2014M\u2014I\u2014T\u2014C\u2014H\u2014I\u2014S\u2014O\u2014N\u2014 \u2014P\u2014R\u2014I\u2014M\u2014A\u2014R\u2014Y\u2014 \u2014S\u2014C\u2014H\u2014O\u2014O\u2014L\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20142\u20140\u2014 \u2014a\u2014m\u2014",
+    "participantCount": 38,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "220",
+    "facilitatorName": "\u2014O\u2014n\u2014n\u2014e\u2014i\u2014l\u2014e\u2014 \u2014M\u2014a\u2014k\u2014w\u2014a\u2014t\u2014s\u2014e\u2014",
+    "contact": "\u20147\u20146\u20142\u20146\u20143\u20148\u20143\u20140\u2014",
+    "meetingPlace": "\u2014M\u2014a\u2014i\u2014n\u2014 \u2014L\u2014a\u2014n\u2014d\u2014 \u2014B\u2014o\u2014a\u2014r\u2014d\u2014",
+    "meetingTime": "\u20141\u20145\u2014:\u20140\u20140\u2014",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "220 B",
+    "facilitatorName": "\u2014M\u2014o\u2014n\u2014i\u2014c\u2014a\u2014 \u2014N\u2014t\u2014h\u2014e\u2014b\u2014o\u2014l\u2014a\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20142\u20147\u20148\u20145\u20147\u20143\u20145\u2014",
+    "meetingPlace": "\u2014R\u2014E\u2014C\u2014R\u2014E\u2014A\u2014T\u2014I\u2014O\u2014N\u2014 \u2014H\u2014A\u2014L\u2014L\u2014",
+    "meetingTime": "\u20141\u20144\u20140\u20140\u2014",
+    "participantCount": 3,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "221",
+    "facilitatorName": "\u2014L\u2014e\u2014s\u2014e\u2014d\u2014i\u2014 \u2014K\u2014a\u2014o\u2014n\u2014e\u2014",
+    "contact": "\u20147\u20144\u20144\u20143\u20140\u20148\u20140\u20144\u2014",
+    "meetingPlace": "\u2014K\u2014G\u2014A\u2014T\u2014L\u2014E\u2014N\u2014G\u2014 \u2014L\u2014A\u2014N\u2014D\u2014 \u2014B\u2014O\u2014A\u2014R\u2014D\u2014",
+    "meetingTime": "\u20141\u20144\u2014:\u20140\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "\u2014I\u2014n\u2014i\u2014t\u2014i\u2014a\u2014l\u2014s\u2014 \u2014u\u2014s\u2014e\u2014d\u2014:\u2014 \u2014D\u2014.\u2014 \u2014V\u2014.\u2014 \u2014K\u2014i\u2014t\u2014i\u2014,\u2014 \u2014T\u2014.\u2014 \u2014B\u2014.\u2014 \u2014L\u2014e\u2014k\u2014g\u2014o\u2014w\u2014a\u2014,\u2014 \u2014M\u2014.\u2014 \u2014M\u2014o\u2014g\u2014o\u2014t\u2014s\u2014i\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "222",
+    "facilitatorName": "\u2014B\u2014o\u2014i\u2014n\u2014e\u2014e\u2014l\u2014o\u2014 \u2014I\u2014p\u2014o\u2014t\u2014s\u2014e\u2014n\u2014g\u2014",
+    "contact": "\u20147\u20145\u20145\u20147\u20140\u20144\u20142\u20143\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014r\u2014w\u2014a\u2014 \u2014K\u2014g\u2014o\u2014t\u2014l\u2014a\u2014",
+    "meetingTime": "\u20141\u20141\u2014:\u20144\u20145\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 11,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "223",
+    "facilitatorName": "\u2014K\u2014e\u2014i\u2014t\u2014u\u2014m\u2014e\u2014t\u2014s\u2014e\u2014 \u2014M\u2014a\u2014t\u2014h\u2014e\u2014b\u2014u\u2014l\u2014a\u2014",
+    "contact": "\u20147\u20146\u20146\u20146\u20145\u20142\u20149\u20145\u2014",
+    "meetingPlace": "Arise & Shine Day Care, Mochudi",
+    "meetingTime": "\u2014[\u2014B\u2014l\u2014a\u2014n\u2014k\u2014]\u2014",
+    "participantCount": 5,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014 \u2014n\u2014u\u2014m\u2014b\u2014e\u2014r\u2014s\u2014;\u2014 \u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "224",
+    "facilitatorName": "\u2014M\u2014a\u2014s\u2014e\u2014g\u2014o\u2014 \u2014G\u2014r\u2014a\u2014c\u2014e\u2014 \u2014M\u2014o\u2014k\u2014g\u2014a\u2014d\u2014i\u2014",
+    "contact": "\u20147\u20142\u20147\u20149\u20140\u20140\u20149\u20149\u2014",
+    "meetingPlace": "\u2014[\u2014B\u2014l\u2014a\u2014n\u2014k\u2014]\u2014",
+    "meetingTime": "\u20141\u20145\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 11,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "225",
+    "facilitatorName": "\u2014M\u2014m\u2014a\u2014p\u2014u\u2014l\u2014a\u2014 \u2014R\u2014a\u2014m\u2014m\u2014a\u2014l\u2014a\u2014",
+    "contact": "\u20147\u20142\u20145\u20146\u20149\u20141\u20142\u20147\u2014",
+    "meetingPlace": "\u2014M\u2014O\u2014R\u2014E\u2014M\u2014A\u2014 \u2014W\u2014A\u2014R\u2014D\u2014 \u2014V\u2014D\u2014C\u2014 \u2014O\u2014F\u2014F\u2014I\u2014C\u2014E\u2014",
+    "meetingTime": "\u20141\u20147\u2014:\u20140\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 18,
+    "category": 2,
+    "reasons": "\u20141\u20147\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014;\u2014 \u20141\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 17,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "227",
+    "facilitatorName": "[Blank on register] Contact: Laone Motlhabanku (Manager)",
+    "contact": "72390199",
+    "meetingPlace": "Just Formu One, Mochudi",
+    "meetingTime": "Not stated on register",
+    "participantCount": 4,
+    "category": 2,
+    "reasons": "; Register header (Leader, Time) blank on physical form",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "230",
+    "facilitatorName": "\u2014J\u2014i\u2014m\u2014m\u2014y\u2014 \u2014J\u2014o\u2014e\u2014l\u2014 \u2014K\u2014a\u2014t\u2014s\u2014h\u2014i\u2014p\u2014i\u2014",
+    "contact": "\u20147\u20142\u20143\u20149\u20140\u20140\u20145\u20145\u2014",
+    "meetingPlace": "\u2014P\u2014h\u2014a\u2014p\u2014h\u2014a\u2014n\u2014e\u2014",
+    "meetingTime": "\u20141\u20147\u20140\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 3,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "231",
+    "facilitatorName": "\u2014B\u2014a\u2014r\u2014a\u2014t\u2014i\u2014 \u2014C\u2014a\u2014r\u2014o\u2014l\u2014i\u2014n\u2014e\u2014 \u2014S\u2014e\u2014i\u2014k\u2014e\u2014t\u2014s\u2014o\u2014",
+    "contact": "\u20147\u20145\u20141\u20140\u20145\u20149\u20149\u20149\u2014",
+    "meetingPlace": "\u2014J\u2014O\u2014W\u2014A\u2014N\u2014E\u2014 \u2014M\u2014A\u2014S\u2014O\u2014W\u2014E\u2014 \u2014S\u2014E\u2014L\u2014O\u2014S\u2014E\u2014S\u2014H\u2014A\u2014 \u2014B\u2014R\u2014A\u2014N\u2014C\u2014H\u2014",
+    "meetingTime": "\u20141\u20146\u2014:\u20140\u20140\u2014",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "\u20142\u20144\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014f\u2014f\u2014i\u2014l\u2014i\u2014a\u2014t\u2014i\u2014o\u2014n\u2014/\u2014w\u2014o\u2014r\u2014k\u2014p\u2014l\u2014a\u2014c\u2014e\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 24,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "232",
+    "facilitatorName": "\u2014M\u2014a\u2014l\u2014o\u2014t\u2014w\u2014a\u2014n\u2014a\u2014 \u2014C\u2014l\u2014u\u2014s\u2014t\u2014e\u2014r\u2014",
+    "contact": "\u20145\u20147\u20145\u20140\u20141\u20147\u20145\u2014",
+    "meetingPlace": "\u2014M\u2014A\u2014L\u2014O\u2014T\u2014W\u2014A\u2014N\u2014A\u2014 \u2014K\u2014G\u2014O\u2014T\u2014L\u2014A\u2014",
+    "meetingTime": "\u20140\u20147\u2014:\u20140\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "\u20141\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014a\u2014g\u2014e\u2014;\u2014 \u2014F\u2014a\u2014c\u2014i\u2014l\u2014i\u2014t\u2014a\u2014t\u2014o\u2014r\u2014 \u2014m\u2014e\u2014e\u2014t\u2014i\u2014n\u2014g\u2014 \u2014t\u2014i\u2014m\u2014e\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "238",
+    "facilitatorName": "\u2014B\u2014o\u2014i\u2014t\u2014u\u2014m\u2014e\u2014l\u2014o\u2014 \u2014B\u2014o\u2014n\u2014t\u2014l\u2014e\u2014 \u2014K\u2014g\u2014o\u2014p\u2014o\u2014l\u2014o\u2014",
+    "contact": "\u20147\u20142\u20149\u20146\u20148\u20143\u20149\u20142\u2014",
+    "meetingPlace": "\u2014P\u2014U\u2014D\u2014U\u2014L\u2014O\u2014G\u2014O\u2014N\u2014G\u2014 \u2014R\u2014E\u2014H\u2014A\u2014B\u2014I\u2014L\u2014I\u2014T\u2014A\u2014T\u2014I\u2014O\u2014N\u2014 \u2014C\u2014E\u2014N\u2014T\u2014E\u2014R\u2014",
+    "meetingTime": "\u20141\u20141\u20143\u20140\u2014 \u2014H\u2014R\u2014S\u2014",
+    "participantCount": 28,
+    "category": 2,
+    "reasons": "\u20142\u2014 \u2014m\u2014i\u2014s\u2014s\u2014i\u2014n\u2014g\u2014 \u2014p\u2014h\u2014o\u2014n\u2014e\u2014s\u2014",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 27,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "248",
+    "facilitatorName": "\u2014B\u2014o\u2014i\u2014t\u2014u\u2014m\u2014e\u2014l\u2014o\u2014 \u2014K\u2014g\u2014o\u2014p\u2014o\u2014l\u2014o\u2014",
+    "contact": "\u20147\u20142\u20147\u20140\u20146\u20146\u20148\u20143\u2014",
+    "meetingPlace": "\u2014M\u2014o\u2014c\u2014h\u2014u\u2014d\u2014i\u2014 \u2014P\u2014o\u2014l\u2014i\u2014c\u2014e\u2014",
+    "meetingTime": "\u20140\u20147\u20143\u20140\u2014 \u2014h\u2014r\u2014s\u2014",
+    "participantCount": 11,
+    "category": 1,
+    "reasons": "\u2014A\u2014l\u2014l\u2014 \u2014f\u2014i\u2014e\u2014l\u2014d\u2014s\u2014 \u2014c\u2014o\u2014m\u2014p\u2014l\u2014e\u2014t\u2014e\u2014 \u2014a\u2014n\u2014d\u2014 \u2014e\u2014x\u2014p\u2014a\u2014n\u2014d\u2014e\u2014d\u2014",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  }
+]

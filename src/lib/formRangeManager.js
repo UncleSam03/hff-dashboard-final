@@ -5,20 +5,83 @@ export const TOTAL_CAMPAIGN_FORMS = 400;
 export const MAX_SAFE_FORM_NUMBER = 2000;
 
 /**
- * Normalizes form numbers into clean positive integers (e.g. "001" -> 1, "Form 45" -> 45).
+ * Normalizes a single form number into a clean positive integer (e.g. "001" -> 1, "Form 45" -> 45).
+ * If a comma-separated list is passed (e.g. "1, 45"), returns the first valid form number (1).
  */
 export function normalizeFormNumber(val) {
     if (val === null || val === undefined) return null;
+    if (Array.isArray(val)) {
+        for (const item of val) {
+            const n = normalizeFormNumber(item);
+            if (n) return n;
+        }
+        return null;
+    }
     const str = String(val).trim();
-    const digitsOnly = str.replace(/[^0-9]/g, '');
-    if (!digitsOnly) return null;
-    const parsed = parseInt(digitsOnly, 10);
+    const match = str.match(/\d+/);
+    if (!match) return null;
+    const parsed = parseInt(match[0], 10);
     return isNaN(parsed) || parsed <= 0 ? null : parsed;
+}
+
+/**
+ * Extracts all distinct positive integer form numbers from a value or facilitator record.
+ * Supports numbers, comma/space/slash-separated strings ("1, 45", "Form #1 & #45"), arrays ([1, 45]),
+ * or a facilitator object ({ form_number, form_numbers }).
+ * @param {*} val
+ * @returns {number[]} Sorted array of unique positive integer form numbers.
+ */
+export function extractFormNumbers(val) {
+    if (val === null || val === undefined) return [];
+    const rawValues = [];
+
+    if (typeof val === 'object' && !Array.isArray(val)) {
+        if (Array.isArray(val.form_numbers)) rawValues.push(...val.form_numbers);
+        if (val.form_number !== undefined && val.form_number !== null) rawValues.push(val.form_number);
+    } else if (Array.isArray(val)) {
+        rawValues.push(...val);
+    } else {
+        rawValues.push(val);
+    }
+
+    const nums = new Set();
+    for (const item of rawValues) {
+        if (item === null || item === undefined) continue;
+        const matches = String(item).match(/\d+/g);
+        if (!matches) continue;
+        for (const m of matches) {
+            const parsed = parseInt(m, 10);
+            if (!isNaN(parsed) && parsed > 0 && parsed <= MAX_SAFE_FORM_NUMBER) {
+                nums.add(parsed);
+            }
+        }
+    }
+
+    return Array.from(nums).sort((a, b) => a - b);
+}
+
+/**
+ * Formats an array/set of form numbers into a canonical string (e.g. [1, 45] -> "1, 45").
+ */
+export function formatFormNumbers(nums) {
+    const clean = extractFormNumbers(nums);
+    return clean.join(', ');
+}
+
+/**
+ * Checks whether a facilitator record is assigned to the given form number.
+ */
+export function facilitatorHasFormNumber(fac, targetFormNum) {
+    if (!fac) return false;
+    const target = normalizeFormNumber(targetFormNum);
+    if (!target) return false;
+    return extractFormNumbers(fac).includes(target);
 }
 
 /**
  * Computes the campaign form status matrix, summary stats, and missing form numbers.
  * Supports 400+ forms out of the box and dynamically expands if higher form numbers are logged.
+ * Also supports facilitators leading multiple groups/forms.
  * @param {Array} registrations All registrations for the active campaign from Dexie.
  * @param {number} [minTotalForms] Minimum total forms to audit (defaults to TOTAL_CAMPAIGN_FORMS = 400).
  * @returns {Object} Form audit report.
@@ -26,9 +89,9 @@ export function normalizeFormNumber(val) {
 export function compute200FormsAudit(registrations = [], minTotalForms = TOTAL_CAMPAIGN_FORMS) {
     const active = (registrations || []).filter(r => !r.is_deleted);
 
-    // Group facilitators by form number
+    // Group facilitators by form number (a facilitator leading multiple groups can appear on multiple form numbers)
     const facilitatorMap = new Map();
-    const facUuidToFormNum = new Map();
+    const facUuidToFormNums = new Map();
     // Group participants by group form number
     const participantMap = new Map();
 
@@ -36,15 +99,18 @@ export function compute200FormsAudit(registrations = [], minTotalForms = TOTAL_C
 
     for (const r of active) {
         if (r.type === 'facilitator') {
-            const num = normalizeFormNumber(r.form_number);
-            if (num && num >= 1 && num <= MAX_SAFE_FORM_NUMBER) {
-                if (num > maxObservedForm) maxObservedForm = num;
+            const nums = extractFormNumbers(r);
+            if (nums.length > 0) {
                 if (r.uuid) {
-                    facUuidToFormNum.set(r.uuid, num);
+                    facUuidToFormNums.set(r.uuid, nums);
                 }
-                // If multiple facilitators share a form, keep first or list them
-                if (!facilitatorMap.has(num)) {
-                    facilitatorMap.set(num, r);
+                for (const num of nums) {
+                    if (num >= 1 && num <= MAX_SAFE_FORM_NUMBER) {
+                        if (num > maxObservedForm) maxObservedForm = num;
+                        if (!facilitatorMap.has(num)) {
+                            facilitatorMap.set(num, r);
+                        }
+                    }
                 }
             }
         }
@@ -53,7 +119,9 @@ export function compute200FormsAudit(registrations = [], minTotalForms = TOTAL_C
     for (const r of active) {
         if (r.type === 'participant') {
             const directNum = normalizeFormNumber(r.group_form_number || r.form_number);
-            const inheritedNum = r.facilitator_uuid ? facUuidToFormNum.get(r.facilitator_uuid) : null;
+            const facNums = r.facilitator_uuid ? facUuidToFormNums.get(r.facilitator_uuid) : null;
+            // Only inherit facilitator's form number if the participant has no direct group_form_number AND the facilitator leads a single numbered form
+            const inheritedNum = (!directNum && facNums && facNums.length === 1) ? facNums[0] : null;
             const num = directNum || inheritedNum;
             if (num && num >= 1 && num <= MAX_SAFE_FORM_NUMBER) {
                 if (num > maxObservedForm) maxObservedForm = num;

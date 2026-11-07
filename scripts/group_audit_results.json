@@ -1,0 +1,2035 @@
+[
+  {
+    "formNumber": "1",
+    "facilitatorName": "Keletso Nkaigwa",
+    "contact": "74070593",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 35,
+    "category": 2,
+    "reasons": "Initials used: J Sebokolodi, N. Chilume, M. Majepe...; 2 missing age; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 7,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "3",
+    "facilitatorName": "Boitshepo Ishmael",
+    "contact": "76700811",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "6",
+    "facilitatorName": "Aim Mathumo",
+    "contact": "77383338",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 53,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "17",
+    "facilitatorName": "Odirile A. Utlwang",
+    "contact": "75032225",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "22",
+    "facilitatorName": "Lerato Leepi Moreti",
+    "contact": "72123212",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "1 missing phone numbers; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "23",
+    "facilitatorName": "Joy Motshegwe",
+    "contact": "76013766",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "11 missing affiliation/workplace; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 11,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "25",
+    "facilitatorName": "Mogomotsi Chelane",
+    "contact": "72768626",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 4
+    }
+  },
+  {
+    "formNumber": "26",
+    "facilitatorName": "Olebile Leslie Mokgweetsi",
+    "contact": "71477094",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "12:00pm",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "Initials used: K. Morake; 3 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "27",
+    "facilitatorName": "Mosupi Molebatsi",
+    "contact": "75888539",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 25,
+    "category": 2,
+    "reasons": "3 missing age; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 2,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "28",
+    "facilitatorName": "Unassigned Facilitator",
+    "contact": "Not provided",
+    "meetingPlace": "Not provided",
+    "meetingTime": "Not specified",
+    "participantCount": 3,
+    "category": 2,
+    "reasons": "3 missing affiliation/workplace; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "31",
+    "facilitatorName": "Obakeng Moagi",
+    "contact": "72271614",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "9 missing affiliation/workplace; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 9,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "33",
+    "facilitatorName": "Milliah Mmui",
+    "contact": "75265604",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "34",
+    "facilitatorName": "Monicah Celiah Modise",
+    "contact": "72905573 / 71674801",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 4,
+    "category": 2,
+    "reasons": "4 missing affiliation/workplace; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 4,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "36",
+    "facilitatorName": "Unassigned Facilitator",
+    "contact": "Not provided",
+    "meetingPlace": "Not provided",
+    "meetingTime": "Not specified",
+    "participantCount": 26,
+    "category": 2,
+    "reasons": "2 missing phone numbers; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "38",
+    "facilitatorName": "Mmapula Sadi Mokgadi",
+    "contact": "72587905",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "39",
+    "facilitatorName": "Katlego Dintsi",
+    "contact": "71565240",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "40",
+    "facilitatorName": "Pitso  Edwin Monametsi",
+    "contact": "74749040",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "6:00pm",
+    "participantCount": 1,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "41",
+    "facilitatorName": "Moagi Modisaotsile",
+    "contact": "76236464",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 21,
+    "category": 2,
+    "reasons": "Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "42",
+    "facilitatorName": "Segale Vincent Mongale",
+    "contact": "78568739",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 25,
+    "category": 2,
+    "reasons": "1 missing age; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "43",
+    "facilitatorName": "Unassigned Facilitator",
+    "contact": "Not provided",
+    "meetingPlace": "Not provided",
+    "meetingTime": "Not specified",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "2 missing age; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "44",
+    "facilitatorName": "Maria Lekgowe",
+    "contact": "74658287",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Tuesday 1800",
+    "participantCount": 8,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "45",
+    "facilitatorName": "Molatlhegi Monty Kgetse",
+    "contact": "71979232",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "12:00pm",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "Initials used: L.W. Mokgatle, G.B. Dintsi, O. Annandile; 4 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 5,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "49",
+    "facilitatorName": "Omang Mankge",
+    "contact": "75682300",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "Not specified",
+    "participantCount": 5,
+    "category": 2,
+    "reasons": "1 missing phone numbers; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "53",
+    "facilitatorName": "Pulafela Pilane",
+    "contact": "74884465",
+    "meetingPlace": "Pulafela Home (Mabodisa)",
+    "meetingTime": "16:00 - 16:45",
+    "participantCount": 13,
+    "category": 2,
+    "reasons": "13 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 13,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "54",
+    "facilitatorName": "Lone Tshoganetso Moitoi",
+    "contact": "71689270",
+    "meetingPlace": "Lone home Mabodisa",
+    "meetingTime": "17:00",
+    "participantCount": 15,
+    "category": 2,
+    "reasons": "2 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 2,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "57",
+    "facilitatorName": "Maipelo Rathari-Molefe",
+    "contact": "72655369",
+    "meetingPlace": "PHAPHANE",
+    "meetingTime": "17:30",
+    "participantCount": 24,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "58",
+    "facilitatorName": "Khutsafalo Kgodungwe",
+    "contact": "72728748",
+    "meetingPlace": "Mmusi P. School",
+    "meetingTime": "16:30",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "1 missing phones",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 7
+    }
+  },
+  {
+    "formNumber": "59",
+    "facilitatorName": "Babedi Moraope",
+    "contact": "75854127",
+    "meetingPlace": "Tigers F Club",
+    "meetingTime": "12:00",
+    "participantCount": 14,
+    "category": 3,
+    "reasons": "8 omitted education fields",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 8,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "61",
+    "facilitatorName": "Barbra Shivuri",
+    "contact": "77772798",
+    "meetingPlace": "MAKAKATLELA DAM",
+    "meetingTime": "11:50 am hrs",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "10 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 10,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "63",
+    "facilitatorName": "Tebogo Esther Modisagae",
+    "contact": "76193699",
+    "meetingPlace": "Makgophana Kgotla",
+    "meetingTime": "7:00",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "1 missing phone numbers; 3 missing age",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "65",
+    "facilitatorName": "Sharon Phiri",
+    "contact": "72804348",
+    "meetingPlace": "Home Mabodisa",
+    "meetingTime": "17:30",
+    "participantCount": 6,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "68",
+    "facilitatorName": "Lesego Popie Pheto",
+    "contact": "71126231 / 73530207",
+    "meetingPlace": "MARULA A RATSHEOLE",
+    "meetingTime": "19 HRS",
+    "participantCount": 26,
+    "category": 2,
+    "reasons": "1 missing phone numbers; 18 missing affiliation/workplace; 5 missing age",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 18,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "72",
+    "facilitatorName": "Seanokeng Nkepe Molefe",
+    "contact": "72422808",
+    "meetingPlace": "VDC Offices Moganetsi Kgotla",
+    "meetingTime": "7:30",
+    "participantCount": 15,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "73",
+    "facilitatorName": "Neo Matlhaga",
+    "contact": "77036887",
+    "meetingPlace": "Masiana Kgotla",
+    "meetingTime": "1700 HRS",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "2 missing phone numbers; 1 missing affiliation/workplace; 2 missing age",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "75",
+    "facilitatorName": "Seanokeng Selala",
+    "contact": "71803347",
+    "meetingPlace": "Ntshinoge, Next to Kagiso Bar",
+    "meetingTime": "17:30",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "3 missing affiliation/workplace; 1 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "78",
+    "facilitatorName": "Bathusi Doricah Tsheko",
+    "contact": "71739132",
+    "meetingPlace": "TSHUKUDU / HOME",
+    "meetingTime": "20:00 HRS",
+    "participantCount": 5,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "80",
+    "facilitatorName": "Godiraone Rrantsetsele",
+    "contact": "75517586",
+    "meetingPlace": "BOKAA KGOTLA",
+    "meetingTime": "12:30",
+    "participantCount": 8,
+    "category": 2,
+    "reasons": "1 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "85",
+    "facilitatorName": "Boago Moitoi",
+    "contact": "76418118",
+    "meetingPlace": "Makgophana ward",
+    "meetingTime": "12:30 HRS",
+    "participantCount": 9,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "87",
+    "facilitatorName": "Malotwana Cluster",
+    "contact": "5750179",
+    "meetingPlace": "Malotwana Kgotla",
+    "meetingTime": "07:00",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "1 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "92",
+    "facilitatorName": "Itumeleng Senyarelo",
+    "contact": "76529898",
+    "meetingPlace": "BOSEJA NORTH KGOTLA",
+    "meetingTime": "07:30",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "98",
+    "facilitatorName": "Aletah Kotsedi",
+    "contact": "74190365",
+    "meetingPlace": "PILANE KGOTLA",
+    "meetingTime": "12:00",
+    "participantCount": 14,
+    "category": 2,
+    "reasons": "1 education codes (J/S/U); Initials: B. Montshojang",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 1,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "100",
+    "facilitatorName": "Kutlo L Batlang",
+    "contact": "72152766",
+    "meetingPlace": "MORULA BOSEJA SOUTH",
+    "meetingTime": "16:00",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "3 missing affiliation/workplace; 5 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "101",
+    "facilitatorName": "Ronicah Motshegwe",
+    "contact": "74371218",
+    "meetingPlace": "KGOTLA BOSEJA SOUTH",
+    "meetingTime": "11:00 AM",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "20 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 20,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "103",
+    "facilitatorName": "Dimpho Tlhankane",
+    "contact": "74498758",
+    "meetingPlace": "Boseja Central Kgotla",
+    "meetingTime": "11:30",
+    "participantCount": 15,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "104",
+    "facilitatorName": "Unassigned Facilitator",
+    "contact": "Not provided",
+    "meetingPlace": "Not provided",
+    "meetingTime": "Not specified",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "3 missing phone numbers; 3 missing affiliation/workplace; 2 missing age; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 3,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "106",
+    "facilitatorName": "Lebogang Doreen Makgale",
+    "contact": "75966113",
+    "meetingPlace": "Mochudi",
+    "meetingTime": "5:00 - 6:30 PM",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "2 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "107",
+    "facilitatorName": "Thabang Pauline Modimakwane",
+    "contact": "72993400",
+    "meetingPlace": "Lady Mitchison School",
+    "meetingTime": "07:30 hrs",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "3 missing phone numbers; 3 missing age",
+    "details": {
+      "missingPhoneCount": 3,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "108",
+    "facilitatorName": "Onkarabile Mlambo",
+    "contact": "73192609",
+    "meetingPlace": "PLOT 8285 BOSEJA SOUTH",
+    "meetingTime": "16:30",
+    "participantCount": 9,
+    "category": 2,
+    "reasons": "1 missing phone numbers",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "110",
+    "facilitatorName": "Onneile Lekwape",
+    "contact": "71621902",
+    "meetingPlace": "ROUTE 7 CARWASH",
+    "meetingTime": "1630 HRS",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "6 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 6,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "114 A",
+    "facilitatorName": "Onteletse Meswele",
+    "contact": "75313601",
+    "meetingPlace": "Mokalotelo",
+    "meetingTime": "05:00 hrs",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "11 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 11,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "116",
+    "facilitatorName": "Onkabetse K. Ramore",
+    "contact": "75349459",
+    "meetingPlace": "MORWA, PLOT 19518 AFTER MAIN KGOTLA",
+    "meetingTime": "17:00 HRS",
+    "participantCount": 19,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "121",
+    "facilitatorName": "BOJELO MMAKGAGO",
+    "contact": "77649805",
+    "meetingPlace": "Pavement Route 9, Phaphane, Slices",
+    "meetingTime": "2:00 pm",
+    "participantCount": 10,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "123",
+    "facilitatorName": "Elisa Mapotsane",
+    "contact": "74786282",
+    "meetingPlace": "Boseja Central Kgotla",
+    "meetingTime": "13:00 - 14:00",
+    "participantCount": 11,
+    "category": 3,
+    "reasons": "",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 9
+    }
+  },
+  {
+    "formNumber": "125",
+    "facilitatorName": "Kefilwe Moseki",
+    "contact": "74413254",
+    "meetingPlace": "EDUCATION CENTRE",
+    "meetingTime": "15:30 pm",
+    "participantCount": 21,
+    "category": 2,
+    "reasons": "6 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 6,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "128",
+    "facilitatorName": "Boago Letshoo",
+    "contact": "77326267",
+    "meetingPlace": "Wildlife Office",
+    "meetingTime": "14:00",
+    "participantCount": 20,
+    "category": 2,
+    "reasons": "1 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "130",
+    "facilitatorName": "Jimmy Joel Katshipi",
+    "contact": "72390055",
+    "meetingPlace": "Makgophane",
+    "meetingTime": "1230hrs",
+    "participantCount": 7,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "132",
+    "facilitatorName": "Onicah Phalaagae",
+    "contact": "71464954",
+    "meetingPlace": "MAKGOPHANA",
+    "meetingTime": "14:00 HRS",
+    "participantCount": 9,
+    "category": 2,
+    "reasons": "1 missing phone numbers; 1 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "134",
+    "facilitatorName": "Kgomotso Comfort Moeng",
+    "contact": "74292277 / 73001103",
+    "meetingPlace": "MAKAKATLELA",
+    "meetingTime": "DOING ONLINE",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "6 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 6,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "136",
+    "facilitatorName": "Olebogeng Peolwane",
+    "contact": "75991025",
+    "meetingPlace": "Makgophana Clinic",
+    "meetingTime": "`13:00`",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "1 missing phone numbers; 1 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 3,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "137 A",
+    "facilitatorName": "Kebonye Pile",
+    "contact": "74345539",
+    "meetingPlace": "Assemblies of God",
+    "meetingTime": "16:00",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "8 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 8,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "137 B",
+    "facilitatorName": "Kealeboga Berman",
+    "contact": "78356479",
+    "meetingPlace": "Boseja Dam",
+    "meetingTime": "07:30",
+    "participantCount": 9,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "138",
+    "facilitatorName": "Mpho Ramatotodi",
+    "contact": "76687880",
+    "meetingPlace": "BOSEJA ROUTE 6",
+    "meetingTime": "07:30",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "2 missing phone numbers; 2 missing age",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "141",
+    "facilitatorName": "Sentleeng Sikwane",
+    "contact": "75493040",
+    "meetingPlace": "MMADIPAMO P. SCH",
+    "meetingTime": "`14:30hrs`",
+    "participantCount": 15,
+    "category": 2,
+    "reasons": "Initials used: O. Medupe, G. M. Poroga, T. S. Golebetswe...",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 14,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "143",
+    "facilitatorName": "Bakang Modise",
+    "contact": "74704731",
+    "meetingPlace": "Bogatsu Primary School (Makgophana)",
+    "meetingTime": "`12:30`",
+    "participantCount": 36,
+    "category": 2,
+    "reasons": "7 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "151",
+    "facilitatorName": "Lesego Moraope",
+    "contact": "71639087",
+    "meetingPlace": "FORESTRY & RANGE RESOURCES",
+    "meetingTime": "14:00",
+    "participantCount": 6,
+    "category": 2,
+    "reasons": "1 marital codes (S/M/D); 1 missing phones; 1 missing affiliations",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 1,
+      "rawMaritalCount": 1,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 2
+    }
+  },
+  {
+    "formNumber": "153",
+    "facilitatorName": "Tebogo Moeng",
+    "contact": "72830089",
+    "meetingPlace": "KGAFELA P.S",
+    "meetingTime": "13:30",
+    "participantCount": 26,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "157",
+    "facilitatorName": "Leah Senwelo",
+    "contact": "71612711",
+    "meetingPlace": "BOSEJA",
+    "meetingTime": "11:30",
+    "participantCount": 3,
+    "category": 2,
+    "reasons": "3 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 3,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "159",
+    "facilitatorName": "Botsalo Leungo Rakgole",
+    "contact": "72110158",
+    "meetingPlace": "Madiane's house",
+    "meetingTime": "`12:00`",
+    "participantCount": 12,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "161",
+    "facilitatorName": "Lone Toteng",
+    "contact": "74408888",
+    "meetingPlace": "Lady Mitchison Primary School",
+    "meetingTime": "6pm",
+    "participantCount": 5,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "164",
+    "facilitatorName": "Dibuka Setshwaneng Mogotsi",
+    "contact": "77713794",
+    "meetingPlace": "KGOTLA AND ALONG ROUTE 6",
+    "meetingTime": "07:30",
+    "participantCount": 8,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "168",
+    "facilitatorName": "Moleti Matlhaga",
+    "contact": "71689509",
+    "meetingPlace": "NTSHINOGE",
+    "meetingTime": "[Blank]",
+    "participantCount": 5,
+    "category": 2,
+    "reasons": "5 missing affiliation/workplace; 2 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 5,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "171",
+    "facilitatorName": "Gagosepe Tsheko",
+    "contact": "71611285",
+    "meetingPlace": "Clinic 1 Mochudi",
+    "meetingTime": "2pm",
+    "participantCount": 10,
+    "category": 2,
+    "reasons": "9 missing phones",
+    "details": {
+      "missingPhoneCount": 9,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 10,
+      "omittedMaritalCount": 10
+    }
+  },
+  {
+    "formNumber": "172",
+    "facilitatorName": "Dineo Seroke",
+    "contact": "72522488",
+    "meetingPlace": "RANKOA P SCHOOL",
+    "meetingTime": "2:30",
+    "participantCount": 32,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "174",
+    "facilitatorName": "Selinah Sefakwe",
+    "contact": "72395409",
+    "meetingPlace": "Kgotla Boseja South",
+    "meetingTime": "7:00 am",
+    "participantCount": 25,
+    "category": 2,
+    "reasons": "1 missing phone numbers; 5 missing age",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "175",
+    "facilitatorName": "Emmanuel Ketsitlile",
+    "contact": "76931562",
+    "meetingPlace": "FIRE",
+    "meetingTime": "07:30",
+    "participantCount": 15,
+    "category": 2,
+    "reasons": "Initials used: B. G. BAGAKA, F. N. MATSOGE, G. G. MATSIRANE; 1 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "179",
+    "facilitatorName": "Kgomotso Nquesh Dintsi",
+    "contact": "74820855 / 72533722",
+    "meetingPlace": "MOCHUDI MALL",
+    "meetingTime": "14:00 HRS",
+    "participantCount": 7,
+    "category": 2,
+    "reasons": "1 marital codes (S/M/D); Initials: D Munthali; 1 missing phones; 7 missing affiliations",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 7,
+      "rawMaritalCount": 1,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "182",
+    "facilitatorName": "Tselane Boikhutso Temeki",
+    "contact": "71770905",
+    "meetingPlace": "PLOT 10226 PHAPHANE",
+    "meetingTime": "8 P.M",
+    "participantCount": 14,
+    "category": 3,
+    "reasons": "1 education codes (J/S/U); 4 missing affiliations",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 4,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 1,
+      "omittedEducationCount": 4,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "183",
+    "facilitatorName": "Onalepelo Dipogiso",
+    "contact": "76934521",
+    "meetingPlace": "Seingwaeng P. School",
+    "meetingTime": "0730 - 0800am",
+    "participantCount": 35,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 4
+    }
+  },
+  {
+    "formNumber": "183 A",
+    "facilitatorName": "Tshegofatso Happy Lebotse",
+    "contact": "74536664",
+    "meetingPlace": "Seingwaeng P. School",
+    "meetingTime": "0730 - 0800am",
+    "participantCount": 1,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "185",
+    "facilitatorName": "Kagiso Moitoi",
+    "contact": "74977997",
+    "meetingPlace": "Education Regional Office",
+    "meetingTime": "15:00hrs",
+    "participantCount": 19,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "188",
+    "facilitatorName": "Lesego Thipe",
+    "contact": "74173550 / 74841114",
+    "meetingPlace": "Isang P. School",
+    "meetingTime": "13:00pm",
+    "participantCount": 24,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "190",
+    "facilitatorName": "Segametsi C Setshwane",
+    "contact": "71542193",
+    "meetingPlace": "At home",
+    "meetingTime": "20:00",
+    "participantCount": 12,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "196",
+    "facilitatorName": "Otshegeditse Moatswi",
+    "contact": "75512007",
+    "meetingPlace": "MMATHUBUDUKWANE POLICE STATION",
+    "meetingTime": "`1500HRS`",
+    "participantCount": 16,
+    "category": 2,
+    "reasons": "Initials used: L. C. Tuelo; 3 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "197",
+    "facilitatorName": "Olebogeng Moyonda",
+    "contact": "72795831",
+    "meetingPlace": "MMATHUBUDUKWANE",
+    "meetingTime": "`0730`",
+    "participantCount": 10,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 3
+    }
+  },
+  {
+    "formNumber": "198",
+    "facilitatorName": "Botshelo Tshukudu",
+    "contact": "74875510",
+    "meetingPlace": "MALOTWANA KGOTLA",
+    "meetingTime": "`08:00`",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "1 missing phone numbers",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "200",
+    "facilitatorName": "Julia K. Madisa",
+    "contact": "72968392",
+    "meetingPlace": "PHAPHANE PRIMARY",
+    "meetingTime": "1000 HRS / 1400 HRS",
+    "participantCount": 39,
+    "category": 2,
+    "reasons": "Initials used: O. Perekisi, P. Makoni; 14 missing phone numbers; 14 missing age",
+    "details": {
+      "missingPhoneCount": 14,
+      "initialFirstNameCount": 2,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 12,
+      "omittedMaritalCount": 15
+    }
+  },
+  {
+    "formNumber": "201",
+    "facilitatorName": "Raymond Baiphetlhi",
+    "contact": "71374706",
+    "meetingPlace": "Mochudi State Prison",
+    "meetingTime": "`1230 - 1400 hrs`",
+    "participantCount": 58,
+    "category": 2,
+    "reasons": "1 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 8,
+      "omittedMaritalCount": 4
+    }
+  },
+  {
+    "formNumber": "202",
+    "facilitatorName": "Katlego Nkatswang",
+    "contact": "78247743",
+    "meetingPlace": "Kgamanyane School",
+    "meetingTime": "14:00",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "1 missing phone numbers",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "203",
+    "facilitatorName": "Tebogo Charmine Dikgang",
+    "contact": "76312544",
+    "meetingPlace": "Pilane Borigane Ward",
+    "meetingTime": "17:30 hrs",
+    "participantCount": 12,
+    "category": 2,
+    "reasons": "Initials used: B. Mokgatlhe",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "205",
+    "facilitatorName": "Itumeleng Pilane",
+    "contact": "77556092",
+    "meetingPlace": "Mmusi P. School",
+    "meetingTime": "07:00 am",
+    "participantCount": 4,
+    "category": 2,
+    "reasons": "4 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 4,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "208",
+    "facilitatorName": "Gaongalewe Kgang",
+    "contact": "77991263",
+    "meetingPlace": "Mososo Kgotla",
+    "meetingTime": "17:00",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "Initials: L Ramodisa; 13 missing affiliations",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 1,
+      "missingAffiliationCount": 13,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 14,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "210",
+    "facilitatorName": "Gaanewe Pinkie Molema",
+    "contact": "72782256",
+    "meetingPlace": "DEPT OF SOCIAL DEV",
+    "meetingTime": "14:00 HRS",
+    "participantCount": 3,
+    "category": 2,
+    "reasons": "3 marital codes (S/M/D); Initials: K. Phuthego, O. Mmupi",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 3,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "216",
+    "facilitatorName": "Lesedi Ramabokwa",
+    "contact": "75097958",
+    "meetingPlace": "MRCB HALL",
+    "meetingTime": "14:00 HRS",
+    "participantCount": 24,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "217",
+    "facilitatorName": "Dolly Shapata",
+    "contact": "77498399",
+    "meetingPlace": "LADY MITCHISON PRIMARY SCHOOL",
+    "meetingTime": "07:20 am",
+    "participantCount": 38,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 1
+    }
+  },
+  {
+    "formNumber": "220",
+    "facilitatorName": "Onneile Makwatse",
+    "contact": "76263830",
+    "meetingPlace": "Main Land Board",
+    "meetingTime": "15:00",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "1 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "220 B",
+    "facilitatorName": "Monica Nthebolang",
+    "contact": "72785735",
+    "meetingPlace": "RECREATION HALL",
+    "meetingTime": "1400",
+    "participantCount": 3,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "221",
+    "facilitatorName": "Lesedi Kaone",
+    "contact": "74430804",
+    "meetingPlace": "KGATLENG LAND BOARD",
+    "meetingTime": "14:00 hrs",
+    "participantCount": 11,
+    "category": 2,
+    "reasons": "Initials used: D. V. Kiti, T. B. Lekgowa, M. Mogotsi",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 3,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "222",
+    "facilitatorName": "Boineelo Ipotseng",
+    "contact": "75570423",
+    "meetingPlace": "Morwa Kgotla",
+    "meetingTime": "11:45 hrs",
+    "participantCount": 11,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "223",
+    "facilitatorName": "Keitumetse Mathebula",
+    "contact": "76665295",
+    "meetingPlace": "[Blank — Arise & Shine]",
+    "meetingTime": "[Blank]",
+    "participantCount": 5,
+    "category": 2,
+    "reasons": "1 missing phone numbers; 1 missing age",
+    "details": {
+      "missingPhoneCount": 1,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "224",
+    "facilitatorName": "Masego Grace Mokgadi",
+    "contact": "72790099",
+    "meetingPlace": "[Blank]",
+    "meetingTime": "1500 HRS",
+    "participantCount": 11,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "225",
+    "facilitatorName": "Mmapula Rammala",
+    "contact": "72569127",
+    "meetingPlace": "MOREMA WARD VDC OFFICE",
+    "meetingTime": "17:00 hrs",
+    "participantCount": 18,
+    "category": 2,
+    "reasons": "17 missing affiliation/workplace; 12 missing age",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 17,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 1,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "227",
+    "facilitatorName": "[Blank]",
+    "contact": "Not provided",
+    "meetingPlace": "[Blank — Just Formu One]",
+    "meetingTime": "[Blank]",
+    "participantCount": 4,
+    "category": 2,
+    "reasons": "",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "230",
+    "facilitatorName": "Jimmy Joel Katshipi",
+    "contact": "72390055",
+    "meetingPlace": "Phaphane",
+    "meetingTime": "1700 hrs",
+    "participantCount": 3,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "231",
+    "facilitatorName": "Barati Caroline Seiketso",
+    "contact": "75105999",
+    "meetingPlace": "JOWANE MASOWE SELOSESHA BRANCH",
+    "meetingTime": "16:00",
+    "participantCount": 24,
+    "category": 2,
+    "reasons": "24 missing affiliation/workplace",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 24,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "232",
+    "facilitatorName": "Unassigned Facilitator",
+    "contact": "Not provided",
+    "meetingPlace": "Not provided",
+    "meetingTime": "Not specified",
+    "participantCount": 17,
+    "category": 2,
+    "reasons": "1 missing age; Facilitator meeting time missing",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "238",
+    "facilitatorName": "Boitumelo Bontle Kgopolo",
+    "contact": "72968392",
+    "meetingPlace": "PUDULOGONG REHABILITATION CENTER",
+    "meetingTime": "1130 HRS",
+    "participantCount": 28,
+    "category": 2,
+    "reasons": "2 missing phones",
+    "details": {
+      "missingPhoneCount": 2,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 27,
+      "omittedMaritalCount": 0
+    }
+  },
+  {
+    "formNumber": "248",
+    "facilitatorName": "Boitumelo Kgopolo",
+    "contact": "72706683",
+    "meetingPlace": "Mochudi Police",
+    "meetingTime": "0730 hrs",
+    "participantCount": 11,
+    "category": 1,
+    "reasons": "All fields complete and expanded",
+    "details": {
+      "missingPhoneCount": 0,
+      "initialFirstNameCount": 0,
+      "missingAffiliationCount": 0,
+      "rawMaritalCount": 0,
+      "rawEducationCount": 0,
+      "omittedEducationCount": 0,
+      "omittedMaritalCount": 0
+    }
+  }
+]

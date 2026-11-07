@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User, Archive, Search } from 'lucide-react';
+import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCheck, UserCheck, ChevronLeft, ClipboardCheck, CalendarDays, User, Archive, Search, Printer } from 'lucide-react';
 import StatsCard from './StatsCard';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
 import { MIN_QUALIFYING_DAYS } from '../lib/constants';
+
+const CERT_URL = '/certificate_blank.pdf?v=mochudi-final-print-2026';
+const LINE_CENTER_X = 418.35; // Visual center of Mochudi recipient line & 'Is recognized...'
+const MAX_NAME_WIDTH = 560;   // Comfortable inner margin on the 636.85 pt line
+const BASE_FONT_SIZE = 36;    // Optimal balance between prestige, legibility, and line clearance
 
 const formatNameTitleCase = (name) => {
     if (!name) return '';
@@ -12,6 +17,30 @@ const formatNameTitleCase = (name) => {
         .filter(part => part.trim().length > 0)
         .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
         .join(' ');
+};
+
+const drawCertificateName = (page, font, name) => {
+    let fontSize = BASE_FONT_SIZE;
+    let textWidth = font.widthOfTextAtSize(name, fontSize);
+
+    // Dynamically scale down for long names so they never overflow the line
+    if (textWidth > MAX_NAME_WIDTH) {
+        fontSize = Math.floor(BASE_FONT_SIZE * (MAX_NAME_WIDTH / textWidth));
+        textWidth = font.widthOfTextAtSize(name, fontSize);
+    }
+
+    // Baseline Y = 422 pt provides 2-4 pt clean clearance for descenders ('y', 'g', 'j', 'p', 'q')
+    // above the line (at Y=405), and stays comfortably beneath the 'Of' flourish (bottom at Y=458.7).
+    const baselineY = 422 - (BASE_FONT_SIZE - fontSize) * 0.2;
+    const x = LINE_CENTER_X - (textWidth / 2);
+
+    page.drawText(name, {
+        x,
+        y: baselineY,
+        size: fontSize,
+        font,
+        color: rgb(0.12, 0.12, 0.12),
+    });
 };
 
 const SatDashboard = ({ analytics, onBack }) => {
@@ -66,6 +95,8 @@ const SatDashboard = ({ analytics, onBack }) => {
     };
 
     const [isExportingZip, setIsExportingZip] = useState(false);
+    const [isGeneratingCombined, setIsGeneratingCombined] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const exportAllAsZip = async (type) => {
         const list = type === 'facilitators' ? analytics?.qualifyingFacilitatorsList : analytics?.qualifyingParticipantsList;
@@ -74,33 +105,23 @@ const SatDashboard = ({ analytics, onBack }) => {
         try {
             setIsExportingZip(true);
             const zip = new JSZip();
-            const url = '/certificate_blank.pdf?v=mochudi-2026';
-            const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+            const existingPdfBytes = await fetch(CERT_URL).then(res => res.arrayBuffer());
 
             for (const person of list) {
-                const pdfDoc = await PDFDocument.load(existingPdfBytes);
-                const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-                
-                const pages = pdfDoc.getPages();
-                const firstPage = pages[0];
-                const { width, height } = firstPage.getSize();
-                
                 const rawName = `${person.first_name || ''} ${person.last_name || ''}`.trim();
                 const name = formatNameTitleCase(rawName);
                 if (!name) continue;
 
-                pdfDoc.setTitle(`${name} Certificate`);
-                
-                const fontSize = 42;
-                const textWidth = font.widthOfTextAtSize(name, fontSize);
-                
-                firstPage.drawText(name, {
-                    x: (width / 2) - (textWidth / 2),
-                    y: (height / 2) + 112, 
-                    size: fontSize,
-                    font: font,
-                    color: rgb(0.2, 0.2, 0.2),
-                });
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+
+                pdfDoc.setTitle(`${name} - Certificate of Completion`);
+                pdfDoc.setAuthor('Healthy Families Foundation');
+                pdfDoc.setSubject('Certificate of Completion - Mochudi Campaign');
+
+                drawCertificateName(firstPage, font, name);
 
                 const pdfBytes = await pdfDoc.save();
                 zip.file(`${name.replace(/[^a-z0-9]/gi, '_')}_Certificate.pdf`, pdfBytes);
@@ -110,7 +131,7 @@ const SatDashboard = ({ analytics, onBack }) => {
             const blobUrl = URL.createObjectURL(zipBlob);
             const a = document.createElement('a');
             a.href = blobUrl;
-            a.download = `Qualifying_${type.charAt(0).toUpperCase() + type.slice(1)}_Certificates.zip`;
+            a.download = `Qualifying_${type.charAt(0).toUpperCase() + type.slice(1)}_Certificates_ZIP.zip`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -124,40 +145,75 @@ const SatDashboard = ({ analytics, onBack }) => {
         }
     };
 
-    const [isGenerating, setIsGenerating] = useState(false);
+    const exportAllAsCombinedPdf = async (type) => {
+        const list = type === 'facilitators' ? analytics?.qualifyingFacilitatorsList : analytics?.qualifyingParticipantsList;
+        if (!list || list.length === 0) return;
+
+        try {
+            setIsGeneratingCombined(true);
+            const existingPdfBytes = await fetch(CERT_URL).then(res => res.arrayBuffer());
+
+            const masterDoc = await PDFDocument.create();
+            const templateDoc = await PDFDocument.load(existingPdfBytes);
+            const font = await masterDoc.embedFont(StandardFonts.HelveticaBold);
+
+            for (const person of list) {
+                const rawName = `${person.first_name || ''} ${person.last_name || ''}`.trim();
+                const name = formatNameTitleCase(rawName);
+                if (!name) continue;
+
+                const [page] = await masterDoc.copyPages(templateDoc, [0]);
+                drawCertificateName(page, font, name);
+                masterDoc.addPage(page);
+            }
+
+            const docTitle = `Qualifying ${type === 'facilitators' ? 'Facilitators' : 'Participants'} Certificates - Mochudi`;
+            masterDoc.setTitle(docTitle);
+            masterDoc.setAuthor('Healthy Families Foundation');
+            masterDoc.setSubject('Certificate of Completion - Mochudi Campaign');
+
+            const pdfBytes = await masterDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Open print-ready combined PDF in a new tab for instant browser printing (Ctrl+P)
+            window.open(blobUrl, '_blank');
+
+            // Also trigger a direct download of the print bundle
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `Qualifying_${type.charAt(0).toUpperCase() + type.slice(1)}_Certificates_PRINT_ALL.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error("Error generating combined print-ready PDF:", error);
+            alert("Could not generate combined print-ready PDF.");
+        } finally {
+            setIsGeneratingCombined(false);
+        }
+    };
 
     const generateAndShowCertificate = async (person) => {
         if (!person) return;
         try {
             setIsGenerating(true);
-            const url = '/certificate_blank.pdf?v=mochudi-2026';
-            const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+            const existingPdfBytes = await fetch(CERT_URL).then(res => res.arrayBuffer());
 
             const pdfDoc = await PDFDocument.load(existingPdfBytes);
             const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
             
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
-            const { width, height } = firstPage.getSize();
             
             const rawName = `${person.first_name || ''} ${person.last_name || ''}`.trim();
             const name = formatNameTitleCase(rawName);
             
-            // Set the PDF metadata title so the browser tab shows the name instead of a UUID
-            pdfDoc.setTitle(`${name} Certificate`);
+            pdfDoc.setTitle(`${name} - Certificate of Completion`);
+            pdfDoc.setAuthor('Healthy Families Foundation');
+            pdfDoc.setSubject('Certificate of Completion - Mochudi Campaign');
 
-            const fontSize = 42;
-            const textWidth = font.widthOfTextAtSize(name, fontSize);
-            
-            // Position name on the line above "Is recognized for completing the..."
-            // In PDF coordinates, 0,0 is bottom-left, so increasing Y moves it up.
-            firstPage.drawText(name, {
-                x: (width / 2) - (textWidth / 2),
-                y: (height / 2) + 112, 
-                size: fontSize,
-                font: font,
-                color: rgb(0.2, 0.2, 0.2),
-            });
+            drawCertificateName(firstPage, font, name);
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -237,22 +293,33 @@ const SatDashboard = ({ analytics, onBack }) => {
                             className="block w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-full text-xs font-medium focus:border-[#71167F] outline-none"
                         />
                     </div>
-                    <div className="flex justify-end gap-3">
+                    <div className="flex flex-wrap justify-end gap-2.5">
                         <button 
                             onClick={() => exportToTxt(type)}
                             disabled={safeList.length === 0}
-                            className="px-5 py-2.5 liquid-glass-pill text-gray-700 font-bold text-[10px] uppercase tracking-wider hover:text-[#71167F] hover:border-[#71167F]/30 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2.5 liquid-glass-pill text-gray-700 font-bold text-[10px] uppercase tracking-wider hover:text-[#71167F] hover:border-[#71167F]/30 transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Export list of names as text file"
                         >
                             <Download size={13} />
-                            Export to TXT
+                            Export TXT
                         </button>
                         <button 
                             onClick={() => exportAllAsZip(type)}
-                            disabled={safeList.length === 0 || isExportingZip}
-                            className="px-5 py-2.5 hff-gradient-bg text-white rounded-full font-bold text-[10px] uppercase tracking-wider hover:opacity-95 shadow-md shadow-[#71167F]/25 transition-all flex items-center gap-2 border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={safeList.length === 0 || isExportingZip || isGeneratingCombined}
+                            className="px-4 py-2.5 liquid-glass-pill text-gray-700 font-bold text-[10px] uppercase tracking-wider hover:text-[#71167F] hover:border-[#71167F]/30 transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Export all individual certificates as a ZIP archive"
                         >
                             <Archive size={13} />
-                            {isExportingZip ? 'Generating ZIP...' : 'Export PDFs (ZIP)'}
+                            {isExportingZip ? 'Generating ZIP...' : 'Export ZIP'}
+                        </button>
+                        <button 
+                            onClick={() => exportAllAsCombinedPdf(type)}
+                            disabled={safeList.length === 0 || isGeneratingCombined || isExportingZip}
+                            className="px-5 py-2.5 hff-gradient-bg text-white rounded-full font-bold text-[10px] uppercase tracking-wider hover:opacity-95 shadow-md shadow-[#71167F]/25 transition-all flex items-center gap-2 border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Compile all certificates into a single print-ready PDF"
+                        >
+                            <Printer size={13} />
+                            {isGeneratingCombined ? 'Preparing Print...' : 'Print All (Combined PDF)'}
                         </button>
                     </div>
                 </div>
@@ -288,7 +355,7 @@ const SatDashboard = ({ analytics, onBack }) => {
                                     key={person.id || index} 
                                     onClick={() => generateAndShowCertificate(person)}
                                     className={`p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 cursor-pointer hover:border-[#71167F]/30 hover:shadow-md transition-all ${isGenerating ? 'opacity-50 pointer-events-none' : ''}`}
-                                    title="Click to view certificate"
+                                    title="Click to preview & print certificate"
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-[#71167F]/5 flex items-center justify-center text-[#71167F]">
                                         <User size={18} />

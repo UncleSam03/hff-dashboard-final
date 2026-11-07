@@ -1,7 +1,7 @@
-import db from './dexieDb';
+import db from './dexieDb.js';
 import * as XLSX from 'xlsx';
-import { parseHffRegisterRows, detectHffHeaderRowIndex, normalizeGender } from './hffRegister';
-import { db as firestoreDb, isConfigured as isFirestoreConfigured } from './firebase';
+import { parseHffRegisterRows, detectHffHeaderRowIndex, normalizeGender } from './hffRegister.js';
+import { db as firestoreDb, isConfigured as isFirestoreConfigured } from './firebase.js';
 import { doc, deleteDoc } from 'firebase/firestore';
 
 export const DEFAULT_CAMPAIGN = {

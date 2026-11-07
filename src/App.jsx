@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import AuthGate from "./auth/AuthGate";
 import { useAuth } from "./auth/AuthContext";
+import { DbProvider } from "./context";
 
 import Hub from './components/Hub';
 import AnalysisHub from './components/AnalysisHub';
@@ -226,7 +227,9 @@ function AppContent() {
 function App() {
   return (
     <AuthGate>
-      <AppContent />
+      <DbProvider>
+        <AppContent />
+      </DbProvider>
     </AuthGate>
   );
 }
