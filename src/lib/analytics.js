@@ -2,7 +2,7 @@
  * Centralized analytics processing for HFF Dashboard
  * Processes raw Dexie registrations into visualizable statistics
  */
-import { TOTAL_CAMPAIGN_DAYS } from './constants.js';
+import { TOTAL_CAMPAIGN_DAYS, MIN_QUALIFYING_DAYS } from './constants.js';
 
 export function normalizeAttendance(attendance) {
     if (!attendance) return Array(TOTAL_CAMPAIGN_DAYS).fill(false);
@@ -180,8 +180,8 @@ export function processAnalytics(registrations) {
         });
     };
 
-    const qualifyingParticipantsList = sortByName(participants.filter(p => getDaysAttended(p.attendance) >= 6));
-    const qualifyingFacilitatorsList = sortByName(facilitators.filter(f => getDaysAttended(f.attendance) >= 8));
+    const qualifyingParticipantsList = sortByName(participants.filter(p => getDaysAttended(p.attendance) >= MIN_QUALIFYING_DAYS));
+    const qualifyingFacilitatorsList = sortByName(facilitators.filter(f => getDaysAttended(f.attendance) >= MIN_QUALIFYING_DAYS));
     
     const qualifyingParticipants = qualifyingParticipantsList.length;
     const qualifyingFacilitators = qualifyingFacilitatorsList.length;

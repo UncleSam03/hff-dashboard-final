@@ -3,6 +3,7 @@ import { Award, Download, Users, CheckCircle, FileText, LayoutPanelTop, ShieldCh
 import StatsCard from './StatsCard';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
+import { MIN_QUALIFYING_DAYS } from '../lib/constants';
 
 const formatNameTitleCase = (name) => {
     if (!name) return '';
@@ -40,8 +41,8 @@ const SatDashboard = ({ analytics, onBack }) => {
 
     const getDescription = () => {
         if (view === 'certificates') return 'Select certificate category to manage records';
-        if (view === 'certificates_facilitators') return 'Facilitators who attended at least 8 days';
-        if (view === 'certificates_participants') return 'Participants who attended at least 6 days';
+        if (view === 'certificates_facilitators') return `Facilitators who attended at least ${MIN_QUALIFYING_DAYS} days`;
+        if (view === 'certificates_participants') return `Participants who attended at least ${MIN_QUALIFYING_DAYS} days`;
         if (view === 'attendance') return 'Select category to view daily attendance logs';
         if (view === 'attendance_facilitators') return 'Daily attendance breakdown for facilitators';
         if (view === 'attendance_participants') return 'Daily attendance breakdown for participants';
@@ -275,7 +276,7 @@ const SatDashboard = ({ analytics, onBack }) => {
                                 <>
                                     <p className="text-gray-800 font-bold mb-1">No qualifying {type} yet</p>
                                     <p className="text-gray-400 text-xs">
-                                        Certificates require at least {type === 'facilitators' ? '8' : '6'} days of recorded attendance.
+                                        Certificates require at least {MIN_QUALIFYING_DAYS} days of recorded attendance.
                                     </p>
                                 </>
                             )}

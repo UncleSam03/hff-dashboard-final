@@ -30,7 +30,7 @@ import {
 import { cn } from '../../lib/utils';
 import { matchesPerson } from '../../lib/searchUtils';
 import { normalizeAttendance } from '../../lib/analytics';
-import { TOTAL_CAMPAIGN_DAYS } from '../../lib/constants';
+import { TOTAL_CAMPAIGN_DAYS, MIN_QUALIFYING_DAYS } from '../../lib/constants';
 import { useAuth } from '../../auth/AuthContext';
 import { 
     toggleSingleAttendance, 
@@ -192,7 +192,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
         participants.forEach(p => {
             const att = normalizeAttendance(p.attendance);
             const daysAttended = att.filter(Boolean).length;
-            const isQualifying = daysAttended >= 6;
+            const isQualifying = daysAttended >= MIN_QUALIFYING_DAYS;
 
             let matchedFacUuid = null;
             if (p.facilitator_uuid) {
@@ -483,7 +483,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             'Assigned Facilitator',
             'Books Received',
             'Total Attended (out of 12)',
-            'Certificate Qualifying (>=6)',
+            `Certificate Qualifying (>=${MIN_QUALIFYING_DAYS})`,
             ...days.map(d => `Day ${d.replace('D', '')}`)
         ];
 
@@ -491,7 +491,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
             const att = localAttendanceMap[p.uuid] || normalizeAttendance(p.attendance);
             const attendedCount = att.filter(Boolean).length;
             const books = (localBooksMap[p.uuid] !== undefined ? localBooksMap[p.uuid] : Boolean(p.books_received)) ? 'YES' : 'NO';
-            const qualifying = attendedCount >= 6 ? 'YES' : 'NO';
+            const qualifying = attendedCount >= MIN_QUALIFYING_DAYS ? 'YES' : 'NO';
             const facName = p.facilitatorName || (contextFacilitator ? `${contextFacilitator.first_name} ${contextFacilitator.last_name}` : 'Unassigned');
 
             return [
@@ -540,7 +540,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
         let booksTotal = 0;
         list.forEach(p => {
             const att = localAttendanceMap[p.uuid] || normalizeAttendance(p.attendance);
-            if (att.filter(Boolean).length >= 6) qualifyingTotal++;
+            if (att.filter(Boolean).length >= MIN_QUALIFYING_DAYS) qualifyingTotal++;
             const isBook = localBooksMap[p.uuid] !== undefined ? localBooksMap[p.uuid] : Boolean(p.books_received);
             if (isBook) booksTotal++;
         });
@@ -628,7 +628,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
                         </div>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                             {isGridActive 
-                                ? `Active Roster: ${list.length} attendees • ${rosterStats.qualifying} qualifying certificates (>=6 days)`
+                                ? `Active Roster: ${list.length} attendees • ${rosterStats.qualifying} qualifying certificates (>=${MIN_QUALIFYING_DAYS} days)`
                                 : 'Select a facilitator team or toggle all participants to mark daily attendance'}
                         </p>
                     </div>
@@ -1023,7 +1023,7 @@ const AttendanceSheet = ({ initialContext, onContextConsumed, onBack }) => {
                                         const isHighlighted = highlightedParticipantUuid === p.uuid;
                                         const att = localAttendanceMap[p.uuid] || normalizeAttendance(p.attendance);
                                         const attendedCount = att.filter(Boolean).length;
-                                        const isQualifying = attendedCount >= 6;
+                                        const isQualifying = attendedCount >= MIN_QUALIFYING_DAYS;
                                         const isBookReceived = localBooksMap[p.uuid] !== undefined ? localBooksMap[p.uuid] : Boolean(p.books_received);
 
                                         return (

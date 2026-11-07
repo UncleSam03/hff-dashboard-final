@@ -11,6 +11,8 @@ import {
 import { cn, splitOccupationAndAffiliation } from '../../lib/utils';
 import { matchesPerson, formatEnteredDate } from '../../lib/searchUtils';
 import { normalizeAttendance } from '../../lib/analytics';
+import { MIN_QUALIFYING_DAYS } from '../../lib/constants';
+import { exportUniform32ColCSV } from '../../lib/sheetsBufferSync';
 import FacilitatorDetail from './FacilitatorDetail';
 import ParticipantDetail from './ParticipantDetail';
 import { useAuth } from '../../auth/AuthContext';
@@ -163,7 +165,7 @@ const PersonList = ({
             return acc;
         }, {});
 
-        // Calculate qualifying participants (>= 6 days) for each facilitator
+        // Calculate qualifying participants (>= 7 days) for each facilitator
         let allParticipants = await db.registrations.where('type').equals('participant').toArray();
         if (activeCampId) {
             allParticipants = allParticipants.filter(p => {
@@ -185,7 +187,7 @@ const PersonList = ({
                 days = Object.values(attendance).filter(Boolean).length;
             }
             
-            if (days >= 6) {
+            if (days >= MIN_QUALIFYING_DAYS) {
                 qualifyingCountsByUuid[p.facilitator_uuid] = (qualifyingCountsByUuid[p.facilitator_uuid] || 0) + 1;
             }
         });
@@ -560,37 +562,7 @@ const PersonList = ({
     );
 
     const exportToCSV = () => {
-        const headers = ['ID', 'Form Number', 'First Name', 'Last Name', 'Type', 'Teaching Group', 'Group Form Number', 'Occupation', 'Affiliation', 'Meeting Place', 'Meeting Time', 'Gender', 'Age', 'Place', 'Facilitator', 'Status'];
-        const csvContent = [
-            headers.join(','),
-            ...people.map(p => {
-                const split = splitOccupationAndAffiliation(p.occupation, p.affiliation, p.meeting_place);
-                return [
-                    p.id, 
-                    p.form_number || '', 
-                    p.first_name, 
-                    p.last_name, 
-                    p.type, 
-                    p.teaching_group ? 'Yes' : 'No', 
-                    p.group_form_number || '', 
-                    split.occupation || '',
-                    split.affiliation || '',
-                    split.meeting_place || p.meeting_place || '',
-                    p.meeting_time || '', 
-                    p.gender, 
-                    p.age, 
-                    p.place || '', 
-                    p.facilitatorName || '', 
-                    p.sync_status
-                ].map(v => `"${v}"`).join(',');
-            })
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `hff_export_${new Date().toISOString().slice(0, 10)}.csv`;
-        link.click();
+        exportUniform32ColCSV(people, `HFF_Uniform_32Col_Export_${new Date().toISOString().slice(0, 10)}.csv`);
     };
 
     if (selectedFacilitator) {

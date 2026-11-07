@@ -5,6 +5,7 @@ import { Search, User, Briefcase, Filter, Download, ArrowLeft, CalendarDays, Map
 import { cn, splitOccupationAndAffiliation } from '../../lib/utils';
 import { matchesPerson } from '../../lib/searchUtils';
 import { normalizeAttendance } from '../../lib/analytics';
+import { MIN_QUALIFYING_DAYS } from '../../lib/constants';
 import ParticipantDetail from './ParticipantDetail';
 import RegistrationForm from '../RegistrationForm';
 
@@ -122,7 +123,7 @@ const FacilitatorDetail = ({ facilitator, onBack, onNavigateToAttendance, onDele
                 ...p,
                 assignedFacilitator: facilitator,
                 facilitatorName: `${facilitator.first_name || ''} ${facilitator.last_name || ''}`.trim(),
-                qualifying: days >= 6
+                qualifying: days >= MIN_QUALIFYING_DAYS
             };
         });
 
