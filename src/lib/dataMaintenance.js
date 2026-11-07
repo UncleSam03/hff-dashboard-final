@@ -138,8 +138,16 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         }
 
         // Check 2: Matching Full Name (exact or fuzzy/inverted/middle-name overlap)
-        const fullA = cleanStr(`${a.first_name || ''} ${a.last_name || ''}`);
-        const fullB = cleanStr(`${b.first_name || ''} ${b.last_name || ''}`);
+        const fnAStr = cleanStr(a.first_name);
+        const lnAStr = cleanStr(a.last_name);
+        const fnBStr = cleanStr(b.first_name);
+        const lnBStr = cleanStr(b.last_name);
+        // Never auto-merge single-token / missing-surname records by name alone
+        if (!fnAStr || !lnAStr || !fnBStr || !lnBStr) {
+            return false;
+        }
+        const fullA = cleanStr(`${fnAStr} ${lnAStr}`);
+        const fullB = cleanStr(`${fnBStr} ${lnBStr}`);
         const namesMatch = (fullA && fullB && fullA === fullB) || areNamesFuzzyMatch(a.first_name, a.last_name, b.first_name, b.last_name);
         if (!namesMatch) {
             return false;
@@ -155,7 +163,7 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
             if (formA && formB && formA !== formB) return false;
             // For facilitators without matching form, require corroborating phone (exact or fuzzy)
             if (!formA || !formB) {
-                return Boolean(phonesFuzzy || (!phA && !phB));
+                return Boolean(phonesFuzzy);
             }
             return true;
         }
@@ -168,13 +176,12 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
         if (ageA && ageB && ageA !== ageB) return false;
 
         // Require corroborating context for participants with the same name:
-        // same group form, same facilitator UUID, same phone number, or both unassigned
-        const sameGroupForm = Boolean(gfA && gfB && gfA === gfB);
-        const sameFacilitator = Boolean(facA && facB && facA === facB);
+        // same group form + same phone (or missing phone), or same phone number
+        const sameGroupForm = Boolean(gfA && gfB && gfA === gfB && (phonesFuzzy || !phA || !phB));
+        const sameFacilitator = Boolean(facA && facB && facA === facB && (phonesFuzzy || !phA || !phB));
         const samePhone = Boolean(phA && phB && phA === phB);
-        const bothUnassigned = !gfA && !gfB && !facA && !facB;
 
-        return sameGroupForm || sameFacilitator || samePhone || bothUnassigned;
+        return sameGroupForm || sameFacilitator || samePhone;
     };
 
     const getRecKey = (r, idx) => (r.id !== undefined && r.id !== null ? `id_${r.id}` : (r.uuid ? `uuid_${r.uuid}` : `idx_${idx}`));
@@ -257,7 +264,8 @@ export async function mergeDuplicateRegistrations({ dryRun = true, campaignId = 
             const candidateKey = getRecKey(candidate, j);
             if (visited.has(candidateKey)) continue;
 
-            if (cluster.some(member => areDuplicates(member, candidate))) {
+            // Require candidate to be a duplicate of EVERY member already in the cluster (prevents transitive chaining)
+            if (cluster.every(member => areDuplicates(member, candidate))) {
                 cluster.push(candidate);
                 visited.add(candidateKey);
             }

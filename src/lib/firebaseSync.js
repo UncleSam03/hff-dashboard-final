@@ -367,16 +367,21 @@ async function pullStoreUpdates(storeName, forceFull = false) {
                     sync_status: 'synced'
                 };
 
-                // Non-destructive day-by-day attendance merge across devices while honoring explicit single-day unchecks
+                // When forceFull is true and local record has no pending edits, trust Firestore attendance as authoritative.
+                // Otherwise, do a non-destructive day-by-day attendance merge across devices while honoring explicit single-day unchecks.
                 if (storeName === 'registrations' && locData.record?.attendance && remoteRecord.attendance) {
-                    const localAtt = normalizeAttendance(locData.record.attendance);
-                    const remoteAtt = normalizeAttendance(remoteRecord.attendance);
-                    const mergedAtt = localAtt.map((val, idx) => Boolean(val || remoteAtt[idx]));
-                    const lastMark = remoteRecord.last_attendance_mark;
-                    if (lastMark && typeof lastMark.day_index === 'number' && lastMark.value === false) {
-                        mergedAtt[lastMark.day_index] = false;
+                    if (forceFull && locData.record?.sync_status === 'synced') {
+                        mergedPayload.attendance = normalizeAttendance(remoteRecord.attendance);
+                    } else {
+                        const localAtt = normalizeAttendance(locData.record.attendance);
+                        const remoteAtt = normalizeAttendance(remoteRecord.attendance);
+                        const mergedAtt = localAtt.map((val, idx) => Boolean(val || remoteAtt[idx]));
+                        const lastMark = remoteRecord.last_attendance_mark;
+                        if (lastMark && typeof lastMark.day_index === 'number' && lastMark.value === false) {
+                            mergedAtt[lastMark.day_index] = false;
+                        }
+                        mergedPayload.attendance = mergedAtt;
                     }
-                    mergedPayload.attendance = mergedAtt;
                 }
 
                 // Reconcile and update existing local record (preserves Dexie auto-increment ID and prevents duplicates)
@@ -417,20 +422,28 @@ export async function reconcileFirebaseDeletions(storeName, force = false) {
     try {
         const querySnapshot = await getDocs(collection(firestoreDb, storeName));
         const remoteUuidSet = new Set();
+        const remoteDeletedUuidSet = new Set();
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (data.is_deleted) return;
             const u = data.uuid || docSnap.id;
+            if (data.is_deleted) {
+                if (u) remoteDeletedUuidSet.add(u);
+                return;
+            }
             if (u) remoteUuidSet.add(u);
         });
 
         const localRecords = await db[storeName].toArray();
+        const seenUuids = new Set();
         
-        const toDelete = localRecords.filter(r => 
-            r.uuid && 
-            r.sync_status === 'synced' &&
-            !remoteUuidSet.has(r.uuid)
-        );
+        const toDelete = localRecords.filter(r => {
+            if (r.is_deleted) return true;
+            if (!r.uuid) return false;
+            if (remoteDeletedUuidSet.has(r.uuid)) return true;
+            if (seenUuids.has(r.uuid)) return true;
+            seenUuids.add(r.uuid);
+            return r.sync_status === 'synced' && !remoteUuidSet.has(r.uuid);
+        });
 
         if (toDelete.length > 0) {
             console.log(`[FirebaseSync] Purging ${toDelete.length} ghost records from ${storeName}`);

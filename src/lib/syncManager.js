@@ -72,7 +72,9 @@ export async function syncSubmissions() {
  * Perform a deep reconciliation with the cloud.
  */
 export async function reconcileWithCloud() {
-    if (isSyncing) return;
+    while (isSyncing) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+    }
     isSyncing = true;
 
     try {
